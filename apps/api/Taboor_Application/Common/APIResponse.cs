@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Taboor_Application.Common
 {
     /// <summary>
-    /// Unified API Response
+    /// Unified API Response wrapper across the platform.
     /// </summary>
     public class ApiResponse<T>
     {
@@ -18,17 +18,17 @@ namespace Taboor_Application.Common
         }
 
         /// <summary>
-        /// Message for client
+        /// General human-readable status message for the client.
         /// </summary>
         public string? Message { get; set; }
 
         /// <summary>
-        /// Single error (old structure)
+        /// Single error message (primary error representation).
         /// </summary>
         public string? Error { get; set; }
 
         /// <summary>
-        /// Multiple errors (new structure)
+        /// Flat list of error messages (for simple toast/alert display in Mobile/Web).
         /// </summary>
         public List<string> Errors { get; set; } = new();
 
@@ -40,7 +40,13 @@ namespace Taboor_Application.Common
         }
 
         /// <summary>
-        /// Data (type-safe)
+        /// Field-specific validation errors dictionary (e.g. {"Email": ["Invalid format"]}).
+        /// Enables forms to bind error messages directly underneath input components.
+        /// </summary>
+        public IDictionary<string, string[]>? ValidationErrors { get; set; }
+
+        /// <summary>
+        /// Strongly-typed response payload.
         /// </summary>
         public T? Data { get; set; }
 
@@ -52,24 +58,28 @@ namespace Taboor_Application.Common
         }
 
         /// <summary>
-        /// HTTP Status Code
+        /// HTTP Status Code.
         /// </summary>
         public HttpStatusCode StatusCode { get; set; }
 
         #region Factory Methods
 
-        public static ApiResponse<T> SuccessResponse(T? data, string? message = null)
+        public static ApiResponse<T> SuccessResponse(T? data, string? message = null, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             return new ApiResponse<T>
             {
                 Success = true,
                 Data = data,
                 Message = message,
-                StatusCode = HttpStatusCode.OK
+                StatusCode = statusCode
             };
         }
 
-        public static ApiResponse<T> FailResponse(string message, List<string>? errors = null)
+        public static ApiResponse<T> FailResponse(
+            string message,
+            List<string>? errors = null,
+            IDictionary<string, string[]>? validationErrors = null,
+            HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             return new ApiResponse<T>
             {
@@ -77,7 +87,8 @@ namespace Taboor_Application.Common
                 Message = message,
                 Error = message,
                 Errors = errors ?? new List<string>(),
-                StatusCode = HttpStatusCode.BadRequest
+                ValidationErrors = validationErrors,
+                StatusCode = statusCode
             };
         }
 

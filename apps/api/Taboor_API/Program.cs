@@ -19,6 +19,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddExceptionHandler<Taboor_API.Middlewares.GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Persist Data Protection keys so antiforgery/CSRF tokens survive restarts and deploys.
 // Defensive: on hosts where the key path isn't writable (e.g. IIS app pools), fall back
@@ -201,6 +203,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 app.UseRequestLocalization(requestLocalizationOptions);
 
 app.UseHttpsRedirection();
