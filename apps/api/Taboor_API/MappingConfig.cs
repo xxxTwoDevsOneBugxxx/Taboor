@@ -1,5 +1,4 @@
 using AutoMapper;
-using Taboor_Application.DTOs.Auth;
 using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Domain.Entities;
 
@@ -16,11 +15,6 @@ namespace Taboor_API.MappingConfig
         public MappingConfig()
         {
             #region User Mappings
-
-            CreateMap<ApplicationUser, UserDTO>()
-                .ForMember(dest => dest.Role, opt => opt.Ignore())
-                .ReverseMap()
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
 
             CreateMap<ApplicationUser, UserDto>()
                 .ForMember(dest => dest.Role, opt => opt.Ignore());
