@@ -108,10 +108,10 @@ namespace Taboor_Application.Services
                     return response;
                 }
 
-                var plan = _mapper.Map<Plan>(dto);
-                plan.Name = dto.Name.Trim();
-                plan.CreatedAt = DateTime.UtcNow;
-                plan.IsActive = true;
+                var plan = new Plan(dto.Name, dto.Description, dto.Price, dto.BillingCycle, dto.MaxBranches, dto.MaxServices, dto.MaxServicesPerBranch);
+
+
+                plan.Activate();
 
                 await repo.AddAsync(plan, cancellationToken);
                 await _uow.SaveAsync();
@@ -172,14 +172,14 @@ namespace Taboor_Application.Services
                     return response;
                 }
 
-                plan.Name = dto.Name.Trim();
-                plan.Description = dto.Description;
-                plan.Price = dto.Price;
-                plan.BillingCycle = dto.BillingCycle;
-                plan.MaxBranches = dto.MaxBranches;
-                plan.MaxServices = dto.MaxServices;
-                plan.MaxServicesPerBranch = dto.MaxServicesPerBranch;
-                plan.UpdatedAt = DateTime.UtcNow;
+
+                plan.Update(dto.Name, dto.Description, dto.Price, dto.BillingCycle, dto.MaxBranches, dto.MaxServices, dto.MaxServicesPerBranch);
+
+
+
+
+
+
 
                 await repo.UpdateAsync(plan, cancellationToken);
                 await _uow.SaveAsync();
@@ -212,8 +212,8 @@ namespace Taboor_Application.Services
                     return response;
                 }
 
-                plan.IsActive = true;
-                plan.UpdatedAt = DateTime.UtcNow;
+                plan.Activate();
+
 
                 await repo.UpdateAsync(plan, cancellationToken);
                 await _uow.SaveAsync();
@@ -244,8 +244,8 @@ namespace Taboor_Application.Services
                     return response;
                 }
 
-                plan.IsActive = false;
-                plan.UpdatedAt = DateTime.UtcNow;
+                plan.Deactivate();
+
 
                 await repo.UpdateAsync(plan, cancellationToken);
                 await _uow.SaveAsync();

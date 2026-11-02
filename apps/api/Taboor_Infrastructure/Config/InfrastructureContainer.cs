@@ -29,6 +29,9 @@ namespace Taboor_Infrastructure.Config
       services.AddDbContext<ApplicationDbContext>(options =>
           options.UseSqlServer(configuration.GetConnectionString("DefaultConnectionString")));
 
+      services.AddScoped<Taboor_Application.Common.Interfaces.IApplicationDbContext>(sp => 
+          sp.GetRequiredService<ApplicationDbContext>());
+
       services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
       {
         options.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;

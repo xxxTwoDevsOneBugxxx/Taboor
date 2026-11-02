@@ -1,13 +1,15 @@
-using Taboor_Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Taboor_Application.Common.Interfaces;
+using Taboor_Domain.Entities;
 
 namespace Taboor_Infrastructure.DB
 {
     /// <summary>
     /// The Entity Framework Core database context for the Taboor application.
+    /// Implements IApplicationDbContext to expose database sets to use case handlers.
     /// </summary>
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>, IApplicationDbContext
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ApplicationDbContext"/> class.
