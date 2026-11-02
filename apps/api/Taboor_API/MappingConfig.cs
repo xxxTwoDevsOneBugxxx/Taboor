@@ -1,6 +1,5 @@
 using AutoMapper;
 using Taboor_Application.DTOs.Auth;
-using Taboor_Application.DTOs.Plan;
 using Taboor_Domain.Entities;
 
 namespace Taboor_API.MappingConfig
@@ -21,14 +20,6 @@ namespace Taboor_API.MappingConfig
                 .ForMember(dest => dest.Role, opt => opt.Ignore())
                 .ReverseMap()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
-
-            #endregion
-
-            #region Plan Mappings
-
-            CreateMap<Plan, PlanDTO>().ReverseMap();
-            CreateMap<CreatePlanDTO, Plan>();
-            CreateMap<UpdatePlanDTO, Plan>();
 
             #endregion
         }
