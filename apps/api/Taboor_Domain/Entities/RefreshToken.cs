@@ -27,5 +27,22 @@ namespace Taboor_Domain.Entities
 
         [ForeignKey("UserId")]
         public ApplicationUser User { get; set; } = null!;
+
+        public static RefreshToken Create(string userId, string token, DateTime expiry)
+        {
+            return new RefreshToken
+            {
+                UserId = userId,
+                Token = token,
+                Expiry = expiry,
+                CreatedAt = DateTime.UtcNow,
+                IsRevoked = false,
+                IsUsed = false
+            };
+        }
+
+        public void MarkAsUsed() => IsUsed = true;
+
+        public void Revoke() => IsRevoked = true;
     }
 }

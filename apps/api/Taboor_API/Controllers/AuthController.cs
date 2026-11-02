@@ -2,6 +2,9 @@ using MediatR;
 using Taboor_Application.Common;
 using Taboor_Application.Features.Auth.Commands.Login;
 using Taboor_Application.Features.Auth.Commands.Register;
+using Taboor_Application.Features.Auth.Commands.RefreshToken;
+using Taboor_Application.Features.Auth.Commands.RevokeToken;
+using Taboor_Application.Features.Auth.Commands.LogoutWeb;
 using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Application.DTOs.Auth;
 using Taboor_Application.DTOs.Token;
@@ -29,7 +32,6 @@ namespace Taboor_API.Controllers
         private const string ClientTypeHeader = "X-Client-Type";
         private const string WebClientType = "web";
 
-        private readonly IAuthService _authService;
         private readonly IUserService _userService;
         private readonly IExternalLoginService _externalLoginService;
         private readonly IAntiforgery _antiforgery;
@@ -37,14 +39,12 @@ namespace Taboor_API.Controllers
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            IAuthService authService,
             IUserService userService,
             IExternalLoginService externalLoginService,
             IAntiforgery antiforgery,
             ISender sender,
             ILogger<AuthController> logger)
         {
-            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _externalLoginService = externalLoginService ?? throw new ArgumentNullException(nameof(externalLoginService));
             _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
@@ -150,66 +150,39 @@ namespace Taboor_API.Controllers
         /// Refreshes an access token using a valid refresh token.
         /// </summary>
         [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO? request)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenCommand? request, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Refresh token request received");
+
+            var isWebClient = IsWebClient();
+
+            // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
+            if (isWebClient && !await ValidateCsrfTokenAsync())
             {
-                _logger.LogInformation("Refresh token request received");
-
-                var isWebClient = IsWebClient();
-
-                // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
-                if (isWebClient)
-                {
-                    if (!await ValidateCsrfTokenAsync())
-                    {
-                        return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
-                    }
-                }
-
-                if (!isWebClient && !ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
-
-                var incomingRefreshToken = isWebClient
-                    ? Request.Cookies[RefreshTokenCookieName]
-                    : request?.RefreshToken;
-
-                if (string.IsNullOrEmpty(incomingRefreshToken))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("Refresh token missing"));
-                }
-
-                var result = isWebClient
-                    ? await _authService.RefreshTokenByCookieAsync(incomingRefreshToken)
-                    : await _authService.RefreshToken(request!);
-
-                _logger.LogInformation("Token refresh successful");
-
-                if (isWebClient)
-                {
-                    SetRefreshTokenCookie(result.RefreshToken!);
-                    result.RefreshToken = null;
-                }
-
-                return Ok(ApiResponse<TokenResponseDTO>.SuccessResponse(result, "Token refreshed successfully"));
+                return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
             }
-            catch (SecurityTokenException ex)
+
+            var incomingRefreshToken = isWebClient
+                ? Request.Cookies[RefreshTokenCookieName]
+                : request?.RefreshToken;
+
+            if (string.IsNullOrEmpty(incomingRefreshToken))
             {
-                _logger.LogWarning(ex, "Security token exception");
-                return Unauthorized(ApiResponse<object>.FailResponse("Invalid token", new List<string> { ex.Message }));
+                return Unauthorized(ApiResponse<object>.FailResponse("Refresh token missing"));
             }
-            catch (Exception ex)
+
+            var command = new RefreshTokenCommand(incomingRefreshToken, request?.AccessToken);
+            var result = await _sender.Send(command, ct);
+
+            _logger.LogInformation("Token refresh successful");
+
+            if (isWebClient)
             {
-                _logger.LogError(ex, "Unexpected error during token refresh");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while refreshing your token."
-                });
+                SetRefreshTokenCookie(result.RefreshToken!);
+                result = result with { RefreshToken = null };
             }
+
+            return Ok(ApiResponse<TokenResponseDto>.SuccessResponse(result, "Token refreshed successfully"));
         }
 
         /// <summary>
@@ -217,83 +190,56 @@ namespace Taboor_API.Controllers
         /// </summary>
         [HttpPost("revoke")]
         [Authorize]
-        public async Task<IActionResult> RevokeToken([FromBody] string? refreshToken)
+        public async Task<IActionResult> RevokeToken([FromBody] string? refreshToken, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Revoke token request received");
+
+            var isWebClient = IsWebClient();
+
+            // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
+            if (isWebClient && !await ValidateCsrfTokenAsync())
             {
-                _logger.LogInformation("Revoke token request received");
-
-                var isWebClient = IsWebClient();
-
-                // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
-                if (isWebClient)
-                {
-                    if (!await ValidateCsrfTokenAsync())
-                    {
-                        return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
-                    }
-                }
-
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
-                }
-
-                var incomingRefreshToken = isWebClient
-                    ? Request.Cookies[RefreshTokenCookieName]
-                    : refreshToken;
-
-                if (string.IsNullOrEmpty(incomingRefreshToken))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Refresh token is required"));
-                }
-
-                await _authService.RevokeRefreshToken(userId, incomingRefreshToken);
-
-                if (isWebClient)
-                {
-                    ClearRefreshTokenCookie();
-                }
-
-                _logger.LogInformation("Refresh token revoked successfully for user {UserId}", userId);
-                return Ok(ApiResponse<object>.SuccessResponse(new { message = "Token revoked successfully" }, "Token revoked"));
+                return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
             }
-            catch (Exception ex)
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
             {
-                _logger.LogError(ex, "Unexpected error during token revocation");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while revoking your token."
-                });
+                return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
             }
+
+            var incomingRefreshToken = isWebClient
+                ? Request.Cookies[RefreshTokenCookieName]
+                : refreshToken;
+
+            if (string.IsNullOrEmpty(incomingRefreshToken))
+            {
+                return BadRequest(ApiResponse<object>.FailResponse("Refresh token is required"));
+            }
+
+            await _sender.Send(new RevokeTokenCommand(userId, incomingRefreshToken), ct);
+
+            if (isWebClient)
+            {
+                ClearRefreshTokenCookie();
+            }
+
+            _logger.LogInformation("Refresh token revoked successfully for user {UserId}", userId);
+            return Ok(ApiResponse<object>.SuccessResponse(new { message = "Token revoked successfully" }, "Token revoked"));
         }
 
         /// <summary>
         /// Web logout: clears the HttpOnly refresh-token cookie and revokes the token by
-        /// looking it up from the cookie alone. Does NOT require a valid access token,
-        /// user claims, or CSRF — logout is low-risk (worst case a forced logout) and the
-        /// CORS policy already restricts this endpoint to the dashboard origin. The cookie
-        /// is cleared unconditionally so the client is always logged out.
+        /// looking it up from the cookie alone.
         /// </summary>
         [HttpPost("logout")]
-        public async Task<IActionResult> LogoutWeb()
+        public async Task<IActionResult> LogoutWeb(CancellationToken ct)
         {
             var incomingRefreshToken = Request.Cookies[RefreshTokenCookieName];
 
-            // Revoke best-effort: even if the DB lookup/update fails, the cookie is
-            // still cleared so the client is always logged out.
-            try
+            if (!string.IsNullOrEmpty(incomingRefreshToken))
             {
-                if (!string.IsNullOrEmpty(incomingRefreshToken))
-                {
-                    await _authService.LogoutWebAsync(incomingRefreshToken);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to revoke refresh token during web logout");
+                await _sender.Send(new LogoutWebCommand(incomingRefreshToken), ct);
             }
 
             ClearRefreshTokenCookie();

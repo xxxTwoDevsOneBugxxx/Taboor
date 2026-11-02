@@ -6,6 +6,7 @@ using Taboor_Application.Common.Security;
 using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Application.ServiceInterfaces;
 using Taboor_Domain.Entities;
+using RefreshTokenEntity = Taboor_Domain.Entities.RefreshToken;
 
 namespace Taboor_Application.Features.Auth.Commands.Login;
 
@@ -68,15 +69,7 @@ public class LoginCommandHandler(
         var refreshTokenExpiry = DateTime.UtcNow.AddDays(expiryDays);
 
         // 5. Persist hashed refresh token directly via IApplicationDbContext
-        var refreshTokenEntity = new RefreshToken
-        {
-            UserId = user.Id,
-            Token = TokenHasher.Hash(rawRefreshToken),
-            Expiry = refreshTokenExpiry,
-            CreatedAt = DateTime.UtcNow,
-            IsRevoked = false,
-            IsUsed = false
-        };
+        var refreshTokenEntity = RefreshTokenEntity.Create(user.Id, TokenHasher.Hash(rawRefreshToken), refreshTokenExpiry);
 
         context.RefreshTokens.Add(refreshTokenEntity);
         await context.SaveChangesAsync(cancellationToken);
