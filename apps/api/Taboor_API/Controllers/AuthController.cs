@@ -5,6 +5,11 @@ using Taboor_Application.Features.Auth.Commands.Register;
 using Taboor_Application.Features.Auth.Commands.RefreshToken;
 using Taboor_Application.Features.Auth.Commands.RevokeToken;
 using Taboor_Application.Features.Auth.Commands.LogoutWeb;
+using Taboor_Application.Features.Auth.Commands.SendVerificationCode;
+using Taboor_Application.Features.Auth.Commands.VerifyEmail;
+using Taboor_Application.Features.Auth.Commands.ForgotPassword;
+using Taboor_Application.Features.Auth.Commands.VerifyResetCode;
+using Taboor_Application.Features.Auth.Commands.ResetPassword;
 using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Application.DTOs.Auth;
 using Taboor_Application.DTOs.Token;
@@ -32,20 +37,17 @@ namespace Taboor_API.Controllers
         private const string ClientTypeHeader = "X-Client-Type";
         private const string WebClientType = "web";
 
-        private readonly IUserService _userService;
         private readonly IExternalLoginService _externalLoginService;
         private readonly IAntiforgery _antiforgery;
         private readonly ISender _sender;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            IUserService userService,
             IExternalLoginService externalLoginService,
             IAntiforgery antiforgery,
             ISender sender,
             ILogger<AuthController> logger)
         {
-            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _externalLoginService = externalLoginService ?? throw new ArgumentNullException(nameof(externalLoginService));
             _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
             _sender = sender ?? throw new ArgumentNullException(nameof(sender));
@@ -270,90 +272,41 @@ namespace Taboor_API.Controllers
         /// Initiates the forgot password process by sending a reset code to the user email.
         /// </summary>
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Forgot password request for email: {Email}", dto?.Email);
+            _logger.LogInformation("Forgot password request for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.ForgotPasswordAsync(dto!.Email);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during forgot password");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing your request."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(
+                "If this email is registered, a reset code has been sent to it.",
+                "Reset code sent"));
         }
 
         /// <summary>
         /// Verifies the password reset code.
         /// </summary>
         [HttpPost("verify-reset-code")]
-        public async Task<IActionResult> VerifyResetCode([FromBody] VerifyEmailDTO dto)
+        public async Task<IActionResult> VerifyResetCode([FromBody] VerifyResetCodeCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Reset code verification for email: {Email}", dto?.Email);
+            _logger.LogInformation("Reset code verification for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.VerifyResetCodeAsync(dto!.Email, dto.Code);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during reset code verification");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while verifying the reset code."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Code verified. You can now reset your password."));
         }
 
         /// <summary>
         /// Resets the user's password using a verified reset code.
         /// </summary>
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Password reset for email: {Email}", dto?.Email);
+            _logger.LogInformation("Password reset for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.ResetPasswordAsync(dto!);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during password reset");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while resetting your password."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Password reset successfully. You can now log in."));
         }
 
         #endregion
@@ -381,65 +334,26 @@ namespace Taboor_API.Controllers
         /// Verifies a user's email using an OTP code.
         /// </summary>
         [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDTO dto)
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Email verification attempt for email: {Email}", dto?.Email);
+            _logger.LogInformation("Email verification attempt for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.VerifyEmailCodeAsync(dto!.Email, dto.Code);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during email verification");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while verifying your email."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Email confirmed successfully."));
         }
 
         /// <summary>
         /// Sends an OTP verification code to the specified email.
         /// </summary>
         [HttpPost("send-code")]
-        public async Task<IActionResult> SendVerificationCodeAsync([FromBody] SendCodeDTO dto)
+        public async Task<IActionResult> SendVerificationCodeAsync([FromBody] SendVerificationCodeCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Send verification code request for email: {Email}", dto?.Email);
+            _logger.LogInformation("Send verification code request for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.SendVerificationCodeAsync(dto!.Email);
-                if (response == null)
-                {
-                    return StatusCode(500, ApiResponse<object>.FailResponse("Unable to send verification code."));
-                }
-
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error sending verification code");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while sending the verification code."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Verification code sent to your email."));
         }
 
         #endregion
