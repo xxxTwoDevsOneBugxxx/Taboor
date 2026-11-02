@@ -43,15 +43,15 @@ namespace Taboor_Domain.Entities
         public DateTime? UpdatedAt { get; private set; }
 
         /// <summary>
-        /// Private parameterless constructor for EF Core materialization via reflection.
-        /// Prevents instantiating an uninitialized entity outside the domain.
+        /// Private constructor for EF Core materialization via reflection and internal creation.
         /// </summary>
         private Plan() { }
 
         /// <summary>
-        /// Public domain constructor for creating a new valid subscription plan.
+        /// Named Static Factory Method to create a new valid subscription plan.
+        /// Guarantees that any created plan starts in a valid state.
         /// </summary>
-        public Plan(
+        public static Plan Create(
             string name,
             string? description,
             decimal price,
@@ -60,15 +60,18 @@ namespace Taboor_Domain.Entities
             int maxServices,
             int maxServicesPerBranch)
         {
-            Name = name.Trim();
-            Description = description?.Trim();
-            Price = price;
-            BillingCycle = billingCycle;
-            MaxBranches = maxBranches;
-            MaxServices = maxServices;
-            MaxServicesPerBranch = maxServicesPerBranch;
-            IsActive = true;
-            CreatedAt = DateTime.UtcNow;
+            return new Plan
+            {
+                Name = name.Trim(),
+                Description = description?.Trim(),
+                Price = price,
+                BillingCycle = billingCycle,
+                MaxBranches = maxBranches,
+                MaxServices = maxServices,
+                MaxServicesPerBranch = maxServicesPerBranch,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
         }
 
         #region Domain Behaviors
@@ -110,15 +113,6 @@ namespace Taboor_Domain.Entities
         public void Deactivate()
         {
             IsActive = false;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        /// <summary>
-        /// Toggles the plan active status.
-        /// </summary>
-        public void ToggleStatus()
-        {
-            IsActive = !IsActive;
             UpdatedAt = DateTime.UtcNow;
         }
 

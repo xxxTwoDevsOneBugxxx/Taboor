@@ -108,7 +108,7 @@ namespace Taboor_Application.Services
                     return response;
                 }
 
-                var plan = new Plan(dto.Name, dto.Description, dto.Price, dto.BillingCycle, dto.MaxBranches, dto.MaxServices, dto.MaxServicesPerBranch);
+                var plan = Plan.Create(dto.Name, dto.Description, dto.Price, dto.BillingCycle, dto.MaxBranches, dto.MaxServices, dto.MaxServicesPerBranch);
 
 
                 plan.Activate();
