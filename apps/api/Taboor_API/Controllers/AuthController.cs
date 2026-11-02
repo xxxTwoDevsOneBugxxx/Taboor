@@ -10,6 +10,12 @@ using Taboor_Application.Features.Auth.Commands.VerifyEmail;
 using Taboor_Application.Features.Auth.Commands.ForgotPassword;
 using Taboor_Application.Features.Auth.Commands.VerifyResetCode;
 using Taboor_Application.Features.Auth.Commands.ResetPassword;
+using Taboor_Application.Features.Auth.Commands.ExternalLoginCallback;
+using Taboor_Application.Features.Auth.Commands.ExternalLoginConfirmation;
+using Taboor_Application.Features.Auth.Commands.GoogleMobileLogin;
+using Taboor_Application.Features.Auth.Commands.FacebookMobileLogin;
+using Microsoft.AspNetCore.Identity;
+using Taboor_Domain.Entities;
 using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Application.DTOs.Auth;
 using Taboor_Application.DTOs.Token;
@@ -37,18 +43,18 @@ namespace Taboor_API.Controllers
         private const string ClientTypeHeader = "X-Client-Type";
         private const string WebClientType = "web";
 
-        private readonly IExternalLoginService _externalLoginService;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IAntiforgery _antiforgery;
         private readonly ISender _sender;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            IExternalLoginService externalLoginService,
+            SignInManager<ApplicationUser> signInManager,
             IAntiforgery antiforgery,
             ISender sender,
             ILogger<AuthController> logger)
         {
-            _externalLoginService = externalLoginService ?? throw new ArgumentNullException(nameof(externalLoginService));
+            _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
             _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
             _sender = sender ?? throw new ArgumentNullException(nameof(sender));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -366,186 +372,102 @@ namespace Taboor_API.Controllers
         [HttpGet("ExternalLogin")]
         public IActionResult ExternalLogin([FromQuery] string provider, [FromQuery] string? returnUrl = null)
         {
-            try
-            {
-                _logger.LogInformation("External login initiated with provider: {Provider}", provider);
+            _logger.LogInformation("External login initiated with provider: {Provider}", provider);
 
-                if (string.IsNullOrEmpty(provider))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Provider is required"));
-                }
-
-                var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Auth", new { returnUrl }, Request.Scheme);
-                var properties = _externalLoginService.ConfigureExternalAuthProperties(provider, redirectUrl!);
-                return Challenge(properties, provider);
-            }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(provider))
             {
-                _logger.LogError(ex, "Error initiating external login");
-                return BadRequest(ApiResponse<object>.FailResponse("External login failed", new List<string> { ex.Message }));
+                return BadRequest(ApiResponse<object>.FailResponse("Provider is required"));
             }
+
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Auth", new { returnUrl }, Request.Scheme);
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl!);
+            return Challenge(properties, provider);
         }
 
         /// <summary>
         /// Handles the callback from external authentication providers.
         /// </summary>
         [HttpGet("ExternalLoginCallback")]
-        public async Task<IActionResult> ExternalLoginCallback([FromQuery] string? returnUrl = null, [FromQuery] string? remoteError = null)
+        public async Task<IActionResult> ExternalLoginCallback([FromQuery] string? returnUrl = null, [FromQuery] string? remoteError = null, CancellationToken ct = default)
         {
-            try
-            {
-                _logger.LogInformation("External login callback received");
+            _logger.LogInformation("External login callback received");
 
-                var result = await _externalLoginService.HandleExternalLoginCallbackAsync(remoteError, returnUrl);
-                if (!string.IsNullOrEmpty(remoteError) || result == null || string.IsNullOrEmpty(result.Email))
-                {
-                    return Redirect($"{returnUrl}?error=external_login_failed");
-                }
+            var result = await _sender.Send(new ExternalLoginCallbackCommand(remoteError, returnUrl), ct);
 
-                var separator = returnUrl!.Contains("?") ? "&" : "?";
-                var url = $"{returnUrl}{separator}email={Uri.EscapeDataString(result.Email)}&isNewUser={result.IsNewUser.ToString().ToLower()}";
-                if (!string.IsNullOrEmpty(result.Token))
-                {
-                    url += $"&token={Uri.EscapeDataString(result.Token)}";
-                }
-                if (!string.IsNullOrEmpty(result.RefreshToken))
-                {
-                    url += $"&refreshToken={Uri.EscapeDataString(result.RefreshToken)}";
-                }
-                return Redirect(url);
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(remoteError) || result == null || string.IsNullOrEmpty(result.Email))
             {
-                _logger.LogError(ex, "Error in external login callback");
                 return Redirect($"{returnUrl}?error=external_login_failed");
             }
+
+            var separator = returnUrl!.Contains("?") ? "&" : "?";
+            var url = $"{returnUrl}{separator}email={Uri.EscapeDataString(result.Email)}&isNewUser={result.IsNewUser.ToString().ToLower()}";
+            if (!string.IsNullOrEmpty(result.Token))
+            {
+                url += $"&token={Uri.EscapeDataString(result.Token)}";
+            }
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+            {
+                url += $"&refreshToken={Uri.EscapeDataString(result.RefreshToken)}";
+            }
+            return Redirect(url);
         }
 
         /// <summary>
         /// Confirms and completes external user registration.
         /// </summary>
         [HttpPost("ExternalLoginConfirmation")]
-        public async Task<IActionResult> ExternalLoginConfirmation([FromBody] ExternalLoginConfirmationDto model)
+        public async Task<IActionResult> ExternalLoginConfirmation([FromBody] ExternalLoginConfirmationCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("External login confirmation for email: {Email}", command.Email);
+
+            var result = await _sender.Send(command, ct);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                _logger.LogInformation("External login confirmation for email: {Email}", model?.Email);
-
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
-
-                var result = await _externalLoginService.ConfirmExternalUserAsync(model!);
-                if (string.IsNullOrEmpty(result.Token))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse(
-                        "External login confirmation failed",
-                        new List<string> { result.Message ?? "Unknown error" }
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    message = "User registered via external provider",
-                    token = result.Token,
-                    refreshToken = result.RefreshToken
-                }, "External user confirmed"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in external login confirmation");
-                return BadRequest(ApiResponse<object>.FailResponse("External login confirmation error", new List<string> { ex.Message }));
-            }
+                message = "User registered via external provider",
+                token = result.Token,
+                refreshToken = result.RefreshToken
+            }, "External user confirmed"));
         }
 
         /// <summary>
         /// Handles Google login from a mobile app by validating the Google ID token.
         /// </summary>
         [HttpPost("GoogleMobile")]
-        public async Task<IActionResult> GoogleMobileLogin([FromBody] GoogleMobileLoginDto dto)
+        public async Task<IActionResult> GoogleMobileLogin([FromBody] GoogleMobileLoginCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Google mobile login attempt");
+
+            var result = await _sender.Send(command, ct);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                _logger.LogInformation("Google mobile login attempt");
-
-                if (dto == null || string.IsNullOrEmpty(dto.IdToken))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Id token is required"));
-                }
-
-                var result = await _externalLoginService.HandleGoogleMobileLoginAsync(dto.IdToken);
-                if (string.IsNullOrEmpty(result.Token))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse(
-                        "Google login failed",
-                        new List<string> { result.Message ?? "Unknown error" }
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    email = result.Email,
-                    isNewUser = result.IsNewUser,
-                    hasPassword = result.HasPassword,
-                    token = result.Token,
-                    refreshToken = result.RefreshToken
-                }, result.Message ?? "Google login successful"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in Google mobile login");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing Google login."
-                });
-            }
+                email = result.Email,
+                isNewUser = result.IsNewUser,
+                hasPassword = result.HasPassword,
+                token = result.Token,
+                refreshToken = result.RefreshToken
+            }, result.Message ?? "Google login successful"));
         }
 
         /// <summary>
         /// Handles Facebook login from a mobile app by validating the Facebook access token.
         /// </summary>
         [HttpPost("FacebookMobile")]
-        public async Task<IActionResult> FacebookMobileLogin([FromBody] FacebookMobileLoginDto dto)
+        public async Task<IActionResult> FacebookMobileLogin([FromBody] FacebookMobileLoginCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Facebook mobile login attempt");
+
+            var result = await _sender.Send(command, ct);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                _logger.LogInformation("Facebook mobile login attempt");
-
-                if (dto == null || string.IsNullOrEmpty(dto.AccessToken))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Access token is required"));
-                }
-
-                var result = await _externalLoginService.HandleFacebookMobileLoginAsync(dto.AccessToken);
-                if (string.IsNullOrEmpty(result.Token))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse(
-                        "Facebook login failed",
-                        new List<string> { result.Message ?? "Unknown error" }
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    email = result.Email,
-                    isNewUser = result.IsNewUser,
-                    hasPassword = result.HasPassword,
-                    token = result.Token,
-                    refreshToken = result.RefreshToken
-                }, result.Message ?? "Facebook login successful"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in Facebook mobile login");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing Facebook login."
-                });
-            }
+                email = result.Email,
+                isNewUser = result.IsNewUser,
+                hasPassword = result.HasPassword,
+                token = result.Token,
+                refreshToken = result.RefreshToken
+            }, result.Message ?? "Facebook login successful"));
         }
 
         #endregion
