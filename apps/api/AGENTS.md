@@ -7,5 +7,6 @@ All development in `apps/api` must strictly follow the root guidelines defined i
 * **System Level:** Traditional Monolith
 * **Boundary Level:** Feature Boundaries (`Taboor_Application/Features/<FeatureName>/`)
 * **Code Level:** Vertical Slice Architecture (VSA) + CQRS (MediatR)
-* **Direct EF Core:** No Generic Repositories, no custom UnitOfWork, no Specification Pattern.
-* **Exceptions:** Global Exception Handler (`IExceptionHandler`) + Result Pattern for business errors.
+* **Direct EF Core:** Direct `IApplicationDbContext` operations in handlers; no Generic Repositories, no UnitOfWork wrappers, no Specification Pattern.
+* **Exceptions & Validation:** `GlobalExceptionHandler` (`IExceptionHandler`) + typed `AppException` + `FluentValidation` via `ValidationBehavior`.
+* **Domain Encapsulation:** Rich Domain Entities with `private set;`, `Entity.Create(...)` static factories, and explicit domain methods.
