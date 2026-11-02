@@ -1,4 +1,7 @@
+using MediatR;
 using Taboor_Application.Common;
+using Taboor_Application.Features.Auth.Commands.Login;
+using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Application.DTOs.Auth;
 using Taboor_Application.DTOs.Token;
 using Taboor_Application.ServiceInterfaces;
@@ -29,6 +32,7 @@ namespace Taboor_API.Controllers
         private readonly IUserService _userService;
         private readonly IExternalLoginService _externalLoginService;
         private readonly IAntiforgery _antiforgery;
+        private readonly ISender _sender;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
@@ -36,12 +40,14 @@ namespace Taboor_API.Controllers
             IUserService userService,
             IExternalLoginService externalLoginService,
             IAntiforgery antiforgery,
+            ISender sender,
             ILogger<AuthController> logger)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _externalLoginService = externalLoginService ?? throw new ArgumentNullException(nameof(externalLoginService));
             _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
+            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -123,49 +129,20 @@ namespace Taboor_API.Controllers
         /// Authenticates a user and returns access and refresh tokens.
         /// </summary>
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
+        public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Login attempt for email: {Email}", command.Email);
+
+            var response = await _sender.Send(command, ct);
+
+            if (IsWebClient())
             {
-                _logger.LogInformation("Login attempt for email: {Email}", model?.Email);
-
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
-
-                var response = await _authService.Login(model!);
-                if (response == null)
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("Invalid email or password."));
-                }
-
-                if (!string.IsNullOrEmpty(response.ErrorMessage))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse(response.ErrorMessage));
-                }
-
-                _logger.LogInformation("Login successful for email: {Email}", model!.Email);
-
-                if (IsWebClient())
-                {
-                    SetRefreshTokenCookie(response.RefreshToken!);
-                    response.RefreshToken = null;
-                    return Ok(ApiResponse<LoginResponseDTO>.SuccessResponse(response, "Login successful"));
-                }
-
-                return Ok(ApiResponse<LoginResponseDTO>.SuccessResponse(response, "Login successful"));
+                SetRefreshTokenCookie(response.RefreshToken!);
+                var webResponse = response with { RefreshToken = null };
+                return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(webResponse, "Login successful"));
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during login");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing your login request."
-                });
-            }
+
+            return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(response, "Login successful"));
         }
 
         /// <summary>
