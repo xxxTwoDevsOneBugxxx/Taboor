@@ -1,6 +1,7 @@
 using MediatR;
 using Taboor_Application.Common;
 using Taboor_Application.Features.Auth.Commands.Login;
+using Taboor_Application.Features.Auth.Commands.Register;
 using Taboor_Application.Features.Auth.DTOs;
 using Taboor_Application.DTOs.Auth;
 using Taboor_Application.DTOs.Token;
@@ -417,37 +418,13 @@ namespace Taboor_API.Controllers
         /// Registers a new user (requires OTP email verification first).
         /// </summary>
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO model)
+        public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Registration attempt for email: {Email}", model?.Email);
+            _logger.LogInformation("Registration attempt for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            var user = await _sender.Send(command, ct);
 
-                var preferredLanguage = CultureInfo.CurrentUICulture.Name;
-                var response = await _userService.Register(model!, preferredLanguage);
-                if (response == null)
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Registration failed"));
-                }
-
-                _logger.LogInformation("Registration successful for email: {Email}", model!.Email);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during registration");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing your registration."
-                });
-            }
+            return Ok(ApiResponse<UserDto>.SuccessResponse(user, "Registration successful"));
         }
 
         #endregion
