@@ -1,7 +1,22 @@
+using MediatR;
 using Taboor_Application.Common;
-using Taboor_Application.DTOs.Auth;
-using Taboor_Application.DTOs.Token;
-using Taboor_Application.ServiceInterfaces;
+using Taboor_Application.Features.Auth.Commands.Login;
+using Taboor_Application.Features.Auth.Commands.Register;
+using Taboor_Application.Features.Auth.Commands.RefreshToken;
+using Taboor_Application.Features.Auth.Commands.RevokeToken;
+using Taboor_Application.Features.Auth.Commands.LogoutWeb;
+using Taboor_Application.Features.Auth.Commands.SendVerificationCode;
+using Taboor_Application.Features.Auth.Commands.VerifyEmail;
+using Taboor_Application.Features.Auth.Commands.ForgotPassword;
+using Taboor_Application.Features.Auth.Commands.VerifyResetCode;
+using Taboor_Application.Features.Auth.Commands.ResetPassword;
+using Taboor_Application.Features.Auth.Commands.ExternalLoginCallback;
+using Taboor_Application.Features.Auth.Commands.ExternalLoginConfirmation;
+using Taboor_Application.Features.Auth.Commands.GoogleMobileLogin;
+using Taboor_Application.Features.Auth.Commands.FacebookMobileLogin;
+using Microsoft.AspNetCore.Identity;
+using Taboor_Domain.Entities;
+using Taboor_Application.Features.Auth.DTOs;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,23 +40,20 @@ namespace Taboor_API.Controllers
         private const string ClientTypeHeader = "X-Client-Type";
         private const string WebClientType = "web";
 
-        private readonly IAuthService _authService;
-        private readonly IUserService _userService;
-        private readonly IExternalLoginService _externalLoginService;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IAntiforgery _antiforgery;
+        private readonly ISender _sender;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
-            IAuthService authService,
-            IUserService userService,
-            IExternalLoginService externalLoginService,
+            SignInManager<ApplicationUser> signInManager,
             IAntiforgery antiforgery,
+            ISender sender,
             ILogger<AuthController> logger)
         {
-            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-            _externalLoginService = externalLoginService ?? throw new ArgumentNullException(nameof(externalLoginService));
+            _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
             _antiforgery = antiforgery ?? throw new ArgumentNullException(nameof(antiforgery));
+            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -123,115 +135,59 @@ namespace Taboor_API.Controllers
         /// Authenticates a user and returns access and refresh tokens.
         /// </summary>
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
+        public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Login attempt for email: {Email}", command.Email);
+
+            var response = await _sender.Send(command, ct);
+
+            if (IsWebClient())
             {
-                _logger.LogInformation("Login attempt for email: {Email}", model?.Email);
-
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
-
-                var response = await _authService.Login(model!);
-                if (response == null)
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("Invalid email or password."));
-                }
-
-                if (!string.IsNullOrEmpty(response.ErrorMessage))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse(response.ErrorMessage));
-                }
-
-                _logger.LogInformation("Login successful for email: {Email}", model!.Email);
-
-                if (IsWebClient())
-                {
-                    SetRefreshTokenCookie(response.RefreshToken!);
-                    response.RefreshToken = null;
-                    return Ok(ApiResponse<LoginResponseDTO>.SuccessResponse(response, "Login successful"));
-                }
-
-                return Ok(ApiResponse<LoginResponseDTO>.SuccessResponse(response, "Login successful"));
+                SetRefreshTokenCookie(response.RefreshToken!);
+                var webResponse = response with { RefreshToken = null };
+                return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(webResponse, "Login successful"));
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during login");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing your login request."
-                });
-            }
+
+            return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(response, "Login successful"));
         }
 
         /// <summary>
         /// Refreshes an access token using a valid refresh token.
         /// </summary>
         [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO? request)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenCommand? request, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Refresh token request received");
+
+            var isWebClient = IsWebClient();
+
+            // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
+            if (isWebClient && !await ValidateCsrfTokenAsync())
             {
-                _logger.LogInformation("Refresh token request received");
-
-                var isWebClient = IsWebClient();
-
-                // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
-                if (isWebClient)
-                {
-                    if (!await ValidateCsrfTokenAsync())
-                    {
-                        return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
-                    }
-                }
-
-                if (!isWebClient && !ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
-
-                var incomingRefreshToken = isWebClient
-                    ? Request.Cookies[RefreshTokenCookieName]
-                    : request?.RefreshToken;
-
-                if (string.IsNullOrEmpty(incomingRefreshToken))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("Refresh token missing"));
-                }
-
-                var result = isWebClient
-                    ? await _authService.RefreshTokenByCookieAsync(incomingRefreshToken)
-                    : await _authService.RefreshToken(request!);
-
-                _logger.LogInformation("Token refresh successful");
-
-                if (isWebClient)
-                {
-                    SetRefreshTokenCookie(result.RefreshToken!);
-                    result.RefreshToken = null;
-                }
-
-                return Ok(ApiResponse<TokenResponseDTO>.SuccessResponse(result, "Token refreshed successfully"));
+                return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
             }
-            catch (SecurityTokenException ex)
+
+            var incomingRefreshToken = isWebClient
+                ? Request.Cookies[RefreshTokenCookieName]
+                : request?.RefreshToken;
+
+            if (string.IsNullOrEmpty(incomingRefreshToken))
             {
-                _logger.LogWarning(ex, "Security token exception");
-                return Unauthorized(ApiResponse<object>.FailResponse("Invalid token", new List<string> { ex.Message }));
+                return Unauthorized(ApiResponse<object>.FailResponse("Refresh token missing"));
             }
-            catch (Exception ex)
+
+            var command = new RefreshTokenCommand(incomingRefreshToken, request?.AccessToken);
+            var result = await _sender.Send(command, ct);
+
+            _logger.LogInformation("Token refresh successful");
+
+            if (isWebClient)
             {
-                _logger.LogError(ex, "Unexpected error during token refresh");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while refreshing your token."
-                });
+                SetRefreshTokenCookie(result.RefreshToken!);
+                result = result with { RefreshToken = null };
             }
+
+            return Ok(ApiResponse<TokenResponseDto>.SuccessResponse(result, "Token refreshed successfully"));
         }
 
         /// <summary>
@@ -239,83 +195,56 @@ namespace Taboor_API.Controllers
         /// </summary>
         [HttpPost("revoke")]
         [Authorize]
-        public async Task<IActionResult> RevokeToken([FromBody] string? refreshToken)
+        public async Task<IActionResult> RevokeToken([FromBody] string? refreshToken, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Revoke token request received");
+
+            var isWebClient = IsWebClient();
+
+            // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
+            if (isWebClient && !await ValidateCsrfTokenAsync())
             {
-                _logger.LogInformation("Revoke token request received");
-
-                var isWebClient = IsWebClient();
-
-                // Web clients authenticate via the HttpOnly cookie and must pass CSRF validation.
-                if (isWebClient)
-                {
-                    if (!await ValidateCsrfTokenAsync())
-                    {
-                        return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
-                    }
-                }
-
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
-                }
-
-                var incomingRefreshToken = isWebClient
-                    ? Request.Cookies[RefreshTokenCookieName]
-                    : refreshToken;
-
-                if (string.IsNullOrEmpty(incomingRefreshToken))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Refresh token is required"));
-                }
-
-                await _authService.RevokeRefreshToken(userId, incomingRefreshToken);
-
-                if (isWebClient)
-                {
-                    ClearRefreshTokenCookie();
-                }
-
-                _logger.LogInformation("Refresh token revoked successfully for user {UserId}", userId);
-                return Ok(ApiResponse<object>.SuccessResponse(new { message = "Token revoked successfully" }, "Token revoked"));
+                return BadRequest(ApiResponse<object>.FailResponse("Invalid CSRF token"));
             }
-            catch (Exception ex)
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
             {
-                _logger.LogError(ex, "Unexpected error during token revocation");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while revoking your token."
-                });
+                return Unauthorized(ApiResponse<object>.FailResponse("User not authenticated"));
             }
+
+            var incomingRefreshToken = isWebClient
+                ? Request.Cookies[RefreshTokenCookieName]
+                : refreshToken;
+
+            if (string.IsNullOrEmpty(incomingRefreshToken))
+            {
+                return BadRequest(ApiResponse<object>.FailResponse("Refresh token is required"));
+            }
+
+            await _sender.Send(new RevokeTokenCommand(userId, incomingRefreshToken), ct);
+
+            if (isWebClient)
+            {
+                ClearRefreshTokenCookie();
+            }
+
+            _logger.LogInformation("Refresh token revoked successfully for user {UserId}", userId);
+            return Ok(ApiResponse<object>.SuccessResponse(new { message = "Token revoked successfully" }, "Token revoked"));
         }
 
         /// <summary>
         /// Web logout: clears the HttpOnly refresh-token cookie and revokes the token by
-        /// looking it up from the cookie alone. Does NOT require a valid access token,
-        /// user claims, or CSRF — logout is low-risk (worst case a forced logout) and the
-        /// CORS policy already restricts this endpoint to the dashboard origin. The cookie
-        /// is cleared unconditionally so the client is always logged out.
+        /// looking it up from the cookie alone.
         /// </summary>
         [HttpPost("logout")]
-        public async Task<IActionResult> LogoutWeb()
+        public async Task<IActionResult> LogoutWeb(CancellationToken ct)
         {
             var incomingRefreshToken = Request.Cookies[RefreshTokenCookieName];
 
-            // Revoke best-effort: even if the DB lookup/update fails, the cookie is
-            // still cleared so the client is always logged out.
-            try
+            if (!string.IsNullOrEmpty(incomingRefreshToken))
             {
-                if (!string.IsNullOrEmpty(incomingRefreshToken))
-                {
-                    await _authService.LogoutWebAsync(incomingRefreshToken);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to revoke refresh token during web logout");
+                await _sender.Send(new LogoutWebCommand(incomingRefreshToken), ct);
             }
 
             ClearRefreshTokenCookie();
@@ -346,90 +275,41 @@ namespace Taboor_API.Controllers
         /// Initiates the forgot password process by sending a reset code to the user email.
         /// </summary>
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Forgot password request for email: {Email}", dto?.Email);
+            _logger.LogInformation("Forgot password request for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.ForgotPasswordAsync(dto!.Email);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during forgot password");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing your request."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(
+                "If this email is registered, a reset code has been sent to it.",
+                "Reset code sent"));
         }
 
         /// <summary>
         /// Verifies the password reset code.
         /// </summary>
         [HttpPost("verify-reset-code")]
-        public async Task<IActionResult> VerifyResetCode([FromBody] VerifyEmailDTO dto)
+        public async Task<IActionResult> VerifyResetCode([FromBody] VerifyResetCodeCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Reset code verification for email: {Email}", dto?.Email);
+            _logger.LogInformation("Reset code verification for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.VerifyResetCodeAsync(dto!.Email, dto.Code);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during reset code verification");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while verifying the reset code."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Code verified. You can now reset your password."));
         }
 
         /// <summary>
         /// Resets the user's password using a verified reset code.
         /// </summary>
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Password reset for email: {Email}", dto?.Email);
+            _logger.LogInformation("Password reset for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.ResetPasswordAsync(dto!);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during password reset");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while resetting your password."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Password reset successfully. You can now log in."));
         }
 
         #endregion
@@ -440,37 +320,13 @@ namespace Taboor_API.Controllers
         /// Registers a new user (requires OTP email verification first).
         /// </summary>
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO model)
+        public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Registration attempt for email: {Email}", model?.Email);
+            _logger.LogInformation("Registration attempt for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            var user = await _sender.Send(command, ct);
 
-                var preferredLanguage = CultureInfo.CurrentUICulture.Name;
-                var response = await _userService.Register(model!, preferredLanguage);
-                if (response == null)
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Registration failed"));
-                }
-
-                _logger.LogInformation("Registration successful for email: {Email}", model!.Email);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during registration");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing your registration."
-                });
-            }
+            return Ok(ApiResponse<UserDto>.SuccessResponse(user, "Registration successful"));
         }
 
         #endregion
@@ -481,65 +337,26 @@ namespace Taboor_API.Controllers
         /// Verifies a user's email using an OTP code.
         /// </summary>
         [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDTO dto)
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Email verification attempt for email: {Email}", dto?.Email);
+            _logger.LogInformation("Email verification attempt for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.VerifyEmailCodeAsync(dto!.Email, dto.Code);
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during email verification");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while verifying your email."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Email confirmed successfully."));
         }
 
         /// <summary>
         /// Sends an OTP verification code to the specified email.
         /// </summary>
         [HttpPost("send-code")]
-        public async Task<IActionResult> SendVerificationCodeAsync([FromBody] SendCodeDTO dto)
+        public async Task<IActionResult> SendVerificationCodeAsync([FromBody] SendVerificationCodeCommand command, CancellationToken ct)
         {
-            try
-            {
-                _logger.LogInformation("Send verification code request for email: {Email}", dto?.Email);
+            _logger.LogInformation("Send verification code request for email: {Email}", command.Email);
 
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
+            await _sender.Send(command, ct);
 
-                var response = await _userService.SendVerificationCodeAsync(dto!.Email);
-                if (response == null)
-                {
-                    return StatusCode(500, ApiResponse<object>.FailResponse("Unable to send verification code."));
-                }
-
-                return StatusCode((int)response.StatusCode, response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error sending verification code");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while sending the verification code."
-                });
-            }
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Verification code sent to your email."));
         }
 
         #endregion
@@ -552,186 +369,102 @@ namespace Taboor_API.Controllers
         [HttpGet("ExternalLogin")]
         public IActionResult ExternalLogin([FromQuery] string provider, [FromQuery] string? returnUrl = null)
         {
-            try
-            {
-                _logger.LogInformation("External login initiated with provider: {Provider}", provider);
+            _logger.LogInformation("External login initiated with provider: {Provider}", provider);
 
-                if (string.IsNullOrEmpty(provider))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Provider is required"));
-                }
-
-                var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Auth", new { returnUrl }, Request.Scheme);
-                var properties = _externalLoginService.ConfigureExternalAuthProperties(provider, redirectUrl!);
-                return Challenge(properties, provider);
-            }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(provider))
             {
-                _logger.LogError(ex, "Error initiating external login");
-                return BadRequest(ApiResponse<object>.FailResponse("External login failed", new List<string> { ex.Message }));
+                return BadRequest(ApiResponse<object>.FailResponse("Provider is required"));
             }
+
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Auth", new { returnUrl }, Request.Scheme);
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl!);
+            return Challenge(properties, provider);
         }
 
         /// <summary>
         /// Handles the callback from external authentication providers.
         /// </summary>
         [HttpGet("ExternalLoginCallback")]
-        public async Task<IActionResult> ExternalLoginCallback([FromQuery] string? returnUrl = null, [FromQuery] string? remoteError = null)
+        public async Task<IActionResult> ExternalLoginCallback([FromQuery] string? returnUrl = null, [FromQuery] string? remoteError = null, CancellationToken ct = default)
         {
-            try
-            {
-                _logger.LogInformation("External login callback received");
+            _logger.LogInformation("External login callback received");
 
-                var result = await _externalLoginService.HandleExternalLoginCallbackAsync(remoteError, returnUrl);
-                if (!string.IsNullOrEmpty(remoteError) || result == null || string.IsNullOrEmpty(result.Email))
-                {
-                    return Redirect($"{returnUrl}?error=external_login_failed");
-                }
+            var result = await _sender.Send(new ExternalLoginCallbackCommand(remoteError, returnUrl), ct);
 
-                var separator = returnUrl!.Contains("?") ? "&" : "?";
-                var url = $"{returnUrl}{separator}email={Uri.EscapeDataString(result.Email)}&isNewUser={result.IsNewUser.ToString().ToLower()}";
-                if (!string.IsNullOrEmpty(result.Token))
-                {
-                    url += $"&token={Uri.EscapeDataString(result.Token)}";
-                }
-                if (!string.IsNullOrEmpty(result.RefreshToken))
-                {
-                    url += $"&refreshToken={Uri.EscapeDataString(result.RefreshToken)}";
-                }
-                return Redirect(url);
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(remoteError) || result == null || string.IsNullOrEmpty(result.Email))
             {
-                _logger.LogError(ex, "Error in external login callback");
                 return Redirect($"{returnUrl}?error=external_login_failed");
             }
+
+            var separator = returnUrl!.Contains("?") ? "&" : "?";
+            var url = $"{returnUrl}{separator}email={Uri.EscapeDataString(result.Email)}&isNewUser={result.IsNewUser.ToString().ToLower()}";
+            if (!string.IsNullOrEmpty(result.Token))
+            {
+                url += $"&token={Uri.EscapeDataString(result.Token)}";
+            }
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+            {
+                url += $"&refreshToken={Uri.EscapeDataString(result.RefreshToken)}";
+            }
+            return Redirect(url);
         }
 
         /// <summary>
         /// Confirms and completes external user registration.
         /// </summary>
         [HttpPost("ExternalLoginConfirmation")]
-        public async Task<IActionResult> ExternalLoginConfirmation([FromBody] ExternalLoginConfirmationDto model)
+        public async Task<IActionResult> ExternalLoginConfirmation([FromBody] ExternalLoginConfirmationCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("External login confirmation for email: {Email}", command.Email);
+
+            var result = await _sender.Send(command, ct);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                _logger.LogInformation("External login confirmation for email: {Email}", model?.Email);
-
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                    return BadRequest(ApiResponse<object>.FailResponse("Validation failed", errors));
-                }
-
-                var result = await _externalLoginService.ConfirmExternalUserAsync(model!);
-                if (string.IsNullOrEmpty(result.Token))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse(
-                        "External login confirmation failed",
-                        new List<string> { result.Message ?? "Unknown error" }
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    message = "User registered via external provider",
-                    token = result.Token,
-                    refreshToken = result.RefreshToken
-                }, "External user confirmed"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in external login confirmation");
-                return BadRequest(ApiResponse<object>.FailResponse("External login confirmation error", new List<string> { ex.Message }));
-            }
+                message = "User registered via external provider",
+                token = result.Token,
+                refreshToken = result.RefreshToken
+            }, "External user confirmed"));
         }
 
         /// <summary>
         /// Handles Google login from a mobile app by validating the Google ID token.
         /// </summary>
         [HttpPost("GoogleMobile")]
-        public async Task<IActionResult> GoogleMobileLogin([FromBody] GoogleMobileLoginDto dto)
+        public async Task<IActionResult> GoogleMobileLogin([FromBody] GoogleMobileLoginCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Google mobile login attempt");
+
+            var result = await _sender.Send(command, ct);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                _logger.LogInformation("Google mobile login attempt");
-
-                if (dto == null || string.IsNullOrEmpty(dto.IdToken))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Id token is required"));
-                }
-
-                var result = await _externalLoginService.HandleGoogleMobileLoginAsync(dto.IdToken);
-                if (string.IsNullOrEmpty(result.Token))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse(
-                        "Google login failed",
-                        new List<string> { result.Message ?? "Unknown error" }
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    email = result.Email,
-                    isNewUser = result.IsNewUser,
-                    hasPassword = result.HasPassword,
-                    token = result.Token,
-                    refreshToken = result.RefreshToken
-                }, result.Message ?? "Google login successful"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in Google mobile login");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing Google login."
-                });
-            }
+                email = result.Email,
+                isNewUser = result.IsNewUser,
+                hasPassword = result.HasPassword,
+                token = result.Token,
+                refreshToken = result.RefreshToken
+            }, result.Message ?? "Google login successful"));
         }
 
         /// <summary>
         /// Handles Facebook login from a mobile app by validating the Facebook access token.
         /// </summary>
         [HttpPost("FacebookMobile")]
-        public async Task<IActionResult> FacebookMobileLogin([FromBody] FacebookMobileLoginDto dto)
+        public async Task<IActionResult> FacebookMobileLogin([FromBody] FacebookMobileLoginCommand command, CancellationToken ct)
         {
-            try
+            _logger.LogInformation("Facebook mobile login attempt");
+
+            var result = await _sender.Send(command, ct);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                _logger.LogInformation("Facebook mobile login attempt");
-
-                if (dto == null || string.IsNullOrEmpty(dto.AccessToken))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse("Access token is required"));
-                }
-
-                var result = await _externalLoginService.HandleFacebookMobileLoginAsync(dto.AccessToken);
-                if (string.IsNullOrEmpty(result.Token))
-                {
-                    return BadRequest(ApiResponse<object>.FailResponse(
-                        "Facebook login failed",
-                        new List<string> { result.Message ?? "Unknown error" }
-                    ));
-                }
-
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    email = result.Email,
-                    isNewUser = result.IsNewUser,
-                    hasPassword = result.HasPassword,
-                    token = result.Token,
-                    refreshToken = result.RefreshToken
-                }, result.Message ?? "Facebook login successful"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in Facebook mobile login");
-                return StatusCode(500, new ProblemDetails
-                {
-                    Title = "Internal server error",
-                    Detail = "An error occurred while processing Facebook login."
-                });
-            }
+                email = result.Email,
+                isNewUser = result.IsNewUser,
+                hasPassword = result.HasPassword,
+                token = result.Token,
+                refreshToken = result.RefreshToken
+            }, result.Message ?? "Facebook login successful"));
         }
 
         #endregion

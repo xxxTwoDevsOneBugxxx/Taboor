@@ -25,7 +25,7 @@ namespace Taboor_Application.Config
 
             // Auto-register all application services matching their interfaces (Scoped)
             services.Scan(scan => scan
-                .FromAssembliesOf(typeof(AuthService))
+                .FromAssembliesOf(typeof(TokenService))
                 .AddClasses(classes => classes.InNamespaces("Taboor_Application.Services"))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());

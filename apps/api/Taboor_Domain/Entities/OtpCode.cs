@@ -20,5 +20,30 @@ namespace Taboor_Domain.Entities
         public bool IsUsed { get; set; }
 
         public bool IsVerified { get; set; }
+
+        public static OtpCode Create(string email, string code, OtpPurpose purpose, int expiryMinutes = 10)
+        {
+            return new OtpCode
+            {
+                Email = email.Trim().ToLower(),
+                Code = code,
+                Purpose = purpose,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes),
+                IsUsed = false,
+                IsVerified = false
+            };
+        }
+
+        public void MarkAsVerified(int extendedMinutes = 30)
+        {
+            IsVerified = true;
+            ExpiresAt = DateTime.UtcNow.AddMinutes(extendedMinutes);
+        }
+
+        public void Invalidate()
+        {
+            IsUsed = true;
+        }
     }
 }

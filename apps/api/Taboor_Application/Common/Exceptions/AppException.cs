@@ -34,6 +34,12 @@ public class AppException : Exception
     public static AppException Unauthorized(string message = "Unauthorized access.")
         => new(message, ErrorType.Unauthorized);
 
+    public static AppException Validation(string message)
+        => new(message, ErrorType.Validation);
+
+    public static AppException Validation(string propertyName, string errorMessage)
+        => new(new Dictionary<string, string[]> { [propertyName] = [errorMessage] });
+
     public static AppException Validation(IDictionary<string, string[]> errors)
         => new(errors);
 
