@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Taboor_Application.Common.Interfaces;
@@ -27,6 +28,15 @@ namespace Taboor_Infrastructure.DB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Rename ASP.NET Core Identity tables to clean domain names
+            modelBuilder.Entity<ApplicationUser>(b => b.ToTable("Users"));
+            modelBuilder.Entity<ApplicationRole>(b => b.ToTable("Roles"));
+            modelBuilder.Entity<IdentityUserRole<string>>(b => b.ToTable("UserRoles"));
+            modelBuilder.Entity<IdentityUserClaim<string>>(b => b.ToTable("UserClaims"));
+            modelBuilder.Entity<IdentityRoleClaim<string>>(b => b.ToTable("RoleClaims"));
+            modelBuilder.Entity<IdentityUserLogin<string>>(b => b.ToTable("UserLogins"));
+            modelBuilder.Entity<IdentityUserToken<string>>(b => b.ToTable("UserTokens"));
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
