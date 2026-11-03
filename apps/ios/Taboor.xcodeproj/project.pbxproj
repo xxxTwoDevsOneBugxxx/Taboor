@@ -20,6 +20,7 @@
 		8DEE73986FA305F9BF656D28 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B235D31D51C55C97F6C57B86 /* LoginUseCase.swift */; };
 		9B95FF34B8FE9DCE8EBE7B5D /* TaboorFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26B467E25F8423F3D3B356AD /* TaboorFonts.swift */; };
 		AA383D555661997E5C78B88B /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BAB4174484872D8FBB38D70B /* Inter-Bold.ttf */; };
+		B0381D558EDB0586FF8570AC /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0779AA819B52EE1D9009757B /* LocalizationManager.swift */; };
 		B0545A7B24FEE86BD92B976E /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A6DFEFC0119C9E28A9F8D362 /* Inter-Regular.ttf */; };
 		B18CC95F22F3A78E58C79B7F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54660DC6D32FF998C78947C2 /* LoginView.swift */; };
 		C1B5F69D58998EB7857DD183 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4416C252F49561E5F0F0DF0A /* Inter-SemiBold.ttf */; };
@@ -36,6 +37,8 @@
 
 /* Begin PBXFileReference section */
 		06318A75B8B8998F5E342B1E /* Tajawal-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-ExtraBold.ttf"; sourceTree = "<group>"; };
+		0779AA819B52EE1D9009757B /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
+		0BCAF1D4257AA4622826E9EB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		13F1D816A8218E2F53E0283F /* AuthWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthWidgets.swift; sourceTree = "<group>"; };
 		15E602282FCE6D7B674754A7 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 		260CFBDB97C23319F26EB797 /* TaboorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorApp.swift; sourceTree = "<group>"; };
@@ -108,6 +111,7 @@
 		28B89F8ED2E9CAB258BB6F0F /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				81AE7425D5CAE4F42B1EC102 /* Localization */,
 				9A1DD4EC6AA5F57E75C8F04F /* Theme */,
 			);
 			path = Core;
@@ -164,6 +168,14 @@
 				56C974BEF297564C76642261 /* User.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		81AE7425D5CAE4F42B1EC102 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				0779AA819B52EE1D9009757B /* LocalizationManager.swift */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		82DC0C466F7E777DF80FBA0A /* Presentation */ = {
@@ -223,6 +235,7 @@
 		AE64E00AEB6B7B47870B3394 /* Taboor */ = {
 			isa = PBXGroup;
 			children = (
+				0BCAF1D4257AA4622826E9EB /* Info.plist */,
 				CD1847A0EA82972DDF98C056 /* App */,
 				28B89F8ED2E9CAB258BB6F0F /* Core */,
 				9B53C0E2FF8A22C1E3621F97 /* Features */,
@@ -296,7 +309,7 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		"TEMP_BBE4D6C8-EC96-434A-9039-610724AF50AC" /* Data */ = {
+		"TEMP_8FCB7491-5391-4C0A-97D4-AACF996C1906" /* Data */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -382,6 +395,7 @@
 				C5D386E1FA516056D3CAC842 /* AppColors.swift in Sources */,
 				D6DB68D08798A27562A8AEBF /* AuthRepositoryProtocol.swift in Sources */,
 				F9D07AD78C6227B5FD5B3898 /* AuthWidgets.swift in Sources */,
+				B0381D558EDB0586FF8570AC /* LocalizationManager.swift in Sources */,
 				8DEE73986FA305F9BF656D28 /* LoginUseCase.swift in Sources */,
 				B18CC95F22F3A78E58C79B7F /* LoginView.swift in Sources */,
 				CB41A1CB5F3C244C3E5068A5 /* LoginViewModel.swift in Sources */,
@@ -445,7 +459,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -462,19 +476,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIAppFonts = (
-					"Tajawal-Regular.ttf",
-					"Tajawal-Medium.ttf",
-					"Tajawal-Bold.ttf",
-					"Tajawal-ExtraBold.ttf",
-					"Inter-Regular.ttf",
-					"Inter-Medium.ttf",
-					"Inter-SemiBold.ttf",
-					"Inter-Bold.ttf",
-				);
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Taboor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -493,19 +497,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIAppFonts = (
-					"Tajawal-Regular.ttf",
-					"Tajawal-Medium.ttf",
-					"Tajawal-Bold.ttf",
-					"Tajawal-ExtraBold.ttf",
-					"Inter-Regular.ttf",
-					"Inter-Medium.ttf",
-					"Inter-SemiBold.ttf",
-					"Inter-Bold.ttf",
-				);
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Taboor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -569,7 +563,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -10,15 +10,13 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Taboor
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.taboor.ios
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        SWIFT_VERSION: "5.0"
-        GENERATE_INFOPLIST_FILE: YES
-        CURRENT_PROJECT_VERSION: 1
-        MARKETING_VERSION: "1.0.0"
-        INFOPLIST_KEY_UIAppFonts:
+    info:
+      path: Taboor/Info.plist
+      properties:
+        CFBundleDisplayName: "طابور"
+        CFBundleIdentifier: com.taboor.ios
+        UILaunchScreen: {}
+        UIAppFonts:
           - "Tajawal-Regular.ttf"
           - "Tajawal-Medium.ttf"
           - "Tajawal-Bold.ttf"
@@ -27,3 +25,10 @@ targets:
           - "Inter-Medium.ttf"
           - "Inter-SemiBold.ttf"
           - "Inter-Bold.ttf"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.taboor.ios
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: NO
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "1.0.0"
