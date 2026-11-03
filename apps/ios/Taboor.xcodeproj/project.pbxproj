@@ -1,0 +1,608 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0EA1529E8781E0B2CDE11817 /* Tajawal-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2B034B226E5BC21266ED744B /* Tajawal-Bold.ttf */; };
+		3594B767DA1B0FF12B991DDD /* Tajawal-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 06318A75B8B8998F5E342B1E /* Tajawal-ExtraBold.ttf */; };
+		3C6B531B427F0E7D61754E39 /* Tajawal-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4A2F3828A493F68BC236D55 /* Tajawal-Regular.ttf */; };
+		41AF569139061531DC3C2757 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9122281936D622E670564F0 /* RegisterView.swift */; };
+		609EAACB876C233B85FAF7D7 /* Tajawal-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 575A33D328F6199DF20FDB31 /* Tajawal-Medium.ttf */; };
+		64C603D3128AC3C48D0F47B3 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44ED6D56235F59F6FED35F14 /* OnboardingView.swift */; };
+		67739D71BB6629D8C076A42E /* RegisterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596BEB95C30ED90EB6CF8330 /* RegisterWidgets.swift */; };
+		759FFAD59E702B39B6AF375E /* TaboorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260CFBDB97C23319F26EB797 /* TaboorApp.swift */; };
+		7D998F7F5A0CE08A76314866 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 15E602282FCE6D7B674754A7 /* icon.png */; };
+		7FBB22C616A2A1B686F14424 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B55CB5CD7B022B8C3A849787 /* Inter-Medium.ttf */; };
+		8DEE73986FA305F9BF656D28 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B235D31D51C55C97F6C57B86 /* LoginUseCase.swift */; };
+		9B95FF34B8FE9DCE8EBE7B5D /* TaboorFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26B467E25F8423F3D3B356AD /* TaboorFonts.swift */; };
+		AA383D555661997E5C78B88B /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BAB4174484872D8FBB38D70B /* Inter-Bold.ttf */; };
+		B0545A7B24FEE86BD92B976E /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A6DFEFC0119C9E28A9F8D362 /* Inter-Regular.ttf */; };
+		B18CC95F22F3A78E58C79B7F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54660DC6D32FF998C78947C2 /* LoginView.swift */; };
+		C1B5F69D58998EB7857DD183 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4416C252F49561E5F0F0DF0A /* Inter-SemiBold.ttf */; };
+		C335C1539C7F446B94FBB6BB /* TaboorLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DEB53E077BB7A4AED943A8 /* TaboorLogoView.swift */; };
+		C5D386E1FA516056D3CAC842 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 345DE8CA0B605334E8A6F4DB /* AppColors.swift */; };
+		C6F057EC3E91476A17E2C566 /* TaboorColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452E2CD408E660D30D743BF5 /* TaboorColors.swift */; };
+		CA9F2C0A73302B2A63EB7C89 /* foreground.png in Resources */ = {isa = PBXBuildFile; fileRef = 3EBBE704BCF4D994FA17A4DF /* foreground.png */; };
+		CB41A1CB5F3C244C3E5068A5 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D51339AC57D00EDA6B009 /* LoginViewModel.swift */; };
+		D6DB68D08798A27562A8AEBF /* AuthRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D778EB11EAB5B12F9F124DC3 /* AuthRepositoryProtocol.swift */; };
+		E1B66A0369DDE57F2D20A029 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0863746C3C49A567E7BA922 /* SplashScreenView.swift */; };
+		F853C6CC27DBFD514E686C78 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C974BEF297564C76642261 /* User.swift */; };
+		F9D07AD78C6227B5FD5B3898 /* AuthWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F1D816A8218E2F53E0283F /* AuthWidgets.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		06318A75B8B8998F5E342B1E /* Tajawal-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-ExtraBold.ttf"; sourceTree = "<group>"; };
+		13F1D816A8218E2F53E0283F /* AuthWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthWidgets.swift; sourceTree = "<group>"; };
+		15E602282FCE6D7B674754A7 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
+		260CFBDB97C23319F26EB797 /* TaboorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorApp.swift; sourceTree = "<group>"; };
+		26B467E25F8423F3D3B356AD /* TaboorFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorFonts.swift; sourceTree = "<group>"; };
+		2B034B226E5BC21266ED744B /* Tajawal-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-Bold.ttf"; sourceTree = "<group>"; };
+		2F79E396A0BADF478FB0963A /* Taboor.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Taboor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		345DE8CA0B605334E8A6F4DB /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		3EBBE704BCF4D994FA17A4DF /* foreground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = foreground.png; sourceTree = "<group>"; };
+		4416C252F49561E5F0F0DF0A /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
+		44ED6D56235F59F6FED35F14 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		452E2CD408E660D30D743BF5 /* TaboorColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorColors.swift; sourceTree = "<group>"; };
+		54660DC6D32FF998C78947C2 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		56C974BEF297564C76642261 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		575A33D328F6199DF20FDB31 /* Tajawal-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-Medium.ttf"; sourceTree = "<group>"; };
+		596BEB95C30ED90EB6CF8330 /* RegisterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterWidgets.swift; sourceTree = "<group>"; };
+		A0863746C3C49A567E7BA922 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
+		A6DFEFC0119C9E28A9F8D362 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
+		B235D31D51C55C97F6C57B86 /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
+		B3DEB53E077BB7A4AED943A8 /* TaboorLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorLogoView.swift; sourceTree = "<group>"; };
+		B4A2F3828A493F68BC236D55 /* Tajawal-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-Regular.ttf"; sourceTree = "<group>"; };
+		B55CB5CD7B022B8C3A849787 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
+		BAB4174484872D8FBB38D70B /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
+		D778EB11EAB5B12F9F124DC3 /* AuthRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryProtocol.swift; sourceTree = "<group>"; };
+		D9122281936D622E670564F0 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		F44D51339AC57D00EDA6B009 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		01A2C257FFC25655A86DF69E /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				D778EB11EAB5B12F9F124DC3 /* AuthRepositoryProtocol.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		13EEBA1050BE39A1BF02D1C7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				44ED6D56235F59F6FED35F14 /* OnboardingView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		1AA28F032B8FA239D98E5DA0 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				F44D51339AC57D00EDA6B009 /* LoginViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		1B704DEE55E2534C5F3B62E0 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				3EBBE704BCF4D994FA17A4DF /* foreground.png */,
+				15E602282FCE6D7B674754A7 /* icon.png */,
+			);
+			path = Images;
+			sourceTree = "<group>";
+		};
+		2294069B181BB55A7152800B = {
+			isa = PBXGroup;
+			children = (
+				AE64E00AEB6B7B47870B3394 /* Taboor */,
+				B897C17CD15D473B6CB9FCB2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		28B89F8ED2E9CAB258BB6F0F /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				9A1DD4EC6AA5F57E75C8F04F /* Theme */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		298F0A7789388AE984F649EE /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A0863746C3C49A567E7BA922 /* SplashScreenView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		29C0C976475373A076F35879 /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				13F1D816A8218E2F53E0283F /* AuthWidgets.swift */,
+				596BEB95C30ED90EB6CF8330 /* RegisterWidgets.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+		31D1C09346D446B57671D57F /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				1AA28F032B8FA239D98E5DA0 /* ViewModels */,
+				87B78B984001C3BDF6296393 /* Views */,
+				29C0C976475373A076F35879 /* Widgets */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		4C23CC76DE0E938F11D88B59 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				CBF13733B344E278A186D7B2 /* Fonts */,
+				1B704DEE55E2534C5F3B62E0 /* Images */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		4D438E4C793639ADF776A973 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				F95A685E52CCDFD47264EF77 /* Domain */,
+				31D1C09346D446B57671D57F /* Presentation */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		5FBD600F11E9BAB9891E5F3B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				56C974BEF297564C76642261 /* User.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		82DC0C466F7E777DF80FBA0A /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				13EEBA1050BE39A1BF02D1C7 /* Views */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		87B78B984001C3BDF6296393 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				54660DC6D32FF998C78947C2 /* LoginView.swift */,
+				D9122281936D622E670564F0 /* RegisterView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9945C65C8D3FF84B563BC156 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				82DC0C466F7E777DF80FBA0A /* Presentation */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		99721D73C809759A6B0AD7D2 /* Splash */ = {
+			isa = PBXGroup;
+			children = (
+				C2A23BA8D319720EFB4A383C /* Presentation */,
+			);
+			path = Splash;
+			sourceTree = "<group>";
+		};
+		9A1DD4EC6AA5F57E75C8F04F /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				345DE8CA0B605334E8A6F4DB /* AppColors.swift */,
+				452E2CD408E660D30D743BF5 /* TaboorColors.swift */,
+				26B467E25F8423F3D3B356AD /* TaboorFonts.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		9B53C0E2FF8A22C1E3621F97 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				4D438E4C793639ADF776A973 /* Auth */,
+				C9E807A6937F6456F8E75D06 /* Common */,
+				9945C65C8D3FF84B563BC156 /* Onboarding */,
+				99721D73C809759A6B0AD7D2 /* Splash */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		AE64E00AEB6B7B47870B3394 /* Taboor */ = {
+			isa = PBXGroup;
+			children = (
+				CD1847A0EA82972DDF98C056 /* App */,
+				28B89F8ED2E9CAB258BB6F0F /* Core */,
+				9B53C0E2FF8A22C1E3621F97 /* Features */,
+				4C23CC76DE0E938F11D88B59 /* Resources */,
+			);
+			path = Taboor;
+			sourceTree = "<group>";
+		};
+		B897C17CD15D473B6CB9FCB2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2F79E396A0BADF478FB0963A /* Taboor.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C2A23BA8D319720EFB4A383C /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				298F0A7789388AE984F649EE /* Views */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		C9E807A6937F6456F8E75D06 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				B3DEB53E077BB7A4AED943A8 /* TaboorLogoView.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		CBF13733B344E278A186D7B2 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				BAB4174484872D8FBB38D70B /* Inter-Bold.ttf */,
+				B55CB5CD7B022B8C3A849787 /* Inter-Medium.ttf */,
+				A6DFEFC0119C9E28A9F8D362 /* Inter-Regular.ttf */,
+				4416C252F49561E5F0F0DF0A /* Inter-SemiBold.ttf */,
+				2B034B226E5BC21266ED744B /* Tajawal-Bold.ttf */,
+				06318A75B8B8998F5E342B1E /* Tajawal-ExtraBold.ttf */,
+				575A33D328F6199DF20FDB31 /* Tajawal-Medium.ttf */,
+				B4A2F3828A493F68BC236D55 /* Tajawal-Regular.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		CD1847A0EA82972DDF98C056 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				260CFBDB97C23319F26EB797 /* TaboorApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		D0E4F4D81FF94D749CE52917 /* UseCases */ = {
+			isa = PBXGroup;
+			children = (
+				B235D31D51C55C97F6C57B86 /* LoginUseCase.swift */,
+			);
+			path = UseCases;
+			sourceTree = "<group>";
+		};
+		F95A685E52CCDFD47264EF77 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				5FBD600F11E9BAB9891E5F3B /* Models */,
+				01A2C257FFC25655A86DF69E /* Repositories */,
+				D0E4F4D81FF94D749CE52917 /* UseCases */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		"TEMP_BBE4D6C8-EC96-434A-9039-610724AF50AC" /* Data */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		220F577BB012CB875E91D7CC /* Taboor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3017F46E216F53CD44CB317 /* Build configuration list for PBXNativeTarget "Taboor" */;
+			buildPhases = (
+				8D002B92D03EAF1494714788 /* Sources */,
+				B9F4D56F3A5A07C02A2392DA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Taboor;
+			packageProductDependencies = (
+			);
+			productName = Taboor;
+			productReference = 2F79E396A0BADF478FB0963A /* Taboor.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5C547D871281505EF906A969 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 49A8E43DC99AD3046F78B177 /* Build configuration list for PBXProject "Taboor" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2294069B181BB55A7152800B;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B897C17CD15D473B6CB9FCB2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				220F577BB012CB875E91D7CC /* Taboor */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B9F4D56F3A5A07C02A2392DA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA383D555661997E5C78B88B /* Inter-Bold.ttf in Resources */,
+				7FBB22C616A2A1B686F14424 /* Inter-Medium.ttf in Resources */,
+				B0545A7B24FEE86BD92B976E /* Inter-Regular.ttf in Resources */,
+				C1B5F69D58998EB7857DD183 /* Inter-SemiBold.ttf in Resources */,
+				0EA1529E8781E0B2CDE11817 /* Tajawal-Bold.ttf in Resources */,
+				3594B767DA1B0FF12B991DDD /* Tajawal-ExtraBold.ttf in Resources */,
+				609EAACB876C233B85FAF7D7 /* Tajawal-Medium.ttf in Resources */,
+				3C6B531B427F0E7D61754E39 /* Tajawal-Regular.ttf in Resources */,
+				CA9F2C0A73302B2A63EB7C89 /* foreground.png in Resources */,
+				7D998F7F5A0CE08A76314866 /* icon.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D002B92D03EAF1494714788 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5D386E1FA516056D3CAC842 /* AppColors.swift in Sources */,
+				D6DB68D08798A27562A8AEBF /* AuthRepositoryProtocol.swift in Sources */,
+				F9D07AD78C6227B5FD5B3898 /* AuthWidgets.swift in Sources */,
+				8DEE73986FA305F9BF656D28 /* LoginUseCase.swift in Sources */,
+				B18CC95F22F3A78E58C79B7F /* LoginView.swift in Sources */,
+				CB41A1CB5F3C244C3E5068A5 /* LoginViewModel.swift in Sources */,
+				64C603D3128AC3C48D0F47B3 /* OnboardingView.swift in Sources */,
+				41AF569139061531DC3C2757 /* RegisterView.swift in Sources */,
+				67739D71BB6629D8C076A42E /* RegisterWidgets.swift in Sources */,
+				E1B66A0369DDE57F2D20A029 /* SplashScreenView.swift in Sources */,
+				759FFAD59E702B39B6AF375E /* TaboorApp.swift in Sources */,
+				C6F057EC3E91476A17E2C566 /* TaboorColors.swift in Sources */,
+				9B95FF34B8FE9DCE8EBE7B5D /* TaboorFonts.swift in Sources */,
+				C335C1539C7F446B94FBB6BB /* TaboorLogoView.swift in Sources */,
+				F853C6CC27DBFD514E686C78 /* User.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3C42C6875671DBE0FD0A7902 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		613070E876DC2492B84C872B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIAppFonts = (
+					"Tajawal-Regular.ttf",
+					"Tajawal-Medium.ttf",
+					"Tajawal-Bold.ttf",
+					"Tajawal-ExtraBold.ttf",
+					"Inter-Regular.ttf",
+					"Inter-Medium.ttf",
+					"Inter-SemiBold.ttf",
+					"Inter-Bold.ttf",
+				);
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.taboor.ios;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BB2D801B33DB3F9610F481FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIAppFonts = (
+					"Tajawal-Regular.ttf",
+					"Tajawal-Medium.ttf",
+					"Tajawal-Bold.ttf",
+					"Tajawal-ExtraBold.ttf",
+					"Inter-Regular.ttf",
+					"Inter-Medium.ttf",
+					"Inter-SemiBold.ttf",
+					"Inter-Bold.ttf",
+				);
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.taboor.ios;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EDC12962254D76F23FA79775 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		49A8E43DC99AD3046F78B177 /* Build configuration list for PBXProject "Taboor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EDC12962254D76F23FA79775 /* Debug */,
+				3C42C6875671DBE0FD0A7902 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B3017F46E216F53CD44CB317 /* Build configuration list for PBXNativeTarget "Taboor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				613070E876DC2492B84C872B /* Debug */,
+				BB2D801B33DB3F9610F481FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5C547D871281505EF906A969 /* Project object */;
+}
