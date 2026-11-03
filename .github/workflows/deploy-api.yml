@@ -49,8 +49,10 @@ jobs:
             exit 1
           }
 
-          dotnet publish apps/api/Taboor_API/Taboor_API.csproj `
+          $cleanPassword = $env:RUNASP_PASSWORD.Trim().Trim('"').Trim("'")
+
+          & dotnet publish apps/api/Taboor_API/Taboor_API.csproj `
             -c Release `
             /p:PublishProfile=site86834-WebDeploy `
-            /p:Password=$env:RUNASP_PASSWORD `
+            "/p:Password=$cleanPassword" `
             /p:AllowUntrustedCertificate=True
