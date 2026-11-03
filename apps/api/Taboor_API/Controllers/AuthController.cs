@@ -20,8 +20,6 @@ using Taboor_Application.Features.Auth.DTOs;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.Globalization;
 using System.Security.Claims;
 
 namespace Taboor_API.Controllers
@@ -391,7 +389,7 @@ namespace Taboor_API.Controllers
 
             var result = await _sender.Send(new ExternalLoginCallbackCommand(remoteError, returnUrl), ct);
 
-            if (!string.IsNullOrEmpty(remoteError) || result == null || string.IsNullOrEmpty(result.Email))
+            if (!string.IsNullOrEmpty(remoteError) || string.IsNullOrEmpty(result.Email))
             {
                 return Redirect($"{returnUrl}?error=external_login_failed");
             }

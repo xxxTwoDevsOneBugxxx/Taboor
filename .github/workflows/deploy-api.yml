@@ -1,0 +1,45 @@
+name: Deploy API to RunASP.net
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy to RunASP.net
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore apps/api/Taboor_API/Taboor_API.csproj
+
+      - name: Inject Production AppSettings (if secret provided)
+        if: ${{ secrets.APPSETTINGS_PRODUCTION != '' }}
+        env:
+          APPSETTINGS_PRODUCTION: ${{ secrets.APPSETTINGS_PRODUCTION }}
+        shell: pwsh
+        run: |
+          Set-Content -Path "apps/api/Taboor_API/appsettings.production.json" -Value $env:APPSETTINGS_PRODUCTION
+
+      - name: Build and Publish via WebDeploy
+        shell: pwsh
+        run: |
+          dotnet publish apps/api/Taboor_API/Taboor_API.csproj `
+            -c Release `
+            /p:PublishProfile=site86834-WebDeploy `
+            /p:Password="${{ secrets.RUNASP_PASSWORD }}" `
+            /p:AllowUntrustedCertificate=True
