@@ -9,9 +9,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Equivalent to Cubit in Flutter
 class LoginViewModel(
-    private val loginUseCase: LoginUseCase
+    private val loginUseCase: LoginUseCase,
+    private val authRepository: com.taboor.features.auth.domain.repository.AuthRepository =
+        com.taboor.features.auth.data.repository.AuthRepositoryImpl()
 ) : ViewModel() {
 
     // Equivalent to emit(state) in Bloc / Cubit
@@ -32,6 +33,36 @@ class LoginViewModel(
 
             val result = loginUseCase(_uiState.value.email, _uiState.value.password)
 
+            result.fold(
+                onSuccess = { user ->
+                    _uiState.update { it.copy(isLoading = false, user = user) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message) }
+                }
+            )
+        }
+    }
+
+    fun loginWithGoogle(idToken: String = "google_token_sample") {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val result = authRepository.googleLogin(idToken)
+            result.fold(
+                onSuccess = { user ->
+                    _uiState.update { it.copy(isLoading = false, user = user) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = error.message) }
+                }
+            )
+        }
+    }
+
+    fun loginWithFacebook(accessToken: String = "fb_token_sample") {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val result = authRepository.facebookLogin(accessToken)
             result.fold(
                 onSuccess = { user ->
                     _uiState.update { it.copy(isLoading = false, user = user) }

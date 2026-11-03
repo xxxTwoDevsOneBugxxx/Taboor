@@ -499,14 +499,80 @@ private fun StepOtp(
 // =================================================================
 // STEP 2: Details & Password
 // =================================================================
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StepDetails(
     viewModel: RegisterViewModel,
     uiState: RegisterUiState
 ) {
     val strings = LocalAppStrings.current
+    val isArabic = LocaleManager.isArabic
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isConfirmVisible by remember { mutableStateOf(false) }
+    var showCountrySheet by remember { mutableStateOf(false) }
+
+    if (showCountrySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showCountrySheet = false },
+            containerColor = AppColors.Paper,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+            ) {
+                Text(
+                    text = strings.countrySelect,
+                    fontFamily = Tajawal,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.DeepTeal
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 350.dp)
+                ) {
+                    items(com.taboor.features.auth.domain.model.Country.allCountries.size) { index ->
+                        val country = com.taboor.features.auth.domain.model.Country.allCountries[index]
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.onCountrySelected(country)
+                                    showCountrySheet = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = country.flag, fontSize = 22.sp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = if (isArabic) country.nameAr else country.name,
+                                fontFamily = Tajawal,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AppColors.DeepTeal,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = country.dialCode,
+                                fontFamily = Inter,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Teal
+                            )
+                        }
+                        if (index < com.taboor.features.auth.domain.model.Country.allCountries.size - 1) {
+                            HorizontalDivider(color = AppColors.Gray200.copy(alpha = 0.5f))
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -583,7 +649,9 @@ private fun StepDetails(
                 placeholder = { Text(text = strings.phoneHint, style = AppTextStyles.fieldHint()) },
                 leadingIcon = {
                     Row(
-                        modifier = Modifier.padding(start = 12.dp, end = 6.dp),
+                        modifier = Modifier
+                            .clickable { showCountrySheet = true }
+                            .padding(start = 12.dp, end = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = uiState.countryFlag, fontSize = 16.sp)

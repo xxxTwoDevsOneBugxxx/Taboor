@@ -40,11 +40,19 @@ import com.taboor.core.theme.Tajawal
 fun LoginScreen(
     viewModel: LoginViewModel,
     onForgotPasswordClick: () -> Unit = {},
-    onCreateAccountClick: () -> Unit = {}
+    onCreateAccountClick: () -> Unit = {},
+    onLoginSuccess: () -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
     var isPasswordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.user) {
+        if (uiState.user != null) {
+            com.taboor.core.services.SessionManager.setUser(uiState.user)
+            onLoginSuccess()
+        }
+    }
 
     // Gradient background mirroring Flutter _LoginGradient
     val backgroundBrush = Brush.verticalGradient(
@@ -342,7 +350,7 @@ fun LoginScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(54.dp)
-                        .clickable { /* Handle Google Sign In */ }
+                        .clickable { viewModel.loginWithGoogle() }
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
@@ -375,7 +383,7 @@ fun LoginScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(54.dp)
-                        .clickable { /* Handle Facebook Sign In */ }
+                        .clickable { viewModel.loginWithFacebook() }
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),

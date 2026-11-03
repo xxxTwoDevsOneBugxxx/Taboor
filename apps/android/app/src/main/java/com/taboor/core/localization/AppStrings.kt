@@ -50,6 +50,7 @@ data class AppStringsData(
     val createAccountSubmit: String,
     val passwordWeak: String,
     val passwordMismatch: String,
+    val countrySelect: String,
 
     // Onboarding
     val onboardingOneTitle: String,
@@ -66,8 +67,178 @@ data class AppStringsData(
     val liveTurnNear: String,
     val alertNow: String,
     val alertLeaveTitle: String,
-    val alertOnlyTwo: String
-)
+    val alertOnlyTwo: String,
+
+    // Navigation
+    val navHome: String,
+    val navQueue: String,
+    val navAlerts: String,
+    val navProfile: String,
+
+    // Home feed
+    val homeGoodMorning: String,
+    val homeGoodAfternoon: String,
+    val homeGoodEvening: String,
+    val homeSearchHint: String,
+    val homeLiveTicket: String,
+    val homeNoTicket: String,
+    val homeJoinQueue: String,
+    val homeNearby: String,
+    val homePopularNearYou: String,
+    val homeSeeAll: String,
+    val fastQueuesNearYou: String,
+
+    // Categories
+    val categoryAll: String,
+    val categoryClinics: String,
+    val categorySalons: String,
+    val categoryGarages: String,
+    val categoryOffices: String,
+
+    // Queue & Tickets
+    val queueEmptyTitle: String,
+    val queueEmptySubtitle: String,
+    val queueNowServing: String,
+    val queueEstimate: String,
+    val ticketDelayed: String,
+    val ticketCancelled: String,
+    val delayTurn: String,
+    val cancelTicket: String,
+
+    // Alerts
+    val alertsEmptyTitle: String,
+    val alertsEmptySubtitle: String,
+    val alertNewBadge: String,
+    val alertTurnStarted: String,
+    val alertQueueOpen: String,
+    val alertQueueJoin: String,
+    val alertTimeToGo: String,
+    val alertThankYou: String,
+    val alertJustNow: String,
+    val alertToday: String,
+    val alertYesterday: String,
+    val alertOlder: String,
+    val alertNoAlertsTitle: String,
+    val alertNoAlertsBody: String,
+
+    // Profile & Settings
+    val profileAccount: String,
+    val profileFullName: String,
+    val profileEmail: String,
+    val profilePhone: String,
+    val profileLanguage: String,
+    val profileSignOut: String,
+    val profileSignOutConfirm: String,
+    val profileCancel: String,
+    val profileSignOutOk: String,
+    val profileAppearance: String,
+    val profileTheme: String,
+    val themeSystem: String,
+    val themeLight: String,
+    val themeDark: String,
+    val profileSecurity: String,
+    val profileBiometric: String,
+    val profileBiometricSubtitle: String,
+    val profileChangePassword: String,
+    val profileChangePasswordSubtitle: String,
+    val profileAbout: String,
+    val profileVersion: String,
+    val profileSettings: String,
+    val appLanguage: String,
+    val languageArabic: String,
+    val languageEnglish: String,
+    val editProfile: String,
+    val editProfileHint: String,
+    val editProfileSave: String,
+    val editProfileSaved: String,
+    val oldPasswordLabel: String,
+    val oldPasswordHint: String,
+    val newPasswordLabel2: String,
+    val changePasswordDone: String,
+
+    // Forgot password
+    val forgotTitle: String,
+    val forgotSubtitle: String,
+    val rememberPassword: String,
+    val newPasswordTitle: String,
+    val newPasswordSubtitle: String,
+    val newPasswordLabel: String,
+    val savePassword: String,
+    val resetCodeSent: String,
+    val resetCodeVerified: String,
+    val resetSuccess: String,
+    val resetCodeInvalid: String,
+    val newPasswordShort: String,
+
+    // Services & Details
+    val serviceChooseBranch: String,
+    val serviceBranches: String,
+    val serviceOpenNow: String,
+    val serviceClosed: String,
+    val serviceJoinQueue: String,
+    val serviceAbout: String,
+    val serviceWorkingHours: String,
+    val serviceTapHint: String,
+    val branchMain: String,
+    val branchDowntown: String,
+    val branchNorth: String,
+    val branchAirport: String,
+    val branchWest: String,
+    val allServicesTitle: String,
+    val allServicesSubtitle: String,
+    val filterAll: String,
+    val filterNearest: String,
+    val filterFastest: String,
+    val filterTopRated: String,
+    val filterOpenNow: String,
+    val openInGoogleMaps: String,
+    val mapDirections: String,
+
+    // QR scanner
+    val scanQrTitle: String,
+    val scanQrSubtitle: String,
+    val openCamera: String,
+    val qrScannerGuide: String
+) {
+    val profileBack: String get() = back
+    val serviceOpenMaps: String get() = openInGoogleMaps
+    val joinNow: String get() = if (this == ArabicStrings) "احجز الآن" else "Join now"
+    val passwordRequired: String get() = if (this == ArabicStrings) "كلمة المرور مطلوبة" else "Password is required"
+    val fullNameRequired: String get() = if (this == ArabicStrings) "الاسم الكامل مطلوب" else "Full name is required"
+    val emailRequired: String get() = if (this == ArabicStrings) "البريد الإلكتروني مطلوب" else "Email is required"
+    val invalidEmail: String get() = if (this == ArabicStrings) "البريد الإلكتروني غير صالح" else "Invalid email address"
+    val biometricUnavailable: String get() = if (this == ArabicStrings) "البصمة غير متاحة على هذا الجهاز" else "Biometrics unavailable on this device"
+    val biometricEnabled: String get() = if (this == ArabicStrings) "تم تفعيل القفل بالبصمة" else "Biometrics enabled"
+    val biometricDisabled: String get() = if (this == ArabicStrings) "تم إلغاء تفعيل البصمة" else "Biometrics disabled"
+
+    fun serviceWaitingNow(count: Int): String {
+        return if (this == ArabicStrings) "$count ينتظرون الآن" else "$count waiting now"
+    }
+
+    fun peopleWaiting(count: Int): String {
+        return if (this == ArabicStrings) "$count ينتظرون" else "$count waiting"
+    }
+
+    fun distanceAway(km: String): String {
+        return if (this == ArabicStrings) "على بعد $km كم" else "$km km away"
+    }
+
+    fun queuePeopleAhead(count: Int): String {
+        return if (this == ArabicStrings) "أمامك $count" else "$count ahead of you"
+    }
+
+    fun queueMinutes(count: Int): String {
+        return if (this == ArabicStrings) "$count دقيقة" else "$count min"
+    }
+
+    fun alertMinutesAgo(min: Int): String {
+        return if (this == ArabicStrings) "منذ $min دقيقة" else "$min min ago"
+    }
+
+    fun alertHoursAgo(h: Int): String {
+        return if (this == ArabicStrings) "منذ $h ساعات" else "$h h ago"
+    }
+}
 
 val ArabicStrings = AppStringsData(
     appTitle = "طابور",
@@ -115,6 +286,7 @@ val ArabicStrings = AppStringsData(
     createAccountSubmit = "إنشاء الحساب",
     passwordWeak = "كلمة المرور لازم تكون 8 أحرف + رقم + حرف كبير",
     passwordMismatch = "كلمتا المرور غير متطابقتين",
+    countrySelect = "اختر الدولة",
 
     onboardingOneTitle = "استنى وأنت في بيتك",
     onboardingOneSubtitle = "سجّل مكانك من أي مكان\nواحصل على رقمك الفوري مجاناً",
@@ -129,7 +301,129 @@ val ArabicStrings = AppStringsData(
     liveTurnNear = "دورك قرب",
     alertNow = "الآن",
     alertLeaveTitle = "وقت الخروج!",
-    alertOnlyTwo = "قدامك 2 فقط"
+    alertOnlyTwo = "قدامك 2 فقط",
+
+    navHome = "الرئيسية",
+    navQueue = "طابوري",
+    navAlerts = "التنبيهات",
+    navProfile = "حسابي",
+
+    homeGoodMorning = "صباح الخير",
+    homeGoodAfternoon = "مساء الخير",
+    homeGoodEvening = "مساء الخير",
+    homeSearchHint = "ابحث عن عيادة، صالون، ورشة...",
+    homeLiveTicket = "تذكرتك الحالية",
+    homeNoTicket = "لا يوجد حجز نشط حالياً",
+    homeJoinQueue = "انضم لطابور",
+    homeNearby = "خدمات قريبة منك",
+    homePopularNearYou = "الأكثر طلباً بالقرب منك",
+    homeSeeAll = "عرض الكل",
+    fastQueuesNearYou = "طوابير سريعة بالقرب منك",
+
+    categoryAll = "الكل",
+    categoryClinics = "عيادات",
+    categorySalons = "صالونات",
+    categoryGarages = "صيانة سيارات",
+    categoryOffices = "مكاتب وخدمات",
+
+    queueEmptyTitle = "لا يوجد طابور نشط حالياً",
+    queueEmptySubtitle = "ابحث عن خدمة قريبة واحجز مكانك في الطابور",
+    queueNowServing = "يستقبل الآن",
+    queueEstimate = "وقت الانتظار التقريبي",
+    ticketDelayed = "تم تأخير دورك 10 دقائق",
+    ticketCancelled = "تم إلغاء التذكرة بنجاح",
+    delayTurn = "تأخير دوري (+10 دقائق)",
+    cancelTicket = "إلغاء التذكرة",
+
+    alertsEmptyTitle = "لا توجد تنبيهات جديدة",
+    alertsEmptySubtitle = "إشعارات وتنبيهات دورك الذكية ستظهر هنا",
+    alertNewBadge = "جديد",
+    alertTurnStarted = "دورك يقترب",
+    alertQueueOpen = "بدأ استقبال العملاء",
+    alertQueueJoin = "تم الانضمام للطابور",
+    alertTimeToGo = "حان وقت الخروج!",
+    alertThankYou = "شكراً لزيارتك",
+    alertJustNow = "الآن",
+    alertToday = "اليوم",
+    alertYesterday = "أمس",
+    alertOlder = "سابقاً",
+    alertNoAlertsTitle = "لا توجد تنبيهات",
+    alertNoAlertsBody = "عندما تصلك إشعارات بحالة الطابور ستظهر هنا",
+
+    profileAccount = "الحساب",
+    profileFullName = "الاسم الكامل",
+    profileEmail = "البريد الإلكتروني",
+    profilePhone = "رقم الهاتف",
+    profileLanguage = "اللغة",
+    profileSignOut = "تسجيل الخروج",
+    profileSignOutConfirm = "هل أنت متأكد من تسجيل الخروج؟",
+    profileCancel = "إلغاء",
+    profileSignOutOk = "تسجيل الخروج",
+    profileAppearance = "المظهر",
+    profileTheme = "الوضع",
+    themeSystem = "تلقائي (حسب النظام)",
+    themeLight = "فاتح",
+    themeDark = "داكن",
+    profileSecurity = "الأمان والخصوصية",
+    profileBiometric = "الدخول بالبصمة",
+    profileBiometricSubtitle = "استخدم بصمة الإصبع أو الوجه لتسجيل الدخول السريع",
+    profileChangePassword = "تغيير كلمة المرور",
+    profileChangePasswordSubtitle = "تحديث وتأمين كلمة مرور حسابك",
+    profileAbout = "عن طابور",
+    profileVersion = "الإصدار 1.0.0",
+    profileSettings = "الإعدادات",
+    appLanguage = "لغة التطبيق",
+    languageArabic = "العربية",
+    languageEnglish = "English",
+    editProfile = "تعديل الملف الشخصي",
+    editProfileHint = "تعديل الاسم والبريد الإلكتروني ورقم الهاتف",
+    editProfileSave = "حفظ التغييرات",
+    editProfileSaved = "تم حفظ التغييرات بنجاح",
+    oldPasswordLabel = "كلمة المرور الحالية",
+    oldPasswordHint = "أدخل كلمة مرورك الحالية",
+    newPasswordLabel2 = "كلمة المرور الجديدة",
+    changePasswordDone = "تم تغيير كلمة المرور بنجاح",
+
+    forgotTitle = "نسيت كلمة المرور؟",
+    forgotSubtitle = "أدخل بريدك الإلكتروني وسنرسل لك كود التحقق لإعادة تعيينها",
+    rememberPassword = "تذكرت كلمة المرور؟",
+    newPasswordTitle = "تعيين كلمة مرور جديدة",
+    newPasswordSubtitle = "أدخل كلمة المرور الجديدة وتأكيدها",
+    newPasswordLabel = "كلمة المرور الجديدة",
+    savePassword = "حفظ كلمة المرور",
+    resetCodeSent = "تم إرسال كود التحقق إلى بريدك الإلكتروني",
+    resetCodeVerified = "تم التحقق من الكود بنجاح",
+    resetSuccess = "تم إعادة تعيين كلمة المرور بنجاح",
+    resetCodeInvalid = "كود التحقق غير صحيح، يرجى المحاولة مرة أخرى",
+    newPasswordShort = "يجب ألا تقل كلمة المرور عن 8 أحرف",
+
+    serviceChooseBranch = "اختر الفرع",
+    serviceBranches = "الفروع المتاحة",
+    serviceOpenNow = "مفتوح الآن",
+    serviceClosed = "مغلق حالياً",
+    serviceJoinQueue = "انضم إلى هذا الطابور",
+    serviceAbout = "عن الخدمة",
+    serviceWorkingHours = "مواعيد العمل",
+    serviceTapHint = "اضغط لعرض تفاصيل الفرع والحجز",
+    branchMain = "الفرع الرئيسي",
+    branchDowntown = "فرع وسط البلد",
+    branchNorth = "فرع الشمال",
+    branchAirport = "فرع المطار",
+    branchWest = "فرع الغرب",
+    allServicesTitle = "جميع الخدمات",
+    allServicesSubtitle = "استكشف الخدمات المتاحة وانضم للطابور مباشرة",
+    filterAll = "الكل",
+    filterNearest = "الأقرب",
+    filterFastest = "أسرع طابور",
+    filterTopRated = "الأعلى تقييماً",
+    filterOpenNow = "مفتوح الآن",
+    openInGoogleMaps = "فتح في خرائط Google",
+    mapDirections = "الاتجاهات والموقع",
+
+    scanQrTitle = "مسح كود الفرع الذكي",
+    scanQrSubtitle = "وجّه الكاميرا نحو رمز QR عند مدخل الفرع للانضمام الفوري",
+    openCamera = "فتح الكاميرا للمسح",
+    qrScannerGuide = "وجّه الكاميرا داخل الإطار"
 )
 
 val EnglishStrings = AppStringsData(
@@ -178,6 +472,7 @@ val EnglishStrings = AppStringsData(
     createAccountSubmit = "Create account",
     passwordWeak = "Password must be at least 8 characters with a number and uppercase letter",
     passwordMismatch = "Passwords do not match",
+    countrySelect = "Select country",
 
     onboardingOneTitle = "Wait from home",
     onboardingOneSubtitle = "Reserve your spot from anywhere\nand get your instant ticket for free",
@@ -192,7 +487,129 @@ val EnglishStrings = AppStringsData(
     liveTurnNear = "Your turn is near",
     alertNow = "now",
     alertLeaveTitle = "Time to go!",
-    alertOnlyTwo = "Only 2 ahead of you"
+    alertOnlyTwo = "Only 2 ahead of you",
+
+    navHome = "Home",
+    navQueue = "My Queue",
+    navAlerts = "Alerts",
+    navProfile = "Profile",
+
+    homeGoodMorning = "Good morning",
+    homeGoodAfternoon = "Good afternoon",
+    homeGoodEvening = "Good evening",
+    homeSearchHint = "Search clinics, salons, garages...",
+    homeLiveTicket = "Your live ticket",
+    homeNoTicket = "No active ticket",
+    homeJoinQueue = "Join a queue",
+    homeNearby = "Nearby services",
+    homePopularNearYou = "Popular near you",
+    homeSeeAll = "See all",
+    fastQueuesNearYou = "Fast queues near you",
+
+    categoryAll = "All",
+    categoryClinics = "Clinics",
+    categorySalons = "Salons",
+    categoryGarages = "Auto Repair",
+    categoryOffices = "Offices",
+
+    queueEmptyTitle = "No active queue yet",
+    queueEmptySubtitle = "Find a nearby service and grab your number",
+    queueNowServing = "Now serving",
+    queueEstimate = "Est. wait",
+    ticketDelayed = "Turn delayed by 10 minutes",
+    ticketCancelled = "Ticket cancelled successfully",
+    delayTurn = "Delay my turn (+10 min)",
+    cancelTicket = "Cancel ticket",
+
+    alertsEmptyTitle = "You're all caught up",
+    alertsEmptySubtitle = "Smart alerts about your turn will show up here",
+    alertNewBadge = "New",
+    alertTurnStarted = "Your turn is coming up",
+    alertQueueOpen = "We're open",
+    alertQueueJoin = "You joined the queue",
+    alertTimeToGo = "Time to head out",
+    alertThankYou = "Thanks for visiting",
+    alertJustNow = "Just now",
+    alertToday = "Today",
+    alertYesterday = "Yesterday",
+    alertOlder = "Earlier",
+    alertNoAlertsTitle = "No alerts yet",
+    alertNoAlertsBody = "When a service sends you a notification, it appears here.",
+
+    profileAccount = "Account",
+    profileFullName = "Full name",
+    profileEmail = "Email",
+    profilePhone = "Phone",
+    profileLanguage = "Language",
+    profileSignOut = "Sign out",
+    profileSignOutConfirm = "Sign out of your account?",
+    profileCancel = "Cancel",
+    profileSignOutOk = "Sign out",
+    profileAppearance = "Appearance",
+    profileTheme = "Theme",
+    themeSystem = "System default",
+    themeLight = "Light",
+    themeDark = "Dark",
+    profileSecurity = "Security",
+    profileBiometric = "Unlock with biometrics",
+    profileBiometricSubtitle = "Use Face ID or fingerprint to sign in",
+    profileChangePassword = "Change password",
+    profileChangePasswordSubtitle = "Update your account password",
+    profileAbout = "About",
+    profileVersion = "Version 1.0.0",
+    profileSettings = "Settings",
+    appLanguage = "App language",
+    languageArabic = "العربية",
+    languageEnglish = "English",
+    editProfile = "Edit profile",
+    editProfileHint = "Update your name, email and phone",
+    editProfileSave = "Save changes",
+    editProfileSaved = "Profile updated successfully.",
+    oldPasswordLabel = "Current password",
+    oldPasswordHint = "Enter your current password",
+    newPasswordLabel2 = "New password",
+    changePasswordDone = "Password changed successfully.",
+
+    forgotTitle = "Forgot your password?",
+    forgotSubtitle = "Enter your email\nand we'll send you a verification code",
+    rememberPassword = "Remembered your password?",
+    newPasswordTitle = "New password",
+    newPasswordSubtitle = "Enter a new password and confirm it",
+    newPasswordLabel = "New password",
+    savePassword = "Save password",
+    resetCodeSent = "Verification code sent to your email",
+    resetCodeVerified = "Code verified successfully",
+    resetSuccess = "Password reset successfully. You can now log in.",
+    resetCodeInvalid = "Invalid or expired verification code",
+    newPasswordShort = "Password must be at least 8 characters",
+
+    serviceChooseBranch = "Choose a branch",
+    serviceBranches = "Branches",
+    serviceOpenNow = "Open now",
+    serviceClosed = "Closed",
+    serviceJoinQueue = "Join this queue",
+    serviceAbout = "About this service",
+    serviceWorkingHours = "Working hours",
+    serviceTapHint = "Tap to view details & join",
+    branchMain = "Main branch",
+    branchDowntown = "Downtown branch",
+    branchNorth = "North branch",
+    branchAirport = "Airport branch",
+    branchWest = "West branch",
+    allServicesTitle = "All Services",
+    allServicesSubtitle = "Explore nearby services and join real-time queues",
+    filterAll = "All",
+    filterNearest = "Nearest",
+    filterFastest = "Fastest Queue",
+    filterTopRated = "Top Rated",
+    filterOpenNow = "Open Now",
+    openInGoogleMaps = "Open in Google Maps",
+    mapDirections = "Directions & Location",
+
+    scanQrTitle = "Scan Branch QR Code",
+    scanQrSubtitle = "Point camera at the reception QR code to join immediately",
+    openCamera = "Open Camera",
+    qrScannerGuide = "Align QR code within the frame"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { ArabicStrings }

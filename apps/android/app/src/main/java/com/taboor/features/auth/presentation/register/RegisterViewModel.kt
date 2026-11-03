@@ -2,14 +2,20 @@ package com.taboor.features.auth.presentation.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.taboor.features.auth.data.api.AuthApi
+import com.taboor.features.auth.domain.model.Country
+import com.taboor.features.auth.domain.usecase.RegisterUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegisterViewModel : ViewModel() {
+class RegisterViewModel(
+    private val registerUseCase: RegisterUseCase? = null,
+    private val authRepository: com.taboor.features.auth.domain.repository.AuthRepository =
+        com.taboor.features.auth.data.repository.AuthRepositoryImpl()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -32,6 +38,15 @@ class RegisterViewModel : ViewModel() {
         _uiState.update { it.copy(phoneNumber = phone, phoneError = null) }
     }
 
+    fun onCountrySelected(country: Country) {
+        _uiState.update {
+            it.copy(
+                countryDialCode = country.dialCode,
+                countryFlag = country.flag
+            )
+        }
+    }
+
     fun onPasswordChanged(password: String) {
         _uiState.update { it.copy(password = password, passwordError = null) }
     }
@@ -49,23 +64,37 @@ class RegisterViewModel : ViewModel() {
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, emailError = null) }
-            // Simulating API call for sending verification code
-            delay(1000)
-            _uiState.update { it.copy(isLoading = false, currentStep = 1) }
+            val result = authRepository.sendVerificationCode(email)
+            result.fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false, currentStep = 1) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, emailError = error.message) }
+                }
+            )
         }
     }
 
     fun verifyOtp(invalidCodeMsg: String) {
         val otp = _uiState.value.otpCode.trim()
-        if (otp.length < 6) {
+        val email = _uiState.value.email.trim()
+        if (otp.length < 4) {
             _uiState.update { it.copy(otpError = invalidCodeMsg) }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, otpError = null) }
-            delay(1000)
-            _uiState.update { it.copy(isLoading = false, currentStep = 2) }
+            val result = authRepository.verifyEmail(email, otp)
+            result.fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false, currentStep = 2) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, otpError = error.message ?: invalidCodeMsg) }
+                }
+            )
         }
     }
 
@@ -77,7 +106,7 @@ class RegisterViewModel : ViewModel() {
     ) {
         val state = _uiState.value
         val name = state.fullName.trim()
-        val phone = state.phoneNumber.trim()
+        val phone = "${state.countryDialCode}${state.phoneNumber.trim().removePrefix("0")}"
         val password = state.password
         val confirm = state.confirmPassword
 
@@ -91,11 +120,11 @@ class RegisterViewModel : ViewModel() {
             nameErr = nameRequired
             hasError = true
         }
-        if (phone.isEmpty()) {
+        if (state.phoneNumber.trim().isEmpty()) {
             phoneErr = phoneRequired
             hasError = true
         }
-        if (password.length < 8 || !password.any { it.isUpperCase() } || !password.any { it.isDigit() }) {
+        if (password.length < 6) {
             passErr = passwordWeakMsg
             hasError = true
         }
@@ -118,8 +147,17 @@ class RegisterViewModel : ViewModel() {
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            delay(1200)
-            _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            val result = registerUseCase?.invoke(name, state.email, phone, password)
+            if (result == null || result.isSuccess) {
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        fullNameError = result.exceptionOrNull()?.message
+                    )
+                }
+            }
         }
     }
 

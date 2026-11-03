@@ -27,7 +27,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     onNavigateToOnboarding: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onNavigateToHome: () -> Unit = {}
 ) {
     // Controller for Logo entry animation (1800ms)
     var startAnimation by remember { mutableStateOf(false) }
@@ -37,7 +38,10 @@ fun SplashScreen(
 
     val logoScale by animateFloatAsState(
         targetValue = if (startAnimation) 1.0f else 0.0f,
-        animationSpec = tween(durationMillis = 1000, easing = EaseOutBack),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
         label = "LogoScale"
     )
 
@@ -59,13 +63,18 @@ fun SplashScreen(
         label = "FloatingT"
     )
 
-    // Navigation timer (2000ms)
+    // Navigation timer with Session Restore
     LaunchedEffect(Unit) {
-        delay(2000)
+        delay(com.taboor.core.constants.AppConstants.SPLASH_DURATION_MS)
         if (LocaleManager.isFirstTime.value) {
             onNavigateToOnboarding()
         } else {
-            onNavigateToLogin()
+            val isLoggedIn = com.taboor.core.services.SessionManager.restore()
+            if (isLoggedIn) {
+                onNavigateToHome()
+            } else {
+                onNavigateToLogin()
+            }
         }
     }
 
