@@ -44,8 +44,13 @@ jobs:
           RUNASP_PASSWORD: ${{ secrets.RUNASP_PASSWORD }}
         shell: pwsh
         run: |
+          if ([string]::IsNullOrWhiteSpace($env:RUNASP_PASSWORD)) {
+            Write-Error "ERROR: GitHub Secret 'RUNASP_PASSWORD' is missing or empty! Please add it in Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          }
+
           dotnet publish apps/api/Taboor_API/Taboor_API.csproj `
             -c Release `
             /p:PublishProfile=site86834-WebDeploy `
-            /p:Password="$env:RUNASP_PASSWORD" `
+            /p:Password=$env:RUNASP_PASSWORD `
             /p:AllowUntrustedCertificate=True
