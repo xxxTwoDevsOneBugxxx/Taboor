@@ -1,6 +1,7 @@
 import SwiftUI
 
-// Exact SVG Path mirrored from Flutter TbLogoPainter
+// MARK: - Exact Taboor SVG Vector Shape (1:1 from android/ic_taboor_symbol.xml & dashboard/logo.tsx)
+
 struct TaboorLogoShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
@@ -11,7 +12,9 @@ struct TaboorLogoShape: Shape {
             CGPoint(x: rect.minX + x * sx, y: rect.minY + y * sy)
         }
 
-        // Part 1: Outer lower loop
+        // -------------------------------------------------------------
+        // Subpath 1: Outer lower loop
+        // -------------------------------------------------------------
         path.move(to: p(808, 537))
         path.addLine(to: p(802, 525))
         path.addLine(to: p(785, 502))
@@ -54,7 +57,9 @@ struct TaboorLogoShape: Shape {
         path.addLine(to: p(814, 557))
         path.closeSubpath()
 
-        // Part 2: Inner loop cutout
+        // -------------------------------------------------------------
+        // Subpath 2: Inner loop cutout
+        // -------------------------------------------------------------
         path.move(to: p(757, 552))
         path.addLine(to: p(762, 570))
         path.addLine(to: p(761, 598))
@@ -73,7 +78,9 @@ struct TaboorLogoShape: Shape {
         path.addLine(to: p(740, 533))
         path.closeSubpath()
 
-        // Part 3: Main "T" letter structure
+        // -------------------------------------------------------------
+        // Subpath 3: Main "T" letter structure (100% exact points from Android/Mobile)
+        // -------------------------------------------------------------
         path.move(to: p(540, 323))
         path.addLine(to: p(527, 319))
         path.addLine(to: p(288, 319))
@@ -160,62 +167,63 @@ struct TaboorLogoShape: Shape {
     }
 }
 
+// MARK: - Logo Icon (1:1 Android TaboorLogoIcon / Flutter _LogoIcon)
+
 struct TaboorLogoIcon: View {
     var size: CGFloat = 80
 
     var body: some View {
         let boxSize = size * (95.0 / 110.0)
-        let radius = size * (28.0 / 110.0)
+        let cornerRadius = size * (28.0 / 110.0)
         let offset = size * (15.0 / 110.0)
 
+        // Strict LTR coordinate locking to preserve geometry
         ZStack(alignment: .topLeading) {
-            // Background Amber rounded rectangle
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .fill(Color.taboorAmber)
+            // Orange/Amber background squircle at bottom-right
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(AppColors.amber)
                 .frame(width: boxSize, height: boxSize)
                 .offset(x: offset, y: offset)
 
-            // Primary Ink rounded rectangle with white SVG Path
-            RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .fill(Color.taboorInk)
+            // Primary Ink container at top-left with White SVG Glyph
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(AppColors.ink)
                 .frame(width: boxSize, height: boxSize)
                 .overlay {
                     TaboorLogoShape()
-                        .fill(Color.white)
-                        .padding(boxSize * 0.12)
+                        .fill(style: FillStyle(eoFill: true))
+                        .foregroundColor(.white)
+                        .padding(boxSize * 0.08)
                 }
         }
         .frame(width: size, height: size)
+        .environment(\.layoutDirection, .leftToRight)
     }
 }
+
+// MARK: - Logo View with Wordmark ("taboor.")
 
 struct TaboorLogoView: View {
     var iconSize: CGFloat = 80
     var showWordmark: Bool = true
 
     var body: some View {
-        HStack(spacing: iconSize * 0.25) {
+        HStack(spacing: iconSize * 0.22) {
             TaboorLogoIcon(size: iconSize)
 
             if showWordmark {
                 HStack(spacing: 0) {
                     Text("taboor")
-                        .font(.inter(iconSize * 0.52, .bold))
-                        .foregroundColor(Color.taboorInk)
+                        .font(.inter(iconSize * 0.55, .bold))
+                        .tracking(-1.5)
+                        .foregroundColor(AppColors.ink)
                     Text(".")
-                        .font(.inter(iconSize * 0.52, .bold))
-                        .foregroundColor(Color.taboorAmber)
+                        .font(.inter(iconSize * 0.55, .bold))
+                        .tracking(-1.5)
+                        .foregroundColor(AppColors.amber)
                 }
             }
         }
+        .environment(\.layoutDirection, .leftToRight)
     }
-}
-
-#Preview {
-    VStack(spacing: 40) {
-        TaboorLogoView(iconSize: 90, showWordmark: true)
-        TaboorLogoIcon(size: 100)
-    }
-    .padding()
-    .background(Color.taboorCream)
 }

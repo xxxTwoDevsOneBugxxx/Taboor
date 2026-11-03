@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Register Screen (3-Step Animated Wizard mirroring Flutter RegisterScreen)
+// MARK: - Register Screen (Adaptive Fonts, Full Bilingual Arabic/English, LTR/RTL)
 
 struct RegisterView: View {
     var onRegisterSuccess: () -> Void = {}
@@ -29,9 +29,11 @@ struct RegisterView: View {
 
     @State private var isLoading: Bool = false
 
+    private let localization = LocalizationManager.shared
+
     var body: some View {
         ZStack {
-            // 1. Background Gradient
+            // Background Gradient
             LinearGradient(
                 colors: [
                     AppColors.softTeal.opacity(0.6),
@@ -82,24 +84,18 @@ struct RegisterView: View {
     // MARK: - Top Navigation Bar
     private var topBar: some View {
         HStack {
-            // Back Button
-            Button(action: goBack) {
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(AppColors.deepTeal)
-                    .padding(8)
-            }
+            // Glass Back Button
+            GlassBackButton(action: goBack)
 
             Spacer()
 
-            // Step Indicator (3 Capsules)
+            // Step Indicator
             StepIndicatorView(currentStep: currentStep)
 
             Spacer()
 
-            // Invisible Spacer for balance
-            Color.clear
-                .frame(width: 36, height: 36)
+            // Language Toggle in Register Top Bar
+            LanguageToggleButton()
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
@@ -133,15 +129,15 @@ struct RegisterView: View {
 
             Spacer().frame(height: 14)
 
-            Text("أنشئ حسابك")
-                .font(.tajawal(25, .extraBold))
+            Text(localization.createYourAccount)
+                .font(.app(25, .extraBold, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.deepTeal)
                 .multilineTextAlignment(.center)
 
             Spacer().frame(height: 8)
 
-            Text("ابدأ بالبريد الإلكتروني\nوهنبعث لك كود التحقق")
-                .font(.tajawal(14, .regular))
+            Text(localization.registerSubtitle)
+                .font(.app(14, .regular, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.gray600)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
@@ -149,8 +145,8 @@ struct RegisterView: View {
             Spacer().frame(height: 32)
 
             AuthTextField(
-                label: "البريد الإلكتروني",
-                hint: "you@example.com",
+                label: localization.emailLabel,
+                hint: localization.emailHint,
                 text: $email,
                 keyboardType: .emailAddress,
                 leadingIcon: "envelope",
@@ -163,7 +159,7 @@ struct RegisterView: View {
             Spacer().frame(height: 24)
 
             AuthPrimaryButton(
-                title: "إرسال الكود",
+                title: localization.sendCode,
                 isLoading: isLoading,
                 isEnabled: true
             ) {
@@ -195,13 +191,13 @@ struct RegisterView: View {
             Spacer().frame(height: 24)
 
             HStack(spacing: 6) {
-                Text("عندك حساب بالفعل؟")
-                    .font(.tajawal(14, .regular))
+                Text(localization.alreadyHaveAccount)
+                    .font(.app(14, .regular, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.gray600)
 
                 Button(action: onNavigateToLogin) {
-                    Text("تسجيل الدخول")
-                        .font(.tajawal(14, .bold))
+                    Text(localization.loginButton)
+                        .font(.app(14, .bold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.deepTeal)
                 }
             }
@@ -211,7 +207,7 @@ struct RegisterView: View {
     private func sendCode() {
         let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            emailError = "اكتب إيميلك."
+            emailError = localization.emailRequired
             return
         }
         emailError = nil
@@ -230,7 +226,6 @@ struct RegisterView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 16)
 
-            // Large Circular Mail Icon (88x88 softTeal)
             ZStack {
                 Circle()
                     .fill(AppColors.softTeal)
@@ -243,15 +238,15 @@ struct RegisterView: View {
 
             Spacer().frame(height: 26)
 
-            Text("كود التحقق")
-                .font(.tajawal(26, .extraBold))
+            Text(localization.otpTitle)
+                .font(.app(26, .extraBold, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.deepTeal)
                 .multilineTextAlignment(.center)
 
             Spacer().frame(height: 10)
 
-            Text("أدخل الكود المكون من 6 أرقام\nأُرسل إلى \(email.isEmpty ? "بريدك الإلكتروني" : email)")
-                .font(.tajawal(15, .regular))
+            Text(localization.otpDescription(email.isEmpty ? (localization.isArabic ? "بريدك الإلكتروني" : "your email") : email))
+                .font(.app(15, .regular, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.gray600)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
@@ -267,15 +262,15 @@ struct RegisterView: View {
 
             // Resend action
             HStack(spacing: 6) {
-                Text("لم يصلك الكود؟")
-                    .font(.tajawal(15, .regular))
+                Text(localization.resendPrompt)
+                    .font(.app(15, .regular, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.gray500)
 
                 Button(action: {
-                    // Resend code logic
+                    // Resend trigger
                 }) {
-                    Text("إعادة الإرسال")
-                        .font(.tajawal(15, .bold))
+                    Text(localization.resend)
+                        .font(.app(15, .bold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.teal)
                 }
             }
@@ -284,7 +279,7 @@ struct RegisterView: View {
 
             let isOtpComplete = otp.allSatisfy { !$0.isEmpty }
             AuthPrimaryButton(
-                title: "تحقق",
+                title: localization.verify,
                 isLoading: isLoading,
                 isEnabled: isOtpComplete
             ) {
@@ -308,15 +303,15 @@ struct RegisterView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 10)
 
-            Text("كمل بياناتك")
-                .font(.tajawal(25, .extraBold))
+            Text(localization.completeDetails)
+                .font(.app(25, .extraBold, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.deepTeal)
                 .multilineTextAlignment(.center)
 
             Spacer().frame(height: 8)
 
-            Text("الاسم وهاتفك وكلمة المرور عشان تكمّل")
-                .font(.tajawal(14, .regular))
+            Text(localization.detailsSubtitle)
+                .font(.app(14, .regular, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.gray600)
                 .multilineTextAlignment(.center)
 
@@ -324,8 +319,8 @@ struct RegisterView: View {
 
             // Full Name Field
             AuthTextField(
-                label: "الاسم الكامل",
-                hint: "مثال: محمد أحمد",
+                label: localization.fullNameLabel,
+                hint: localization.fullNameHint,
                 text: $fullName,
                 leadingIcon: "person.text.rectangle",
                 errorMessage: fullNameError,
@@ -336,10 +331,10 @@ struct RegisterView: View {
 
             Spacer().frame(height: 18)
 
-            // Egyptian Phone Field (+20)
+            // Phone Field
             PhoneInputField(
-                label: "رقم الموبايل",
-                hint: "01xxxxxxxxx",
+                label: localization.phoneLabel,
+                hint: localization.phoneHint,
                 phoneNumber: $phone,
                 errorMessage: phoneError
             )
@@ -348,8 +343,8 @@ struct RegisterView: View {
 
             // Password Field
             AuthTextField(
-                label: "كلمة المرور",
-                hint: "••••••••••",
+                label: localization.passwordLabel,
+                hint: localization.passwordHint,
                 text: $password,
                 isSecure: isPasswordSecure,
                 leadingIcon: "lock",
@@ -372,8 +367,8 @@ struct RegisterView: View {
 
             // Confirm Password Field
             AuthTextField(
-                label: "تأكيد كلمة المرور",
-                hint: "••••••••••",
+                label: localization.confirmPasswordLabel,
+                hint: localization.passwordHint,
                 text: $confirmPassword,
                 isSecure: isConfirmSecure,
                 leadingIcon: "lock",
@@ -397,7 +392,7 @@ struct RegisterView: View {
             // Submit Button
             let canSubmit = isDetailsValid
             AuthPrimaryButton(
-                title: "إنشاء الحساب",
+                title: localization.createAccountSubmit,
                 isLoading: isLoading,
                 isEnabled: canSubmit
             ) {

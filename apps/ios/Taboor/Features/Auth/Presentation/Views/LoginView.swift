@@ -1,23 +1,36 @@
 import SwiftUI
 
-// MARK: - Login Screen (Exact Flutter UI Mirror)
+// MARK: - Login Screen (Adaptive Fonts, Full Bilingual Arabic/English, LTR/RTL)
 
 struct LoginView: View {
     var onLoginSuccess: () -> Void = {}
     var onNavigateToRegister: () -> Void = {}
     var onForgotPassword: () -> Void = {}
 
+    private enum Field: Hashable {
+        case email
+        case password
+    }
+
+    @FocusState private var focusedField: Field?
+
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var isSecure: Bool = true
     @State private var isLoading: Bool = false
+
     @State private var emailError: String? = nil
     @State private var passwordError: String? = nil
     @State private var generalError: String? = nil
 
+    @State private var emailShake: Int = 0
+    @State private var passwordShake: Int = 0
+
+    private let localization = LocalizationManager.shared
+
     var body: some View {
         ZStack {
-            // 1. Background Gradient (Matches _LoginGradient in Flutter)
+            // Background Gradient (1:1 with Flutter _LoginGradient)
             LinearGradient(
                 colors: [
                     AppColors.softTeal.opacity(0.6),
@@ -29,10 +42,9 @@ struct LoginView: View {
             )
             .ignoresSafeArea()
 
-            // 2. Scrollable Content
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    // Top Bar Spacer & Language Toggle
+                    // Top Bar with Language Toggle
                     HStack {
                         Spacer()
                         LanguageToggleButton()
@@ -43,7 +55,7 @@ struct LoginView: View {
                     VStack(spacing: 0) {
                         Spacer().frame(height: 16)
 
-                        // Logo (Squircle Vector Path)
+                        // Logo (Fixed LTR orientation, never flipped)
                         TaboorLogoView(iconSize: 72, showWordmark: false)
                             .frame(height: 72)
 
@@ -58,31 +70,47 @@ struct LoginView: View {
                         Spacer().frame(height: 14)
 
                         // Welcome Title
-                        Text("أهلًا بيك من جديد")
-                            .font(.tajawal(25, .extraBold))
+                        Text(localization.loginWelcomeTitle)
+                            .font(.app(25, .extraBold, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.deepTeal)
                             .multilineTextAlignment(.center)
 
                         Spacer().frame(height: 8)
 
                         // Subtitle
-                        Text("سجّل دخولك واستكمل طلبك في الطابور")
-                            .font(.tajawal(14, .regular))
+                        Text(localization.loginWelcomeSubtitle)
+                            .font(.app(14, .regular, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.gray600)
                             .multilineTextAlignment(.center)
+                            .lineSpacing(4)
 
                         Spacer().frame(height: 32)
 
                         // Email Field
                         AuthTextField(
-                            label: "البريد الإلكتروني",
-                            hint: "you@example.com",
+                            label: localization.emailLabel,
+                            hint: localization.emailHint,
                             text: $email,
                             keyboardType: .emailAddress,
+                            textContentType: .emailAddress,
+                            submitLabel: .next,
+                            onSubmit: {
+                                focusedField = .password
+                            },
                             leadingIcon: "envelope",
                             errorMessage: emailError,
+                            shakeTrigger: emailShake,
                             onTextChange: { _ in
-                                if emailError != nil { emailError = nil }
+                                if emailError != nil {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        emailError = nil
+                                    }
+                                }
+                                if generalError != nil {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        generalError = nil
+                                    }
+                                }
                             }
                         )
 
@@ -90,46 +118,84 @@ struct LoginView: View {
 
                         // Password Field
                         AuthTextField(
-                            label: "كلمة المرور",
-                            hint: "••••••••••",
+                            label: localization.passwordLabel,
+                            hint: localization.passwordHint,
                             text: $password,
                             isSecure: isSecure,
+                            textContentType: .password,
+                            submitLabel: .go,
+                            onSubmit: {
+                                performLogin()
+                            },
                             leadingIcon: "lock",
                             trailingIcon: isSecure ? "eye.slash" : "eye",
                             trailingAction: {
                                 isSecure.toggle()
                             },
                             errorMessage: passwordError,
+                            shakeTrigger: passwordShake,
                             onTextChange: { _ in
-                                if passwordError != nil { passwordError = nil }
+                                if passwordError != nil {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        passwordError = nil
+                                    }
+                                }
+                                if generalError != nil {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        generalError = nil
+                                    }
+                                }
                             }
                         )
 
                         Spacer().frame(height: 12)
 
-                        // Forgot Password Link
+                        // Forgot Password Link (Aligned with text direction)
                         HStack {
-                            Button(action: onForgotPassword) {
-                                Text("نسيت كلمة المرور؟")
-                                    .font(.tajawal(13, .bold))
+                            Button(action: {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                onForgotPassword()
+                            }) {
+                                Text(localization.forgotPassword)
+                                    .font(.app(13, .bold, isArabic: localization.isArabic))
                                     .foregroundColor(AppColors.teal)
+                                    .padding(.vertical, 4)
                             }
+                            .buttonStyle(ScaleButtonStyle(scale: 0.96, pressedOpacity: 0.8))
+
                             Spacer()
                         }
 
-                        Spacer().frame(height: 20)
+                        Spacer().frame(height: 18)
 
-                        // General Error Banner (if any)
+                        // General Error Toast/Banner (if any)
                         if let generalError = generalError {
-                            Text(generalError)
-                                .font(.tajawal(13, .medium))
-                                .foregroundColor(AppColors.accentRed)
-                                .padding(.bottom, 8)
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(AppColors.accentRed)
+
+                                Text(generalError)
+                                    .font(.app(13, .medium, isArabic: localization.isArabic))
+                                    .foregroundColor(AppColors.accentRed)
+
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 11)
+                            .background(AppColors.accentRed.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(AppColors.accentRed.opacity(0.25), lineWidth: 1)
+                            )
+                            .padding(.bottom, 12)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
                         }
 
-                        // Login Action Button
+                        // Login Button
                         AuthPrimaryButton(
-                            title: "تسجيل الدخول",
+                            title: localization.loginButton,
                             isLoading: isLoading,
                             isEnabled: true
                         ) {
@@ -147,20 +213,16 @@ struct LoginView: View {
                         HStack(spacing: 12) {
                             SocialLoginButton(
                                 title: "Google",
-                                iconName: "G",
-                                iconColor: Color(hex: 0xEA4335),
-                                isSystemIcon: false
+                                isGoogle: true
                             ) {
-                                // Google Sign-in trigger
+                                // Google Login
                             }
 
                             SocialLoginButton(
                                 title: "Facebook",
-                                iconName: "f",
-                                iconColor: Color(hex: 0x1877F2),
-                                isSystemIcon: false
+                                isFacebook: true
                             ) {
-                                // Facebook Sign-in trigger
+                                // Facebook Login
                             }
                         }
 
@@ -168,15 +230,20 @@ struct LoginView: View {
 
                         // Don't have an account? Sign up
                         HStack(spacing: 6) {
-                            Text("مش عندك حساب؟")
-                                .font(.tajawal(14, .regular))
+                            Text(localization.noAccountYet)
+                                .font(.app(14, .regular, isArabic: localization.isArabic))
                                 .foregroundColor(AppColors.gray600)
 
-                            Button(action: onNavigateToRegister) {
-                                Text("أنشئ حسابًا")
-                                    .font(.tajawal(14, .bold))
+                            Button(action: {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                onNavigateToRegister()
+                            }) {
+                                Text(localization.createAccount)
+                                    .font(.app(14, .bold, isArabic: localization.isArabic))
                                     .foregroundColor(AppColors.deepTeal)
+                                    .padding(.vertical, 4)
                             }
+                            .buttonStyle(ScaleButtonStyle(scale: 0.96, pressedOpacity: 0.8))
                         }
 
                         Spacer().frame(height: 32)
@@ -184,37 +251,74 @@ struct LoginView: View {
                     .padding(.horizontal, 24)
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                focusedField = nil
+            }
         }
+        .environment(\.layoutDirection, localization.layoutDirection)
+    }
+
+    // MARK: - Validation & Login Handling
+
+    private func isValidEmail(_ email: String) -> Bool {
+        let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        return NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: email)
     }
 
     private func performLogin() {
+        focusedField = nil
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         var hasError = false
 
         if trimmedEmail.isEmpty {
-            emailError = "اكتب إيميلك."
+            emailError = localization.emailRequired
+            emailShake += 1
+            hasError = true
+        } else if !isValidEmail(trimmedEmail) {
+            emailError = localization.invalidEmail
+            emailShake += 1
             hasError = true
         } else {
             emailError = nil
         }
 
         if password.isEmpty {
-            passwordError = "اكتب كلمة المرور."
+            passwordError = localization.passwordRequired
+            passwordShake += 1
+            hasError = true
+        } else if password.count < 6 {
+            passwordError = localization.passwordMinLength
+            passwordShake += 1
             hasError = true
         } else {
             passwordError = nil
         }
 
-        if hasError { return }
+        if hasError {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            return
+        }
 
-        // Start loading
-        isLoading = true
-        generalError = nil
+        withAnimation(.easeOut(duration: 0.2)) {
+            isLoading = true
+            generalError = nil
+        }
 
-        // Simulate login success or hook to API
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            isLoading = false
-            onLoginSuccess()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                isLoading = false
+            }
+            // For mock demo or live credentials
+            if trimmedEmail == "test@taboor.com" && password == "wrong123" {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    generalError = localization.invalidCredentials
+                }
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            } else {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                onLoginSuccess()
+            }
         }
     }
 }

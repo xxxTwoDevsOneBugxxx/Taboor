@@ -1,66 +1,125 @@
 import SwiftUI
 import Combine
 
-// MARK: - Onboarding Screen (Exact Pixel & Animation Math from Flutter)
+// MARK: - Arc Shape for Live Tracking Counter (Counter-Clockwise Sweep from 3 o'clock)
+
+struct CounterArcShape: Shape {
+    var progress: Double
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2 - 8
+
+        // Flutter & Android: drawArc(rect, 0, -360 * progress)
+        // Starts at 0 radians (3 o'clock) and sweeps counter-clockwise
+        path.addArc(
+            center: center,
+            radius: radius,
+            startAngle: .radians(0),
+            endAngle: .radians(-2.0 * .pi * max(0.001, progress)),
+            clockwise: true
+        )
+        return path
+    }
+}
+
+// MARK: - Onboarding Screen
 
 struct OnboardingView: View {
     var onFinish: () -> Void = {}
 
     @State private var currentPage = 0
-    @State private var animT: Double = 0.0
+    @State private var scrollPosition: Int? = 0
+    @State private var isTouching = false
+    @State private var isAutoAdvanceEnabled = true
+    private let autoTimer = Timer.publish(every: 3.5, on: .main, in: .common).autoconnect()
 
-    // Auto-advance timer (moves to next tab automatically like in Flutter)
-    @State private var autoTimer = Timer.publish(every: 3.5, on: .main, in: .common).autoconnect()
-    @State private var isUserInteracting = false
-
+    private let localization = LocalizationManager.shared
     private let pageCount = 3
 
     var body: some View {
         ZStack {
-            // 1. Background with 3 Ambient Circles (Exact Flutter _OnboardingBackground)
+            // Ambient Background
             OnboardingBackground()
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Top Bar Spacer (height: 44 in Flutter)
-                Color.clear
-                    .frame(height: 44)
-
-                // Page Carousel (Auto-advances & Swipeable)
-                TabView(selection: $currentPage) {
-                    // Page 1: Ticket
-                    OnboardingPageContent(
-                        isActive: currentPage == 0,
-                        title: "استنى وأنت في بيتك",
-                        subtitle: "سجّل مكانك من أي مكان\nواحصل على رقمك الفوري مجاناً"
-                    ) {
-                        TicketIllustration(t: animT)
-                    }
-                    .tag(0)
-
-                    // Page 2: Live Tracking
-                    OnboardingPageContent(
-                        isActive: currentPage == 1,
-                        title: "دورك.. لحظة بلحظة",
-                        subtitle: "تابع ترتيبك في الطابور مباشر\nمع عداد واضح ومؤشر تقدم"
-                    ) {
-                        LiveTrackingIllustration(t: animT)
-                    }
-                    .tag(1)
-
-                    // Page 3: Smart Alert
-                    OnboardingPageContent(
-                        isActive: currentPage == 2,
-                        title: "هننبهك قبل ما يجي دورك",
-                        subtitle: "اشعارات ذكية تقولك امتى تخرج\n\"وقت الخروج - قدامك اتنين بس!\""
-                    ) {
-                        AlertIllustration(t: animT)
-                    }
-                    .tag(2)
+                // Top Bar with Language Toggle
+                HStack {
+                    LanguageToggleButton()
+                    Spacer()
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .frame(height: 52)
 
-                // Dots Indicator
+                // Page Carousel via Paged ScrollView (Zero TabView bugs, 100% reliable swipe & active dots)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 0) {
+                        // Page 0: Ticket
+                        OnboardingPageContent(
+                            title: localization.onboarding1Title,
+                            subtitle: localization.onboarding1Subtitle,
+                            isActive: currentPage == 0
+                        ) {
+                            TicketAnimationHost()
+                        }
+                        .containerRelativeFrame(.horizontal)
+                        .id(0)
+
+                        // Page 1: Live Tracking
+                        OnboardingPageContent(
+                            title: localization.onboarding2Title,
+                            subtitle: localization.onboarding2Subtitle,
+                            isActive: currentPage == 1
+                        ) {
+                            LiveTrackingAnimationHost()
+                        }
+                        .containerRelativeFrame(.horizontal)
+                        .id(1)
+
+                        // Page 2: Alert
+                        OnboardingPageContent(
+                            title: localization.onboarding3Title,
+                            subtitle: localization.onboarding3Subtitle,
+                            isActive: currentPage == 2
+                        ) {
+                            AlertAnimationHost()
+                        }
+                        .containerRelativeFrame(.horizontal)
+                        .id(2)
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollTargetBehavior(.paging)
+                .scrollPosition(id: $scrollPosition)
+                .detectScrollInteraction(isTouching: $isTouching)
+                .onChange(of: isTouching) { _, touching in
+                    if touching {
+                        isAutoAdvanceEnabled = false
+                    }
+                }
+                .onChange(of: scrollPosition) { _, newPos in
+                    if let newPos = newPos, newPos != currentPage {
+                        currentPage = newPos
+                        isAutoAdvanceEnabled = false
+                    }
+                }
+                .onChange(of: currentPage) { _, newPage in
+                    if scrollPosition != newPage {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            scrollPosition = newPage
+                        }
+                    }
+                }
+
+                // Dots Indicator (28x8 active, 8x8 inactive with individual tab accents)
                 dotsIndicator
                     .padding(.bottom, 20)
 
@@ -70,23 +129,16 @@ struct OnboardingView: View {
                     .padding(.bottom, 24)
             }
         }
-        .onAppear {
-            // Continuous 2-second repeat reverse animation loop
-            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-                animT = 1.0
-            }
-        }
-        // Auto-scroll between tabs
+        // Auto-advance timer (only runs until user interacts manually)
         .onReceive(autoTimer) { _ in
-            if !isUserInteracting {
-                withAnimation(.easeInOut(duration: 0.45)) {
-                    currentPage = (currentPage + 1) % pageCount
-                }
+            guard isAutoAdvanceEnabled, !isTouching else { return }
+            withAnimation(.easeInOut(duration: 0.45)) {
+                currentPage = (currentPage + 1) % pageCount
             }
         }
     }
 
-    // MARK: - Dots Indicator (Exact Flutter: 28 x 8 active, 8 x 8 inactive)
+    // MARK: - Dots Indicator (Exact match from Android/Flutter with frosted pill)
     private var dotsIndicator: some View {
         HStack(spacing: 8) {
             ForEach(0..<pageCount, id: \.self) { index in
@@ -102,8 +154,11 @@ struct OnboardingView: View {
                 Capsule()
                     .fill(isActive ? accentColor : AppColors.gray300)
                     .frame(width: isActive ? 28 : 8, height: 8)
-                    .animation(.easeOut(duration: 0.3), value: currentPage)
+                    .animation(.easeInOut(duration: 0.3), value: currentPage)
+                    .contentShape(Rectangle())
                     .onTapGesture {
+                        UISelectionFeedbackGenerator().selectionChanged()
+                        isAutoAdvanceEnabled = false
                         withAnimation(.easeInOut(duration: 0.35)) {
                             currentPage = index
                         }
@@ -112,27 +167,37 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Next / Start Button (Exact Flutter _NextButton)
+    // MARK: - Next / Start Button (56pt height, 16pt radius)
     private var bottomActionButton: some View {
         let isLast = currentPage == pageCount - 1
         return Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            isAutoAdvanceEnabled = false
             if isLast {
                 onFinish()
             } else {
-                withAnimation(.easeInOut(duration: 0.4)) {
+                withAnimation(.easeInOut(duration: 0.35)) {
                     currentPage += 1
                 }
             }
         } label: {
-            HStack(spacing: 8) {
-                Text(isLast ? "ابدأ الآن" : "التالي")
-                    .font(.tajawal(17, .bold))
-                    .foregroundColor(AppColors.paper)
-
-                if !isLast {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 16, weight: .bold))
+            ZStack {
+                if isLast {
+                    Text(localization.startNow)
+                        .font(.app(17, .bold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.paper)
+                        .transition(.opacity)
+                } else {
+                    HStack(spacing: 8) {
+                        Text(localization.next)
+                            .font(.app(17, .bold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.paper)
+
+                        Image(systemName: localization.isArabic ? "arrow.left" : "arrow.right")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(AppColors.paper)
+                    }
+                    .transition(.opacity)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -145,103 +210,119 @@ struct OnboardingView: View {
                 )
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: AppColors.teal.opacity(0.35), radius: 20, x: 0, y: 8)
+            .shadow(color: AppColors.teal.opacity(0.35), radius: 16, x: 0, y: 8)
         }
+        .buttonStyle(ScaleButtonStyle())
     }
 }
 
-// MARK: - Page Content
+// MARK: - Page Content Wrapper
+
 struct OnboardingPageContent<Illustration: View>: View {
-    let isActive: Bool
     let title: String
     let subtitle: String
+    var isActive: Bool = true
     @ViewBuilder let illustration: () -> Illustration
+
+    private let localization = LocalizationManager.shared
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Illustration
             illustration()
-                .frame(width: 250, height: 235)
-                .opacity(isActive ? 1.0 : 0.0)
+                .frame(height: 250)
+                .padding(.bottom, 20)
                 .offset(y: isActive ? 0 : 25)
-                .animation(.easeOut(duration: 0.5), value: isActive)
-                .padding(.bottom, 16)
+                .opacity(isActive ? 1 : 0)
+                .animation(.easeOut(duration: 0.45).delay(0.04), value: isActive)
 
-            // Texts Container
-            VStack(spacing: 0) {
-                // Amber Top Dash (Exact Flutter: 40 x 5)
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(AppColors.amber)
-                    .frame(width: 40, height: 5)
-                    .padding(.bottom, 24)
+            // Accent Pill
+            Capsule()
+                .fill(AppColors.amber)
+                .frame(width: 40, height: 5)
+                .padding(.bottom, 18)
+                .offset(y: isActive ? 0 : 30)
+                .opacity(isActive ? 1 : 0)
+                .animation(.easeOut(duration: 0.5).delay(0.08), value: isActive)
 
-                // Title (Tajawal 28 ExtraBold)
-                Text(title)
-                    .font(.tajawal(28, .extraBold))
-                    .foregroundColor(AppColors.deepTeal)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.bottom, 16)
+            // Title
+            Text(title)
+                .font(.app(28, .extraBold, isArabic: localization.isArabic))
+                .foregroundColor(AppColors.deepTeal)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 12)
+                .offset(y: isActive ? 0 : 35)
+                .opacity(isActive ? 1 : 0)
+                .animation(.easeOut(duration: 0.55).delay(0.12), value: isActive)
 
-                // Subtitle (Tajawal 15.5 Regular)
-                Text(subtitle)
-                    .font(.tajawal(15.5, .regular))
-                    .foregroundColor(AppColors.gray600)
-                    .lineSpacing(8)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-            }
-            .opacity(isActive ? 1.0 : 0.0)
-            .offset(y: isActive ? 0 : 35)
-            .animation(.easeOut(duration: 0.6), value: isActive)
+            // Subtitle
+            Text(subtitle)
+                .font(.app(15.5, .regular, isArabic: localization.isArabic))
+                .foregroundColor(AppColors.gray600)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+                .padding(.horizontal, 32)
+                .offset(y: isActive ? 0 : 40)
+                .opacity(isActive ? 1 : 0)
+                .animation(.easeOut(duration: 0.6).delay(0.15), value: isActive)
 
             Spacer()
         }
     }
 }
 
-// MARK: - Background Ambient Blobs
-struct OnboardingBackground: View {
+// MARK: - Animation Hosts (Using TimelineView for 60/120fps Silky-Smooth Interpolation)
+
+struct TicketAnimationHost: View {
     var body: some View {
-        ZStack {
-            AppColors.cream
-
-            GeometryReader { geo in
-                // Top-Left SoftTeal Circle
-                Circle()
-                    .fill(AppColors.softTeal.opacity(0.5))
-                    .frame(width: 220, height: 220)
-                    .position(x: 40, y: 50)
-
-                // Bottom-Right Indigo Circle
-                Circle()
-                    .fill(AppColors.indigo.opacity(0.08))
-                    .frame(width: 200, height: 200)
-                    .position(x: geo.size.width + 30, y: geo.size.height - 100)
-
-                // Bottom-Left Amber Circle
-                Circle()
-                    .fill(AppColors.amber.opacity(0.1))
-                    .frame(width: 160, height: 160)
-                    .position(x: 60, y: geo.size.height - 30)
-            }
+        TimelineView(.animation) { timeline in
+            let cycle: Double = 4.0
+            let elapsed = timeline.date.timeIntervalSinceReferenceDate
+            let phase = (elapsed.truncatingRemainder(dividingBy: cycle)) / cycle
+            let t = phase < 0.5 ? (phase * 2.0) : (2.0 - phase * 2.0)
+            TicketIllustration(t: t)
         }
-        .allowsHitTesting(false)
     }
 }
 
-// MARK: - Illustration 1: _TicketIllustration
+struct LiveTrackingAnimationHost: View {
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let cycle: Double = 4.0
+            let elapsed = timeline.date.timeIntervalSinceReferenceDate
+            let phase = (elapsed.truncatingRemainder(dividingBy: cycle)) / cycle
+            let t = phase < 0.5 ? (phase * 2.0) : (2.0 - phase * 2.0)
+            LiveTrackingIllustration(t: t)
+        }
+    }
+}
+
+struct AlertAnimationHost: View {
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let cycle: Double = 4.0
+            let elapsed = timeline.date.timeIntervalSinceReferenceDate
+            let phase = (elapsed.truncatingRemainder(dividingBy: cycle)) / cycle
+            let t = phase < 0.5 ? (phase * 2.0) : (2.0 - phase * 2.0)
+            AlertIllustration(t: t)
+        }
+    }
+}
+
+// MARK: - Illustration 1: TicketIllustration (1:1 Android/Flutter)
+
 struct TicketIllustration: View {
-    let t: Double // 0.0 to 1.0
+    let t: Double
+    private let localization = LocalizationManager.shared
 
     var body: some View {
-        let rotation = Angle(radians: -0.05 + t * 0.1)
+        let rotationAngle = Angle.degrees(-3.0 + t * 6.0)
 
         ZStack {
-            // Back Gradient Card with QR
-            RoundedRectangle(cornerRadius: 190 * 0.18, style: .continuous)
+            // Backdrop QR Card (offset x: 16 - t * 8, y: 10, size 150x190)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [AppColors.indigo, AppColors.teal],
@@ -252,17 +333,19 @@ struct TicketIllustration: View {
                 .frame(width: 150, height: 190)
                 .overlay {
                     Image(systemName: "qrcode")
-                        .font(.system(size: 92))
-                        .foregroundColor(Color(hex: 0xFFFDF8, alpha: 0.6))
+                        .font(.system(size: 80, weight: .light))
+                        .foregroundColor(AppColors.paper.opacity(0.6))
                 }
-                .shadow(color: AppColors.teal.opacity(0.35), radius: 34, x: 0, y: 14)
-                .offset(x: 16 - t * 8, y: 10)
+                .shadow(color: AppColors.teal.opacity(0.4), radius: 20, x: 0, y: 10)
+                .offset(x: 16 - CGFloat(t * 8), y: 10)
 
-            // Front Paper Ticket
+            // Foreground White Ticket Card (offset x: -10 + t * 6, y: -14, size 168x208)
             VStack(spacing: 0) {
-                // Header (App Icon + "طابور")
+                Spacer().frame(height: 16)
+
+                // Header: brand mark + appTitle
                 HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 7)
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [AppColors.deepTeal, AppColors.teal],
@@ -272,15 +355,14 @@ struct TicketIllustration: View {
                         )
                         .frame(width: 20, height: 20)
 
-                    Text("طابور")
-                        .font(.tajawal(16, .bold))
+                    Text(localization.appTitle)
+                        .font(.app(16, .bold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.deepTeal)
                 }
-                .padding(.top, 18)
 
-                Spacer().frame(height: 16)
+                Spacer().frame(height: 14)
 
-                // Perforated line with Scissors
+                // Cut line with scissors
                 ZStack {
                     Rectangle()
                         .fill(AppColors.gray300)
@@ -289,35 +371,31 @@ struct TicketIllustration: View {
 
                     Circle()
                         .fill(AppColors.paper)
-                        .frame(width: 26, height: 26)
+                        .frame(width: 24, height: 24)
 
                     Image(systemName: "scissors")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 13))
                         .foregroundColor(AppColors.gray400)
-                        .offset(y: 1)
                 }
 
                 Spacer()
 
-                // Ticket Number Label
-                Text("رقمك")
-                    .font(.tajawal(12, .medium))
+                Text(localization.ticketNumberLabel)
+                    .font(.app(12, .medium, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.gray500)
 
-                // Big Number "07"
                 Text("07")
-                    .font(.tajawal(44, .extraBold))
+                    .font(.app(44, .extraBold, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.deepTeal)
                     .lineLimit(1)
 
-                Spacer().frame(height: 8)
+                Spacer().frame(height: 6)
 
-                // "مجلسك وريح" Pill
-                Text("مجلسك وريح")
-                    .font(.tajawal(13, .bold))
+                Text(localization.ticketSitRelax)
+                    .font(.app(12, .bold, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.paper)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 5)
+                    .padding(.vertical, 4)
                     .background(
                         LinearGradient(
                             colors: [AppColors.deepTeal, AppColors.teal],
@@ -327,14 +405,14 @@ struct TicketIllustration: View {
                     )
                     .clipShape(Capsule())
 
-                Spacer().frame(height: 14)
+                Spacer().frame(height: 12)
 
-                // Barcode Lines
+                // Barcode simulation dashes
                 HStack(spacing: 3) {
                     ForEach(0..<14, id: \.self) { i in
                         RoundedRectangle(cornerRadius: 1)
                             .fill(AppColors.gray600)
-                            .frame(width: (i % 3 == 0) ? 3 : 1, height: 12)
+                            .frame(width: (i % 3 == 0) ? 3 : 1.5, height: 12)
                     }
                 }
                 .padding(.bottom, 14)
@@ -342,29 +420,33 @@ struct TicketIllustration: View {
             .frame(width: 168, height: 208)
             .background(AppColors.paper)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: AppColors.deepTeal.opacity(0.22), radius: 28, x: 0, y: 14)
-            .offset(x: -10 + t * 6, y: -14)
+            .shadow(color: AppColors.deepTeal.opacity(0.35), radius: 24, x: 0, y: 12)
+            .offset(x: -10 + CGFloat(t * 6), y: -14)
         }
         .frame(width: 240, height: 230)
-        .rotationEffect(rotation)
+        .rotationEffect(rotationAngle)
         .environment(\.layoutDirection, .leftToRight)
     }
 }
 
-// MARK: - Illustration 2: _LiveTrackingIllustration (Exact Circular Counter Arc)
+// MARK: - Illustration 2: LiveTrackingIllustration (1:1 Android/Flutter)
+
 struct LiveTrackingIllustration: View {
-    let t: Double // 0.0 to 1.0
+    let t: Double
+    private let localization = LocalizationManager.shared
 
     var body: some View {
-        let counterNum = max(1, min(6, Int(round(6.0 - (t * 5.0)))))
-        let formattedCounter = String(format: "%02d", counterNum)
+        let countValue = max(1, min(6, Int(round(6.0 - (t * 5.0)))))
+        let formattedCounter = String(format: "%02d", countValue)
+        let scale = 0.97 + t * 0.04
+        let arcProgress = 1.0 - t
 
         ZStack {
-            // Indigo Radial Glow behind
+            // Pulsating radar radial background (size 210)
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [AppColors.indigo.opacity(0.4), AppColors.indigo.opacity(0.0)],
+                        colors: [AppColors.indigo.opacity(0.35), Color.clear],
                         center: .center,
                         startRadius: 0,
                         endRadius: 105
@@ -373,51 +455,55 @@ struct LiveTrackingIllustration: View {
                 .frame(width: 210, height: 210)
                 .opacity(0.5 + t * 0.3)
 
-            // Scaled White Circle Card (176 x 176)
+            // Center circular counter (size 176)
             ZStack {
-                // Background Track Circle (SoftTeal stroke: 7, radius: 80)
+                // 1. SoftTeal Track Circle (diameter 160)
                 Circle()
                     .stroke(AppColors.softTeal, lineWidth: 7)
                     .frame(width: 160, height: 160)
 
-                // Animated Amber Arc: sweeps counter-clockwise starting from 0 (3 o'clock)
+                // 2. Amber Arc indicator - drawn DIRECTLY ON the SoftTeal track
                 Circle()
-                    .trim(from: 0, to: CGFloat(max(0.01, 1.0 - t)))
+                    .trim(from: 0, to: CGFloat(max(0.001, min(1.0, arcProgress))))
                     .stroke(AppColors.amber, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                     .frame(width: 160, height: 160)
-                    .scaleEffect(x: 1, y: -1) // Inverts vertical so it sweeps counter-clockwise from 3 o'clock!
+                    .scaleEffect(y: -1)
 
-                // Inner Content
+                // Counter Content Inside
                 VStack(spacing: 2) {
-                    // Teal Dot + "أمامك"
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Circle()
                             .fill(AppColors.teal)
-                            .frame(width: 8, height: 8)
+                            .frame(width: 6, height: 6)
 
-                        Text("أمامك")
-                            .font(.tajawal(15, .bold))
+                        Text(localization.liveAhead)
+                            .font(.app(localization.isArabic ? 13.5 : 11, .bold, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.deepTeal)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
 
-                    // Live Counter Number (Tajawal 58 ExtraBold)
+                    // Dynamic Countdown 05..01
                     Text(formattedCounter)
-                        .font(.tajawal(58, .extraBold))
+                        .font(.app(localization.isArabic ? 50 : 46, .extraBold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.deepTeal)
                         .lineLimit(1)
 
-                    // Pill: icon + "دورك قرب"
-                    HStack(spacing: 6) {
+                    // Badge: "دورك قرب" / "Almost your turn" with trend icon
+                    HStack(spacing: 3) {
                         Image(systemName: "chart.line.downtrend.xyaxis")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: localization.isArabic ? 9.5 : 8.5, weight: .bold))
                             .foregroundColor(AppColors.teal)
 
-                        Text("دورك قرب")
-                            .font(.tajawal(12, .bold))
+                        Text(localization.liveTurnNear)
+                            .font(.app(localization.isArabic ? 11.5 : 9.5, .bold, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.teal)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, localization.isArabic ? 9 : 8)
+                    .padding(.vertical, 3)
+                    .frame(maxWidth: 114)
                     .background(AppColors.softTeal)
                     .clipShape(Capsule())
                 }
@@ -425,88 +511,37 @@ struct LiveTrackingIllustration: View {
             .frame(width: 176, height: 176)
             .background(AppColors.paper)
             .clipShape(Circle())
-            .shadow(color: AppColors.indigo.opacity(0.2), radius: 28, x: 0, y: 12)
-            .scaleEffect(0.97 + t * 0.04)
+            .shadow(color: AppColors.indigo.opacity(0.2), radius: 20, x: 0, y: 12)
+            .scaleEffect(scale)
         }
         .frame(width: 250, height: 235)
         .environment(\.layoutDirection, .leftToRight)
     }
 }
 
-// MARK: - Illustration 3: _AlertIllustration
-// The Notification Paper Card is UNDER (behind) the Bell Circle!
+// MARK: - Illustration 3: AlertIllustration (Exact match from Android/Flutter)
+
 struct AlertIllustration: View {
-    let t: Double // 0.0 to 1.0
+    let t: Double
+    private let localization = LocalizationManager.shared
 
     var body: some View {
+        let bellOffsetX = 24.0 - t * 6.0
+        let bellOffsetY = 18.0 - t * 4.0
+        let cardOffsetX = -24.0 + t * 14.0
+        let cardOffsetY = 0.0
+
+        let rippleRadius = 110.0 * (0.5 + t * 0.5)
+        let rippleAlpha = max(0.0, min(1.0, (1.0 - t) * 0.9)) * 0.35
+
         ZStack {
-            // 1. Ring Ripple Painter (at very back)
+            // 1. Expanding Sound Ripple Ring (Centered around the bell)
             Circle()
-                .stroke(AppColors.indigo.opacity((1.0 - t) * 0.18 * 0.9), lineWidth: 3)
-                .frame(
-                    width: (250 - 16) * (0.5 + t * 0.5),
-                    height: (250 - 16) * (0.5 + t * 0.5)
-                )
+                .stroke(AppColors.indigo.opacity(rippleAlpha), lineWidth: 3)
+                .frame(width: rippleRadius * 2, height: rippleRadius * 2)
+                .offset(x: bellOffsetX, y: bellOffsetY)
 
-            // 2. Notification Paper Card is UNDER the bell (drawn before the bell)
-            ZStack(alignment: .leading) {
-                // Amber Bar on Left
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(AppColors.amber)
-                    .frame(width: 4, height: 84)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    // Header (Icon + "طابور" + "الآن")
-                    HStack {
-                        RoundedRectangle(cornerRadius: 7)
-                            .fill(
-                                LinearGradient(
-                                    colors: [AppColors.deepTeal, AppColors.teal],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 22, height: 22)
-                            .overlay {
-                                Image(systemName: "bell")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(AppColors.paper)
-                            }
-
-                        Text("طابور")
-                            .font(.tajawal(13, .bold))
-                            .foregroundColor(AppColors.deepTeal)
-
-                        Spacer()
-
-                        Text("الآن")
-                            .font(.tajawal(10, .medium))
-                            .foregroundColor(AppColors.gray500)
-                    }
-
-                    Spacer()
-
-                    Text("وقت الخروج!")
-                        .font(.tajawal(14, .extraBold))
-                        .foregroundColor(AppColors.deepTeal)
-
-                    Spacer().frame(height: 2)
-
-                    Text("قدامك 2 فقط")
-                        .font(.tajawal(12, .regular))
-                        .foregroundColor(AppColors.gray600)
-                }
-                .padding(.leading, 14)
-                .padding(.trailing, 12)
-                .padding(.vertical, 12)
-            }
-            .frame(width: 176, height: 124)
-            .background(AppColors.paper)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: AppColors.deepTeal.opacity(0.18), radius: 24, x: 0, y: 10)
-            .offset(x: -24 + t * 14, y: 0)
-
-            // 3. Bell Circle (drawn on top of the paper card)
+            // 2. Active Bell Circle (Rendered FIRST / UNDER the notification card)
             ZStack(alignment: .topTrailing) {
                 Circle()
                     .fill(
@@ -519,26 +554,143 @@ struct AlertIllustration: View {
                     .frame(width: 128, height: 128)
                     .overlay {
                         Image(systemName: "bell.badge.fill")
-                            .font(.system(size: 54))
+                            .font(.system(size: 52, weight: .bold))
                             .foregroundColor(AppColors.paper)
                     }
-                    .shadow(color: AppColors.teal.opacity(0.35), radius: 26, x: 0, y: 12)
+                    .shadow(color: AppColors.teal.opacity(0.4), radius: 24, x: 0, y: 12)
 
-                // Amber Dot on Bell
+                // Pulsing Notification Dot at top-trailing
                 Circle()
                     .fill(AppColors.amber)
                     .frame(width: 13, height: 13)
-                    .overlay(Circle().stroke(AppColors.deepTeal, lineWidth: 2.5))
+                    .overlay(
+                        Circle().stroke(AppColors.deepTeal, lineWidth: 2.5)
+                    )
                     .scaleEffect(1.0 + t * 0.25)
-                    .offset(x: -24, y: 14)
+                    .padding(.top, 14)
+                    .padding(.trailing, 24)
             }
-            .offset(x: 24 - t * 6, y: 18 - t * 4)
+            .offset(x: bellOffsetX, y: bellOffsetY)
+
+            // 3. Notification Card Popup (Rendered ON TOP of the bell)
+            HStack(spacing: 0) {
+                // Amber Accent Strip on leading edge
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(AppColors.amber)
+                    .frame(width: 4, height: 76)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    // Header Row
+                    HStack(spacing: 8) {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [AppColors.deepTeal, AppColors.teal],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 22, height: 22)
+                            .overlay {
+                                Image(systemName: "bell.fill")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(AppColors.paper)
+                            }
+
+                        Text(localization.appTitle)
+                            .font(.app(13, .bold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.deepTeal)
+
+                        Spacer()
+
+                        Text(localization.alertNow)
+                            .font(.app(10, .medium, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.gray500)
+                    }
+
+                    Spacer()
+
+                    // Title: "وقت الخروج!" / "Time to go!"
+                    Text(localization.alertLeaveTitle)
+                        .font(.app(14, .extraBold, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.deepTeal)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+
+                    Spacer().frame(height: 2)
+
+                    // Subtitle: "قدامك 2 فقط" / "Only 2 ahead"
+                    Text(localization.alertOnlyTwo)
+                        .font(.app(12, .regular, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.gray600)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 12)
+                .padding(.vertical, 12)
+            }
+            .frame(width: 176, height: 124)
+            .background(AppColors.paper)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: AppColors.deepTeal.opacity(0.18), radius: 24, x: 0, y: 10)
+            .offset(x: cardOffsetX, y: cardOffsetY)
         }
         .frame(width: 250, height: 235)
         .environment(\.layoutDirection, .leftToRight)
     }
 }
 
-#Preview {
-    OnboardingView()
+// MARK: - Ambient Circles Background
+
+struct OnboardingBackground: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
+
+            ZStack {
+                AppColors.background
+                    .ignoresSafeArea()
+
+                // Top-Left SoftTeal Circle (Flutter: 220x220, top: -60, left: -70)
+                Circle()
+                    .fill(AppColors.softTeal.opacity(0.5))
+                    .frame(width: 220, height: 220)
+                    .position(x: 40, y: 50)
+
+                // Bottom-Right faint Indigo Circle (Flutter: 200x200, bottom: 60, right: -70)
+                Circle()
+                    .fill(AppColors.indigo.opacity(0.08))
+                    .frame(width: 200, height: 200)
+                    .position(x: w + 20, y: h - 140)
+
+                // Bottom-Left faint Amber Circle (Flutter: 160x160, bottom: -50, left: 20)
+                Circle()
+                    .fill(AppColors.amber.opacity(0.1))
+                    .frame(width: 160, height: 160)
+                    .position(x: 80, y: h + 20)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+// MARK: - Scroll Interaction Detection Helper
+
+private extension View {
+    @ViewBuilder
+    func detectScrollInteraction(isTouching: Binding<Bool>) -> some View {
+        if #available(iOS 18.0, *) {
+            self.onScrollPhaseChange { _, newPhase in
+                isTouching.wrappedValue = (newPhase == .interacting || newPhase == .tracking)
+            }
+        } else {
+            self.simultaneousGesture(
+                DragGesture(minimumDistance: 15)
+                    .onChanged { _ in isTouching.wrappedValue = true }
+                    .onEnded { _ in isTouching.wrappedValue = false }
+            )
+        }
+    }
 }

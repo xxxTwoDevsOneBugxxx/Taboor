@@ -7,9 +7,21 @@ enum AppScreen {
     case register
 }
 
+enum AuthDestination: Hashable {
+    case register
+}
+
 @main
 struct TaboorApp: App {
     @State private var currentScreen: AppScreen = .splash
+    @State private var authPath = NavigationPath()
+    private let localization = LocalizationManager.shared
+
+    init() {
+        // Register Tajawal and Inter TTF fonts into CoreText
+        FontRegistration.registerCustomFonts()
+        LocalizationManager.shared.currentLanguage = .arabic
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -34,45 +46,51 @@ struct TaboorApp: App {
                         removal: .opacity.combined(with: .move(edge: .leading))
                     ))
 
-                case .login:
-                    LoginView(
-                        onLoginSuccess: {
-                            // Can route to Home
-                        },
-                        onNavigateToRegister: {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                currentScreen = .register
+                case .login, .register:
+                    NavigationStack(path: $authPath) {
+                        LoginView(
+                            onLoginSuccess: {
+                                // Can route to Home
+                            },
+                            onNavigateToRegister: {
+                                authPath.append(AuthDestination.register)
+                            },
+                            onForgotPassword: {
+                                // Forgot password flow
                             }
-                        },
-                        onForgotPassword: {
-                            // Forgot password flow
+                        )
+                        .navigationDestination(for: AuthDestination.self) { destination in
+                            switch destination {
+                            case .register:
+                                RegisterView(
+                                    onRegisterSuccess: {
+                                        if !authPath.isEmpty {
+                                            authPath.removeLast()
+                                        }
+                                    },
+                                    onNavigateToLogin: {
+                                        if !authPath.isEmpty {
+                                            authPath.removeLast()
+                                        }
+                                    }
+                                )
+                                .navigationBarBackButtonHidden(true)
+                            }
                         }
-                    )
+                    }
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .trailing)),
                         removal: .opacity.combined(with: .move(edge: .leading))
                     ))
-
-                case .register:
-                    RegisterView(
-                        onRegisterSuccess: {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                currentScreen = .login
-                            }
-                        },
-                        onNavigateToLogin: {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                currentScreen = .login
-                            }
+                    .onAppear {
+                        if currentScreen == .register && authPath.isEmpty {
+                            authPath.append(AuthDestination.register)
                         }
-                    )
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .leading)),
-                        removal: .opacity.combined(with: .move(edge: .trailing))
-                    ))
+                    }
                 }
             }
-            .environment(\.layoutDirection, .rightToLeft)
+            .animation(.easeInOut(duration: 0.35), value: currentScreen)
+            .environment(\.layoutDirection, localization.layoutDirection)
         }
     }
 }

@@ -29,13 +29,13 @@ enum PasswordStrengthLevel {
         }
     }
 
-    var label: String {
+    func label(isArabic: Bool) -> String {
         switch self {
         case .empty: return ""
-        case .weak: return "ضعيفة"
-        case .medium: return "متوسطة"
-        case .strong: return "قوية"
-        case .veryStrong: return "قوية جداً"
+        case .weak: return isArabic ? "ضعيفة" : "Weak"
+        case .medium: return isArabic ? "متوسطة" : "Medium"
+        case .strong: return isArabic ? "قوية" : "Strong"
+        case .veryStrong: return isArabic ? "قوية جداً" : "Very strong"
         }
     }
 
@@ -56,6 +56,7 @@ enum PasswordStrengthLevel {
 
 struct PasswordStrengthMeterView: View {
     let password: String
+    private let localization = LocalizationManager.shared
 
     var body: some View {
         let strength = PasswordStrengthLevel.calculate(for: password)
@@ -71,8 +72,8 @@ struct PasswordStrengthMeterView: View {
                 }
 
                 if !password.isEmpty {
-                    Text(strength.label)
-                        .font(.tajawal(12, .bold))
+                    Text(strength.label(isArabic: localization.isArabic))
+                        .font(.app(12, .bold, isArabic: localization.isArabic))
                         .foregroundColor(strength.color)
                         .padding(.horizontal, 4)
                         .transition(.opacity)
@@ -87,6 +88,7 @@ struct PasswordStrengthMeterView: View {
 struct PasswordMatchIndicatorView: View {
     let password: String
     let confirm: String
+    private let localization = LocalizationManager.shared
 
     var body: some View {
         if !confirm.isEmpty {
@@ -96,8 +98,8 @@ struct PasswordMatchIndicatorView: View {
                     .font(.system(size: 14))
                     .foregroundColor(isMatch ? AppColors.success : AppColors.accentRed)
 
-                Text(isMatch ? "كلمتا المرور متطابقتين" : "كلمتا المرور غير متطابقتين")
-                    .font(.tajawal(12, .bold))
+                Text(isMatch ? localization.passwordMatchOk : localization.passwordMismatch)
+                    .font(.app(12, .bold, isArabic: localization.isArabic))
                     .foregroundColor(isMatch ? AppColors.success : AppColors.accentRed)
             }
             .transition(.opacity)
@@ -105,7 +107,7 @@ struct PasswordMatchIndicatorView: View {
     }
 }
 
-// MARK: - Step Indicator (3 Capsules: 24x8 active, 8x8 inactive)
+// MARK: - Step Indicator (3 Capsules)
 
 struct StepIndicatorView: View {
     let currentStep: Int // 0, 1, 2
@@ -125,10 +127,10 @@ struct StepIndicatorView: View {
     }
 }
 
-// MARK: - OTP 6-Digit Box Input (LTR direction)
+// MARK: - OTP 6-Digit Box Input
 
 struct OtpInputView: View {
-    @Binding var otp: [String] // Array of 6 single-character strings
+    @Binding var otp: [String]
     var onCompleted: (() -> Void)? = nil
 
     @FocusState private var focusedField: Int?
@@ -145,14 +147,12 @@ struct OtpInputView: View {
                             otp[index] = newVal
                         }
 
-                        // Auto advance
                         if !newVal.isEmpty && index < 5 {
                             focusedField = index + 1
                         } else if newVal.isEmpty && index > 0 {
                             focusedField = index - 1
                         }
 
-                        // Check completion
                         if otp.allSatisfy({ !$0.isEmpty }) {
                             onCompleted?()
                         }
@@ -176,7 +176,7 @@ struct OtpInputView: View {
                 .focused($focusedField, equals: index)
             }
         }
-        .environment(\.layoutDirection, .leftToRight) // OTP digits are always LTR
+        .environment(\.layoutDirection, .leftToRight)
         .onAppear {
             focusedField = 0
         }
@@ -192,11 +192,12 @@ struct PhoneInputField: View {
     var errorMessage: String? = nil
 
     @FocusState private var isFocused: Bool
+    private let localization = LocalizationManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(label)
-                .font(.tajawal(14, .bold))
+                .font(.app(14, .bold, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.deepTeal)
 
             HStack(spacing: 10) {
@@ -220,7 +221,7 @@ struct PhoneInputField: View {
                 // Phone Digits Input
                 TextField("", text: $phoneNumber)
                     .keyboardType(.phonePad)
-                    .font(.tajawal(15, .medium))
+                    .font(.inter(15, .medium))
                     .foregroundColor(AppColors.deepTeal)
                     .focused($isFocused)
                     .overlay(
@@ -228,7 +229,7 @@ struct PhoneInputField: View {
                             if phoneNumber.isEmpty {
                                 HStack {
                                     Text(hint)
-                                        .font(.tajawal(14, .regular))
+                                        .font(.inter(14, .regular))
                                         .foregroundColor(AppColors.gray400)
                                     Spacer()
                                 }
@@ -252,7 +253,7 @@ struct PhoneInputField: View {
 
             if let errorMessage = errorMessage, !errorMessage.isEmpty {
                 Text(errorMessage)
-                    .font(.tajawal(12, .medium))
+                    .font(.app(12, .medium, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.accentRed)
                     .padding(.horizontal, 4)
             }
