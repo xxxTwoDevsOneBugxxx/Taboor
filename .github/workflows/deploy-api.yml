@@ -28,18 +28,24 @@ jobs:
         run: dotnet restore apps/api/Taboor_API/Taboor_API.csproj
 
       - name: Inject Production AppSettings (if secret provided)
-        if: ${{ secrets.APPSETTINGS_PRODUCTION != '' }}
         env:
-          APPSETTINGS_PRODUCTION: ${{ secrets.APPSETTINGS_PRODUCTION }}
+          APPSETTINGS_CONTENT: ${{ secrets.APPSETTINGS_PRODUCTION }}
         shell: pwsh
         run: |
-          Set-Content -Path "apps/api/Taboor_API/appsettings.production.json" -Value $env:APPSETTINGS_PRODUCTION
+          if (![string]::IsNullOrWhiteSpace($env:APPSETTINGS_CONTENT)) {
+            Set-Content -Path "apps/api/Taboor_API/appsettings.production.json" -Value $env:APPSETTINGS_CONTENT
+            Write-Host "Production appsettings injected successfully."
+          } else {
+            Write-Host "No APPSETTINGS_PRODUCTION secret provided; skipping."
+          }
 
       - name: Build and Publish via WebDeploy
+        env:
+          RUNASP_PASSWORD: ${{ secrets.RUNASP_PASSWORD }}
         shell: pwsh
         run: |
           dotnet publish apps/api/Taboor_API/Taboor_API.csproj `
             -c Release `
             /p:PublishProfile=site86834-WebDeploy `
-            /p:Password="${{ secrets.RUNASP_PASSWORD }}" `
+            /p:Password="$env:RUNASP_PASSWORD" `
             /p:AllowUntrustedCertificate=True
