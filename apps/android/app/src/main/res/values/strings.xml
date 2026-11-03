@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">طابور</string>
+    <string name="login_welcome_title">مرحباً بك مجدداً</string>
+    <string name="login_welcome_subtitle">سجّل الدخول لمتابعة دورك وحجوزاتك بكل سهولة</string>
+    <string name="email_label">البريد الإلكتروني</string>
+    <string name="email_hint">name@example.com</string>
+    <string name="password_label">كلمة المرور</string>
+    <string name="password_hint">••••••••</string>
+    <string name="forgot_password">نسيت كلمة المرور؟</string>
+    <string name="login_button">تسجيل الدخول</string>
+    <string name="logging_in">جارٍ تسجيل الدخول...</string>
+    <string name="or">أو</string>
+    <string name="no_account">ليس لديك حساب؟</string>
+    <string name="create_account">إنشاء حساب جديد</string>
+    <string name="login_with_google">Google</string>
+    <string name="login_with_facebook">Facebook</string>
+</resources>

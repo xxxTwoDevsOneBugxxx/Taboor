@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Taboor Brand Colors -->
+    <color name="taboor_ink">#0B4C56</color>
+    <color name="taboor_deep_teal">#103F4B</color>
+    <color name="taboor_teal">#159F99</color>
+    <color name="taboor_soft_teal">#E3F3EE</color>
+    <color name="taboor_indigo">#6B72CD</color>
+    <color name="taboor_amber">#F6A253</color>
+    <color name="taboor_cream">#F5F0E7</color>
+    <color name="taboor_paper">#FFFDF8</color>
+
+    <!-- Semantic Aliases -->
+    <color name="taboor_primary">#0B4C56</color>
+    <color name="taboor_primary_dark">#103F4B</color>
+    <color name="taboor_accent">#F6A253</color>
+    <color name="taboor_background">#F5F0E7</color>
+    <color name="taboor_surface">#FFFDF8</color>
+</resources>
