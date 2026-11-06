@@ -28,11 +28,10 @@ public enum AppLanguage: String, CaseIterable {
     }
 }
 
-@Observable
-public final class LocalizationManager {
+public final class LocalizationManager: ObservableObject {
     public static let shared = LocalizationManager()
 
-    public var currentLanguage: AppLanguage = .arabic {
+    @Published public var currentLanguage: AppLanguage = .arabic {
         didSet {
             UserDefaults.standard.set(currentLanguage.rawValue, forKey: "app_language")
         }
@@ -153,4 +152,23 @@ public final class LocalizationManager {
     public var passwordMatchOk: String { isArabic ? "كلمتا المرور متطابقتين" : "Passwords match" }
     public var passwordMismatch: String { isArabic ? "كلمتا المرور غير متطابقتين" : "Passwords don't match" }
     public var createAccountSubmit: String { isArabic ? "إنشاء الحساب" : "Create account" }
+
+    // Forgot Password
+    public var forgotPasswordTitle: String { isArabic ? "استعادة كلمة المرور" : "Reset Password" }
+    public var forgotPasswordSubtitle: String {
+        isArabic
+            ? "أدخل بريدك الإلكتروني\nوهنبعث لك كود لإعادة التعيين"
+            : "Enter your email\nand we'll send you a reset code"
+    }
+    public var resetCodeSent: String { isArabic ? "تم إرسال كود التحقق بنجاح" : "Reset code sent successfully" }
+    public var resetCodeInvalid: String { isArabic ? "كود التحقق غير صحيح" : "Invalid reset code" }
+    public var resetCodeVerified: String { isArabic ? "تم التحقق من الكود بنجاح" : "Code verified successfully" }
+    public var newPasswordTitle: String { isArabic ? "كلمة مرور جديدة" : "New Password" }
+    public var newPasswordSubtitle: String {
+        isArabic ? "أنشئ كلمة مرور جديدة وقوية لحسابك" : "Create a strong new password for your account"
+    }
+    public var newPasswordLabel: String { isArabic ? "كلمة المرور الجديدة" : "New password" }
+    public var resetPasswordButton: String { isArabic ? "تغيير كلمة المرور" : "Reset password" }
+    public var passwordResetSuccess: String { isArabic ? "تم تغيير كلمة المرور بنجاح!" : "Password reset successfully!" }
+    public var rememberPassword: String { isArabic ? "افتكرت كلمة المرور؟" : "Remember your password?" }
 }

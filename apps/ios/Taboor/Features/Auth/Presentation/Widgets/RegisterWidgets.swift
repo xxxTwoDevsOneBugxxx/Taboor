@@ -127,58 +127,95 @@ struct StepIndicatorView: View {
     }
 }
 
-// MARK: - OTP 6-Digit Box Input
+// MARK: - OTP 6-Digit Box Input (High-Performance Single First-Responder with iOS AutoFill)
 
 struct OtpInputView: View {
     @Binding var otp: [String]
     var onCompleted: (() -> Void)? = nil
 
-    @FocusState private var focusedField: Int?
+    @State private var code: String = ""
+    @FocusState private var isFocused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<6, id: \.self) { index in
-                TextField("", text: Binding(
-                    get: { otp[index] },
-                    set: { newVal in
-                        if newVal.count > 1 {
-                            otp[index] = String(newVal.suffix(1))
-                        } else {
-                            otp[index] = newVal
-                        }
+        ZStack {
+            // 1. Single hidden TextField managing keyboard input & SMS/Mail one-time code
+            TextField("", text: $code)
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($isFocused)
+                .opacity(0.01)
+                .frame(width: 1, height: 1)
+                .accentColor(.clear)
+                .onChange(of: code) { _, newValue in
+                    let digitsOnly = String(newValue.filter { $0.isNumber }.prefix(6))
+                    if digitsOnly != newValue {
+                        code = digitsOnly
+                    }
 
-                        if !newVal.isEmpty && index < 5 {
-                            focusedField = index + 1
-                        } else if newVal.isEmpty && index > 0 {
-                            focusedField = index - 1
-                        }
-
-                        if otp.allSatisfy({ !$0.isEmpty }) {
-                            onCompleted?()
+                    // Sync to otp binding array
+                    var newOtp = Array(repeating: "", count: 6)
+                    for (i, char) in digitsOnly.enumerated() {
+                        if i < 6 {
+                            newOtp[i] = String(char)
                         }
                     }
-                ))
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .font(.inter(24, .bold))
-                .foregroundColor(AppColors.deepTeal)
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-                .background(AppColors.paper)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(
-                            focusedField == index ? AppColors.teal : AppColors.gray300,
-                            lineWidth: focusedField == index ? 2 : 1.2
-                        )
-                )
-                .focused($focusedField, equals: index)
+                    otp = newOtp
+
+                    if digitsOnly.count == 6 {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        onCompleted?()
+                    }
+                }
+
+            // 2. Six visual display boxes with smooth focus and filling
+            HStack(spacing: 8) {
+                ForEach(0..<6, id: \.self) { index in
+                    let digit = index < code.count ? String(Array(code)[index]) : ""
+                    let isCurrent = isFocused && (index == code.count || (index == 5 && code.count == 6))
+
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(AppColors.paper)
+
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(
+                                isCurrent ? AppColors.teal : (digit.isEmpty ? AppColors.gray200 : AppColors.teal.opacity(0.7)),
+                                lineWidth: isCurrent ? 2.0 : 1.2
+                            )
+
+                        if !digit.isEmpty {
+                            Text(digit)
+                                .font(.inter(24, .bold))
+                                .foregroundColor(AppColors.deepTeal)
+                        } else if isCurrent {
+                            // Subtle pulse indicator for active box
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(AppColors.teal)
+                                .frame(width: 2, height: 22)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .animation(.easeOut(duration: 0.15), value: isCurrent)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isFocused = true
             }
         }
         .environment(\.layoutDirection, .leftToRight)
         .onAppear {
-            focusedField = 0
+            code = otp.joined()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isFocused = true
+            }
+        }
+        .onChange(of: otp) { _, newOtp in
+            let joined = newOtp.joined()
+            if joined != code {
+                code = joined
+            }
         }
     }
 }
@@ -218,38 +255,55 @@ struct PhoneInputField: View {
                     .fill(AppColors.gray200)
                     .frame(width: 1, height: 26)
 
-                // Phone Digits Input
-                TextField("", text: $phoneNumber)
-                    .keyboardType(.phonePad)
-                    .font(.inter(15, .medium))
-                    .foregroundColor(AppColors.deepTeal)
-                    .focused($isFocused)
-                    .overlay(
-                        Group {
-                            if phoneNumber.isEmpty {
-                                HStack {
-                                    Text(hint)
-                                        .font(.inter(14, .regular))
-                                        .foregroundColor(AppColors.gray400)
-                                    Spacer()
-                                }
-                                .allowsHitTesting(false)
-                            }
-                        }
-                    )
+                // Phone Digits Input (Native 0ms Touch Responder & Native Placeholder)
+                TextField(
+                    "",
+                    text: $phoneNumber,
+                    prompt: Text(hint)
+                        .font(.inter(14, .regular))
+                        .foregroundColor(AppColors.gray400)
+                )
+                .keyboardType(.phonePad)
+                .font(.inter(15, .medium))
+                .foregroundColor(AppColors.deepTeal)
+                .focused($isFocused)
+                .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(AppColors.paper)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(errorMessage != nil ? AppColors.accentRed.opacity(0.05) : Color.white.opacity(0.92))
+
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.9), Color.white.opacity(0.3)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(
                         errorMessage != nil ? AppColors.accentRed :
                         isFocused ? AppColors.teal : AppColors.gray200,
-                        lineWidth: errorMessage != nil ? 1.8 : (isFocused ? 1.8 : 1.5)
+                        lineWidth: errorMessage != nil ? 1.8 : (isFocused ? 2.0 : 1.2)
                     )
             )
+            .shadow(
+                color: isFocused ? AppColors.teal.opacity(0.12) : Color.black.opacity(0.02),
+                radius: isFocused ? 10 : 4,
+                x: 0,
+                y: isFocused ? 3 : 1
+            )
+            .animation(.spring(response: 0.22, dampingFraction: 0.78), value: isFocused)
+            .animation(.spring(response: 0.22, dampingFraction: 0.78), value: errorMessage != nil)
 
             if let errorMessage = errorMessage, !errorMessage.isEmpty {
                 Text(errorMessage)

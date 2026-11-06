@@ -77,6 +77,7 @@ struct RegisterView: View {
                     .padding(.top, 16)
                     .padding(.bottom, 32)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
         }
     }
@@ -103,12 +104,13 @@ struct RegisterView: View {
     }
 
     private func goBack() {
-        if currentStep > 0 {
-            withAnimation(.easeInOut(duration: 0.35)) {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if currentStep > 0 {
                 currentStep -= 1
+            } else {
+                onNavigateToLogin()
             }
-        } else {
-            onNavigateToLogin()
         }
     }
 
@@ -213,10 +215,28 @@ struct RegisterView: View {
         emailError = nil
         isLoading = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            isLoading = false
-            withAnimation(.easeInOut(duration: 0.35)) {
-                currentStep = 1
+        Task {
+            do {
+                try await AuthRepository.shared.sendOtp(email: trimmed)
+                await MainActor.run {
+                    isLoading = false
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        currentStep = 1
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    let msg = error.localizedDescription
+                    if msg.lowercased().contains("already") || msg.contains("مسجل") || msg.contains("موجود") {
+                        emailError = localization.isArabic
+                            ? "هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول."
+                            : "This email is already registered. Please sign in."
+                    } else {
+                        emailError = msg
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
             }
         }
     }
@@ -290,10 +310,27 @@ struct RegisterView: View {
 
     private func verifyCode() {
         isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            isLoading = false
-            withAnimation(.easeInOut(duration: 0.35)) {
-                currentStep = 2
+        let code = otp.joined()
+
+        Task {
+            do {
+                try await AuthRepository.shared.verifyEmail(
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    code: code
+                )
+                await MainActor.run {
+                    isLoading = false
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        currentStep = 2
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        currentStep = 2
+                    }
+                }
             }
         }
     }
@@ -410,9 +447,27 @@ struct RegisterView: View {
 
     private func createAccount() {
         isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            isLoading = false
-            onRegisterSuccess()
+        Task {
+            do {
+                _ = try await AuthRepository.shared.register(
+                    fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+                    email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                    phoneNumber: phone.trimmingCharacters(in: .whitespacesAndNewlines),
+                    password: password,
+                    confirmPassword: confirmPassword
+                )
+                await MainActor.run {
+                    isLoading = false
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    onRegisterSuccess()
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    passwordError = error.localizedDescription
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            }
         }
     }
 }

@@ -13,4 +13,5 @@ extension Color {
     static let taboorPrimary = AppColors.primary
     static let taboorAccent = AppColors.accent
     static let taboorBackground = AppColors.background
+    static let taboorSplashBackground = AppColors.splashBackground
 }

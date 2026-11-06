@@ -12,7 +12,7 @@ final class LoginViewModel {
 
     private let loginUseCase: LoginUseCase
 
-    init(loginUseCase: LoginUseCase) {
+    init(loginUseCase: LoginUseCase = LoginUseCase(repository: AuthRepository.shared)) {
         self.loginUseCase = loginUseCase
     }
 

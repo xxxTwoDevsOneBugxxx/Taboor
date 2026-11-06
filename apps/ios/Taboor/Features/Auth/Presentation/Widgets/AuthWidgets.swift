@@ -155,6 +155,7 @@ struct GlassBackButton: View {
 
     var body: some View {
         Button {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             action()
         } label: {
@@ -209,41 +210,57 @@ struct AuthTextField: View {
                         .frame(width: 24)
                 }
 
-                // Input Field
+                // Input Field (Native 0ms Touch Responder & Native Placeholder)
                 Group {
                     if isSecure {
-                        SecureField("", text: $text)
-                            .textContentType(textContentType)
-                            .submitLabel(submitLabel)
-                            .onSubmit { onSubmit?() }
+                        SecureField(
+                            "",
+                            text: $text,
+                            prompt: Text(hint)
+                                .font(.app(14, .regular, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.gray400)
+                        )
+                        .textContentType(textContentType)
+                        .submitLabel(submitLabel)
+                        .onSubmit { onSubmit?() }
                     } else {
-                        TextField("", text: $text)
-                            .keyboardType(keyboardType)
-                            .textContentType(textContentType)
-                            .submitLabel(submitLabel)
-                            .onSubmit { onSubmit?() }
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
+                        TextField(
+                            "",
+                            text: $text,
+                            prompt: Text(hint)
+                                .font(.app(14, .regular, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.gray400)
+                        )
+                        .keyboardType(keyboardType)
+                        .textContentType(textContentType)
+                        .submitLabel(submitLabel)
+                        .onSubmit { onSubmit?() }
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
                     }
                 }
                 .font(.app(15, .medium, isArabic: localization.isArabic))
                 .foregroundColor(AppColors.deepTeal)
                 .focused($isFocused)
-                .overlay(
-                    Group {
-                        if text.isEmpty {
-                            HStack {
-                                Text(hint)
-                                    .font(.app(14, .regular, isArabic: localization.isArabic))
-                                    .foregroundColor(AppColors.gray400)
-                                Spacer()
-                            }
-                            .allowsHitTesting(false)
-                        }
-                    }
-                )
+                .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
                 .onChange(of: text) { _, newValue in
                     onTextChange?(newValue)
+                }
+
+                // Clear Button (iOS standard quick clear)
+                if !isSecure && !text.isEmpty && isFocused {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        text = ""
+                        onTextChange?("")
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(AppColors.gray400)
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.scale.combined(with: .opacity))
                 }
 
                 // Trailing Icon (e.g. eye)
@@ -258,16 +275,40 @@ struct AuthTextField: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(errorMessage != nil ? AppColors.accentRed.opacity(0.04) : AppColors.paper)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(errorMessage != nil ? AppColors.accentRed.opacity(0.05) : Color.white.opacity(0.92))
+
+                    // Apple Glass subtle specular gradient stroke
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.9), Color.white.opacity(0.3)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(
                         errorMessage != nil ? AppColors.accentRed :
                         isFocused ? AppColors.teal : AppColors.gray200,
-                        lineWidth: errorMessage != nil ? 1.8 : (isFocused ? 1.8 : 1.5)
+                        lineWidth: errorMessage != nil ? 1.8 : (isFocused ? 2.0 : 1.2)
                     )
             )
+            .shadow(
+                color: isFocused ? AppColors.teal.opacity(0.12) : Color.black.opacity(0.02),
+                radius: isFocused ? 10 : 4,
+                x: 0,
+                y: isFocused ? 3 : 1
+            )
+            .animation(.spring(response: 0.22, dampingFraction: 0.78), value: isFocused)
+            .animation(.spring(response: 0.22, dampingFraction: 0.78), value: errorMessage != nil)
             .modifier(ShakeEffect(animatableData: CGFloat(shakeTrigger)))
 
             // Error Text with Animated Warning Icon
