@@ -206,6 +206,16 @@ struct TaboorLogoIcon: View {
 struct TaboorLogoView: View {
     var iconSize: CGFloat = 80
     var showWordmark: Bool = true
+    var wordmarkColor: Color? = nil
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var effectiveWordmarkColor: Color {
+        if let wordmarkColor {
+            return wordmarkColor
+        }
+        return colorScheme == .dark ? .white : AppColors.ink
+    }
 
     var body: some View {
         HStack(spacing: iconSize * 0.22) {
@@ -216,7 +226,7 @@ struct TaboorLogoView: View {
                     Text("taboor")
                         .font(.inter(iconSize * 0.55, .bold))
                         .tracking(-1.5)
-                        .foregroundColor(AppColors.ink)
+                        .foregroundColor(effectiveWordmarkColor)
                     Text(".")
                         .font(.inter(iconSize * 0.55, .bold))
                         .tracking(-1.5)
@@ -225,5 +235,19 @@ struct TaboorLogoView: View {
             }
         }
         .environment(\.layoutDirection, .leftToRight)
+    }
+}
+
+#Preview("Logo - Light & Dark") {
+    VStack(spacing: 40) {
+        TaboorLogoView(iconSize: 80, showWordmark: true)
+            .padding()
+            .background(AppColors.splashBackground)
+            .preferredColorScheme(.light)
+
+        TaboorLogoView(iconSize: 80, showWordmark: true)
+            .padding()
+            .background(AppColors.splashBackground)
+            .preferredColorScheme(.dark)
     }
 }
