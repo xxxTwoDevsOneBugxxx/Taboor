@@ -18,6 +18,7 @@ public struct AllServicesView: View {
     @State private var isMapMode = false
     @State private var selectedPlaceOnMap: ServicePlace? = nil
     @State private var isCardDismissed = false
+    @State private var isRefreshing = false
 
     // Cairo default region
     @State private var cameraPosition: MapCameraPosition = .region(
@@ -65,6 +66,7 @@ public struct AllServicesView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    dataService.isTabBarHidden = false
                     dismiss()
                 }) {
                     Image(systemName: localization.isArabic ? "chevron.right" : "chevron.left")
@@ -133,6 +135,7 @@ public struct AllServicesView: View {
             }
         }
         .background(AppColors.screenBackground.ignoresSafeArea())
+        .environment(\.layoutDirection, localization.layoutDirection)
     }
 
     // MARK: - 1. Native List Content View
@@ -149,9 +152,69 @@ public struct AllServicesView: View {
                 resultsBar
 
                 // Places List
-                if filteredPlaces.isEmpty {
-                    ContentUnavailableView.search(text: searchQuery.isEmpty ? (selectedCategory?.title(isArabic: localization.isArabic) ?? "") : searchQuery)
-                        .padding(.vertical, 40)
+                if isRefreshing {
+                    LazyVStack(spacing: 12) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            ServiceCardSkeleton()
+                        }
+                    }
+                } else if filteredPlaces.isEmpty {
+                    VStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.softTeal)
+                                .frame(width: 76, height: 76)
+
+                            Circle()
+                                .strokeBorder(AppColors.teal.opacity(0.2), lineWidth: 1.5)
+                                .frame(width: 92, height: 92)
+
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 30, weight: .semibold))
+                                .foregroundColor(AppColors.teal)
+                        }
+                        .padding(.top, 10)
+
+                        VStack(spacing: 6) {
+                            Text(localization.isArabic ? "لم نجد أي خدمات مطابقة" : "No Matching Services")
+                                .font(.app(17.5, .bold, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.textPrimary)
+
+                            Text(localization.isArabic
+                                 ? "تأكد من كتابة الاسم بشكل صحيح، أو جرّب إزالة التصفية لاكتشاف جميع الأماكن المتاحة."
+                                 : "Double-check your spelling, or reset filters to browse all available places.")
+                                .font(.app(13, .regular, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(3)
+                                .padding(.horizontal, 24)
+                        }
+
+                        if !searchQuery.isEmpty || selectedCategory != nil || selectedFilter != .all {
+                            Button(action: {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    searchQuery = ""
+                                    selectedCategory = nil
+                                    selectedFilter = .all
+                                }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 11, weight: .bold))
+                                    Text(localization.isArabic ? "إعادة ضبط التصفية والبحث" : "Reset Filters & Search")
+                                        .font(.app(12.5, .bold, isArabic: localization.isArabic))
+                                }
+                                .foregroundColor(AppColors.teal)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(AppColors.softTeal)
+                                .clipShape(Capsule())
+                            }
+                            .padding(.top, 6)
+                        }
+                    }
+                    .padding(.vertical, 36)
                 } else {
                     LazyVStack(spacing: 12) {
                         ForEach(filteredPlaces) { place in
@@ -180,7 +243,9 @@ public struct AllServicesView: View {
             .padding(.top, 12)
         }
         .refreshable {
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            withAnimation(.easeInOut(duration: 0.2)) { isRefreshing = true }
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            withAnimation(.easeInOut(duration: 0.25)) { isRefreshing = false }
         }
     }
 
@@ -243,10 +308,26 @@ public struct AllServicesView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(Color(UIColor.secondaryLabel))
-                    TextField(localization.isArabic ? "ابحث على الخريطة..." : "Search on map...", text: $searchQuery)
-                        .font(.app(14, .regular, isArabic: localization.isArabic))
+
+                    ZStack(alignment: .leading) {
+                        if searchQuery.isEmpty {
+                            Text(localization.isArabic ? "ابحث على الخريطة..." : "Search on map...")
+                                .font(.app(14, .regular, isArabic: localization.isArabic))
+                                .foregroundColor(Color(UIColor.placeholderText))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        TextField("", text: $searchQuery)
+                            .font(.app(14, .regular, isArabic: localization.isArabic))
+                            .multilineTextAlignment(.leading)
+                            .autocorrectionDisabled()
+                    }
+
                     if !searchQuery.isEmpty {
-                        Button(action: { searchQuery = "" }) {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            searchQuery = ""
+                        }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(Color(UIColor.tertiaryLabel))
                         }
@@ -431,15 +512,25 @@ public struct AllServicesView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundColor(Color(UIColor.secondaryLabel))
 
-            TextField(
-                localization.isArabic ? "ابحث عن عيادة، دكتور، صالون..." : "Search clinic, doctor, salon...",
-                text: $searchQuery
-            )
-            .font(.app(14, .regular, isArabic: localization.isArabic))
-            .autocorrectionDisabled()
+            ZStack(alignment: localization.isArabic ? .leading : .leading) {
+                if searchQuery.isEmpty {
+                    Text(localization.isArabic ? "ابحث عن عيادة، دكتور، صالون..." : "Search clinic, doctor, salon...")
+                        .font(.app(14, .regular, isArabic: localization.isArabic))
+                        .foregroundColor(Color(UIColor.placeholderText))
+                        .frame(maxWidth: .infinity, alignment: localization.isArabic ? .leading : .leading)
+                }
+
+                TextField("", text: $searchQuery)
+                    .font(.app(14, .regular, isArabic: localization.isArabic))
+                    .multilineTextAlignment(localization.isArabic ? .leading : .leading)
+                    .autocorrectionDisabled()
+            }
 
             if !searchQuery.isEmpty {
-                Button(action: { searchQuery = "" }) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    searchQuery = ""
+                }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 15))
                         .foregroundColor(Color(UIColor.tertiaryLabel))
@@ -452,55 +543,81 @@ public struct AllServicesView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18), lineWidth: 0.8)
+                .strokeBorder(AppColors.cardBorder, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.03), radius: 4, x: 0, y: 1.5)
     }
 
-    // MARK: - Category Filter Pills (Full Width Edge-to-Edge)
+    // MARK: - Category Filter Pills (Full Width Edge-to-Edge with RTL Support)
     private var categoriesBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                // "All" Pill
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        selectedCategory = nil
-                    }
-                }) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "square.grid.2x2.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text(localization.isArabic ? "الكل" : "All")
-                            .font(.app(12.5, selectedCategory == nil ? .bold : .medium, isArabic: localization.isArabic))
-                            .fixedSize(horizontal: true, vertical: false)
-                    }
-                    .foregroundColor(selectedCategory == nil ? .white : AppColors.textPrimary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(selectedCategory == nil ? AppColors.teal : AppColors.cardBackground)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(selectedCategory == nil ? Color.clear : Color(UIColor.separator).opacity(0.18), lineWidth: 0.8)
-                    )
-                    .shadow(color: Color.black.opacity(selectedCategory == nil ? 0.15 : 0.03), radius: 3, x: 0, y: 1.5)
-                }
-
-                ForEach(ServiceCategory.allCases) { cat in
-                    CategoryFilterPill(
-                        category: cat,
-                        isSelected: selectedCategory == cat,
-                        onSelect: {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                selectedCategory = (selectedCategory == cat ? nil : cat)
-                            }
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    // "All" Pill
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                            selectedCategory = nil
                         }
-                    )
+                    }) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "square.grid.2x2.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(localization.isArabic ? "الكل" : "All")
+                                .font(.app(12.5, selectedCategory == nil ? .bold : .medium, isArabic: localization.isArabic))
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                        .foregroundColor(selectedCategory == nil ? .white : AppColors.textPrimary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(selectedCategory == nil ? AppColors.teal : AppColors.cardBackground)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(selectedCategory == nil ? Color.clear : AppColors.cardBorder, lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(selectedCategory == nil ? 0.15 : 0.03), radius: 3, x: 0, y: 1.5)
+                    }
+                    .id("category_all")
+
+                    ForEach(ServiceCategory.allCases) { cat in
+                        CategoryFilterPill(
+                            category: cat,
+                            isSelected: selectedCategory == cat,
+                            onSelect: {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    selectedCategory = (selectedCategory == cat ? nil : cat)
+                                }
+                            }
+                        )
+                        .id(cat.id)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 2)
+            }
+            .defaultScrollAnchor(.leading)
+            .flipsForRightToLeftLayoutDirection(false)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    if let category = selectedCategory {
+                        proxy.scrollTo(category.id, anchor: .center)
+                    } else {
+                        proxy.scrollTo("category_all", anchor: .leading)
+                    }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 2)
+            .onChange(of: selectedCategory) { _, newCategory in
+                if let cat = newCategory {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        proxy.scrollTo(cat.id, anchor: .center)
+                    }
+                } else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        proxy.scrollTo("category_all", anchor: .leading)
+                    }
+                }
+            }
         }
         .padding(.horizontal, -16)
     }

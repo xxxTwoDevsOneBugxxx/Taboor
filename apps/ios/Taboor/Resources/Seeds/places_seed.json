@@ -1,0 +1,687 @@
+{
+  "success": true,
+  "message": "Places fetched successfully",
+  "data": [
+    {
+      "id": "place_1",
+      "nameEn": "Dar Al Fouad Hospital",
+      "nameAr": "مستشفى دار الفؤاد",
+      "category": "clinics",
+      "rating": 4.9,
+      "reviewCount": 1420,
+      "isOpen": true,
+      "activeQueuesCount": 18,
+      "estimatedWaitMinutes": 8,
+      "imageUrl": "https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_1_1",
+          "nameEn": "Nasr City Main Branch",
+          "nameAr": "الفرع الرئيسي - مدينة نصر",
+          "addressEn": "Ahmed Fakhry St, Nasr City, Cairo",
+          "addressAr": "شارع أحمد فخري، مدينة نصر، القاهرة",
+          "latitude": 30.0585,
+          "longitude": 31.3465,
+          "phone": "+20 2 2400 0000",
+          "openingHours": "24/7 طوال اليوم",
+          "counters": [
+            { "id": "c1", "number": 1, "nameEn": "Triage & Check-in", "nameAr": "الاستقبال والفرز", "servingTicket": "A-10", "isOpen": true },
+            { "id": "c2", "number": 2, "nameEn": "Internal Medicine", "nameAr": "عيادة الباطنة والقلب", "servingTicket": "A-11", "isOpen": true },
+            { "id": "c3", "number": 3, "nameEn": "Pediatrics", "nameAr": "عيادة الأطفال", "servingTicket": "B-04", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_1_2",
+          "nameEn": "6th of October Branch",
+          "nameAr": "فرع 6 أكتوبر - المحور المركزي",
+          "addressEn": "Central Axis, 6th of October City",
+          "addressAr": "المحور المركزي، مدينة 6 أكتوبر",
+          "latitude": 29.9725,
+          "longitude": 30.9542,
+          "phone": "+20 2 3835 0000",
+          "openingHours": "24/7 طوال اليوم",
+          "counters": [
+            { "id": "c4", "number": 1, "nameEn": "Outpatient Clinic", "nameAr": "العيادات الخارجية", "servingTicket": "O-08", "isOpen": true },
+            { "id": "c5", "number": 2, "nameEn": "Cardiology", "nameAr": "مركز القلب التخصصي", "servingTicket": "C-03", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_1_3",
+          "nameEn": "Maadi Outpatient Center",
+          "nameAr": "فرع المعادي - طريق النصر",
+          "addressEn": "El Nasr St, New Maadi, Cairo",
+          "addressAr": "شارع النصر، المعادي الجديدة، القاهرة",
+          "latitude": 29.9760,
+          "longitude": 31.2810,
+          "phone": "+20 2 2516 0000",
+          "openingHours": "08:00 AM – 11:00 PM",
+          "counters": [
+            { "id": "c6", "number": 1, "nameEn": "Consultation Desk", "nameAr": "الاستشارات الطبية", "servingTicket": "M-05", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_2",
+      "nameEn": "Dr. Sara Dental Clinic",
+      "nameAr": "عيادة د. سارة لطب وجراحة الأسنان",
+      "category": "clinics",
+      "rating": 4.9,
+      "reviewCount": 420,
+      "isOpen": true,
+      "activeQueuesCount": 6,
+      "estimatedWaitMinutes": 12,
+      "imageUrl": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_2_1",
+          "nameEn": "New Cairo - Festival City",
+          "nameAr": "فرع التجمع الخامس - كايرو فيستيفال سيتي",
+          "addressEn": "Business District, CFC, New Cairo",
+          "addressAr": "مجمع الأعمال، كايرو فيستيفال، التجمع الخامس",
+          "latitude": 30.0305,
+          "longitude": 31.4080,
+          "phone": "+20 102 334 5566",
+          "openingHours": "10:00 AM – 10:00 PM",
+          "counters": [
+            { "id": "c7", "number": 1, "nameEn": "Examination Room 1", "nameAr": "غرفة الكشف والاستشارة", "servingTicket": "D-02", "isOpen": true },
+            { "id": "c8", "number": 2, "nameEn": "Smile Design Suite", "nameAr": "جناح تجميل الأسنان", "servingTicket": "D-04", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_2_2",
+          "nameEn": "Heliopolis - Merghany",
+          "nameAr": "فرع مصر الجديدة - شارع الميرغني",
+          "addressEn": "68 El Merghany St, Heliopolis",
+          "addressAr": "٦٨ شارع الميرغني، مصر الجديدة",
+          "latitude": 30.0890,
+          "longitude": 31.3285,
+          "phone": "+20 102 334 5577",
+          "openingHours": "11:00 AM – 09:30 PM",
+          "counters": [
+            { "id": "c9", "number": 1, "nameEn": "Orthodontics Desk", "nameAr": "عيادة تقويم الأسنان", "servingTicket": "O-01", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_2_3",
+          "nameEn": "Sheikh Zayed - Capital Park",
+          "nameAr": "فرع الشيخ زايد - كابيتال بارك",
+          "addressEn": "Building B2, Capital Business Park, Zayed",
+          "addressAr": "مبنى B2، كابيتال بيزنس بارك، الشيخ زايد",
+          "latitude": 30.0163,
+          "longitude": 30.9837,
+          "phone": "+20 102 334 5588",
+          "openingHours": "10:00 AM – 10:00 PM",
+          "counters": [
+            { "id": "c10", "number": 1, "nameEn": "Pediatric Clinic", "nameAr": "طب أسنان الأطفال", "servingTicket": "P-03", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_3",
+      "nameEn": "Al Borg Diagnostics & Labs",
+      "nameAr": "معامل ومختبرات البرج التخصصية",
+      "category": "clinics",
+      "rating": 4.8,
+      "reviewCount": 980,
+      "isOpen": true,
+      "activeQueuesCount": 11,
+      "estimatedWaitMinutes": 6,
+      "imageUrl": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_3_1",
+          "nameEn": "Dokki - Mesaha Square",
+          "nameAr": "فرع الدقي - ميدان المساحة",
+          "addressEn": "12 Mesaha Sq, Dokki, Giza",
+          "addressAr": "١٢ ميدان المساحة، الدقي، الجيزة",
+          "latitude": 30.0380,
+          "longitude": 31.2120,
+          "phone": "+20 2 3336 0000",
+          "openingHours": "07:00 AM – 11:00 PM",
+          "counters": [
+            { "id": "c11", "number": 1, "nameEn": "Blood Sampling 1", "nameAr": "سحب عينات دم 1", "servingTicket": "L-14", "isOpen": true },
+            { "id": "c12", "number": 2, "nameEn": "Results Delivery", "nameAr": "استلام النتائج والتقارير", "servingTicket": "R-08", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_3_2",
+          "nameEn": "New Maadi - Laselki",
+          "nameAr": "فرع المعادي - شارع اللاسلكي",
+          "addressEn": "24 Laselki St, New Maadi",
+          "addressAr": "٢٤ شارع اللاسلكي، المعادي الجديدة",
+          "latitude": 29.9755,
+          "longitude": 31.2790,
+          "phone": "+20 2 2519 0000",
+          "openingHours": "07:00 AM – 11:00 PM",
+          "counters": [
+            { "id": "c13", "number": 1, "nameEn": "Fast-Track Sampling", "nameAr": "سحب عينات سريع", "servingTicket": "L-06", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_3_3",
+          "nameEn": "Mohandessin - Gameat Dowal",
+          "nameAr": "فرع المهندسين - جامعة الدول",
+          "addressEn": "45 Gameat El Dowal St, Mohandessin",
+          "addressAr": "٤٥ شارع جامعة الدول العربية، المهندسين",
+          "latitude": 30.0540,
+          "longitude": 31.2015,
+          "phone": "+20 2 3762 0000",
+          "openingHours": "07:00 AM – 11:00 PM",
+          "counters": [
+            { "id": "c14", "number": 1, "nameEn": "Sample Intake", "nameAr": "استقبال الحالات والتحاليل", "servingTicket": "L-22", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_4",
+      "nameEn": "Cairo Eye & Vision Center",
+      "nameAr": "مركز القاهرة للعيون والليزك",
+      "category": "clinics",
+      "rating": 4.7,
+      "reviewCount": 350,
+      "isOpen": true,
+      "activeQueuesCount": 5,
+      "estimatedWaitMinutes": 15,
+      "imageUrl": "https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_4_1",
+          "nameEn": "New Cairo - North 90th",
+          "nameAr": "فرع التجمع الخامس - التسعين الشمالي",
+          "addressEn": "Medical Park 1, North 90th St",
+          "addressAr": "ميديكال بارك ١، شارع التسعين الشمالي",
+          "latitude": 30.0270,
+          "longitude": 31.4766,
+          "phone": "+20 2 2810 5000",
+          "openingHours": "10:00 AM – 09:00 PM",
+          "counters": [
+            { "id": "c15", "number": 1, "nameEn": "Lasik Examination", "nameAr": "فحص الفيمتو ليزك", "servingTicket": "E-05", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_4_2",
+          "nameEn": "Nasr City - Abbas El Akkad",
+          "nameAr": "فرع مدينة نصر - عباس العقاد",
+          "addressEn": "58 Abbas El Akkad St, Nasr City",
+          "addressAr": "٥٨ شارع عباس العقاد، مدينة نصر",
+          "latitude": 30.0610,
+          "longitude": 31.3390,
+          "phone": "+20 2 2270 3000",
+          "openingHours": "11:00 AM – 09:00 PM",
+          "counters": [
+            { "id": "c16", "number": 1, "nameEn": "Vision Clinic", "nameAr": "عيادة البصريات والكشف", "servingTicket": "E-09", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_5",
+      "nameEn": "Mirror Barber & Grooming",
+      "nameAr": "صالون ميرور للحلاقة والتجميل",
+      "category": "salons",
+      "rating": 4.8,
+      "reviewCount": 780,
+      "isOpen": true,
+      "activeQueuesCount": 7,
+      "estimatedWaitMinutes": 10,
+      "imageUrl": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_5_1",
+          "nameEn": "Zamalek Main Branch",
+          "nameAr": "فرع الزمالك - شارع البرازيل",
+          "addressEn": "18 Brazil St, Zamalek, Cairo",
+          "addressAr": "١٨ شارع البرازيل، الزمالك، القاهرة",
+          "latitude": 30.0612,
+          "longitude": 31.2185,
+          "phone": "+20 100 123 4567",
+          "openingHours": "10:00 AM – 12:00 AM",
+          "counters": [
+            { "id": "c17", "number": 1, "nameEn": "Master Chair (Ahmed)", "nameAr": "كرسي رئيسي (أحمد)", "servingTicket": "M-19", "isOpen": true },
+            { "id": "c18", "number": 2, "nameEn": "Grooming & Beard (Karim)", "nameAr": "عناية ولحية (كريم)", "servingTicket": "M-20", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_5_2",
+          "nameEn": "Sheikh Zayed - Capital Park",
+          "nameAr": "فرع الشيخ زايد - كابيتال بيزنس بارك",
+          "addressEn": "Building B4, Capital Business Park",
+          "addressAr": "مبنى B4، كابيتال بيزنس بارك، الشيخ زايد",
+          "latitude": 30.0163,
+          "longitude": 30.9837,
+          "phone": "+20 100 123 4568",
+          "openingHours": "10:00 AM – 11:30 PM",
+          "counters": [
+            { "id": "c19", "number": 1, "nameEn": "VIP Suite", "nameAr": "جناح الـ VIP الفاخر", "servingTicket": "V-02", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_5_3",
+          "nameEn": "New Cairo - Downtown Mall",
+          "nameAr": "فرع التجمع الخامس - الداون تاون",
+          "addressEn": "Downtown Mall, Sector A, New Cairo",
+          "addressAr": "داون تاون مول، القطاع أ، التجمع الخامس",
+          "latitude": 30.0120,
+          "longitude": 31.4350,
+          "phone": "+20 100 123 4569",
+          "openingHours": "11:00 AM – 11:30 PM",
+          "counters": [
+            { "id": "c20", "number": 1, "nameEn": "Stylist Chair 1", "nameAr": "كرسي تصفيف 1", "servingTicket": "M-08", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_6",
+      "nameEn": "Tarek El Sagheer Luxury Salon",
+      "nameAr": "صالون طارق الصغير للتصفيف الفاخر",
+      "category": "salons",
+      "rating": 4.9,
+      "reviewCount": 610,
+      "isOpen": true,
+      "activeQueuesCount": 4,
+      "estimatedWaitMinutes": 18,
+      "imageUrl": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_6_1",
+          "nameEn": "Heliopolis - Thawra St",
+          "nameAr": "فرع مصر الجديدة - شارع الثورة",
+          "addressEn": "94 El Thawra St, Heliopolis",
+          "addressAr": "٩٤ شارع الثورة، مصر الجديدة",
+          "latitude": 30.0910,
+          "longitude": 31.3395,
+          "phone": "+20 2 2415 8899",
+          "openingHours": "11:00 AM – 11:00 PM",
+          "counters": [
+            { "id": "c21", "number": 1, "nameEn": "Hairstyling Suite", "nameAr": "جناح تصفيف الشعر", "servingTicket": "T-05", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_6_2",
+          "nameEn": "Sheikh Zayed - Arkan Plaza",
+          "nameAr": "فرع الشيخ زايد - أركان بلازا",
+          "addressEn": "Arkan Plaza, Phase 2, Zayed",
+          "addressAr": "أركان بلازا، المرحلة الثانية، الشيخ زايد",
+          "latitude": 30.0125,
+          "longitude": 30.9850,
+          "phone": "+20 2 3796 5500",
+          "openingHours": "11:00 AM – 11:30 PM",
+          "counters": [
+            { "id": "c22", "number": 1, "nameEn": "Hair Artistry", "nameAr": "صالون العناية والشعر", "servingTicket": "A-03", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_7",
+      "nameEn": "Glossy Beauty & Spa Lounge",
+      "nameAr": "بيوتي لاونج جلوسي للسيدات",
+      "category": "salons",
+      "rating": 4.9,
+      "reviewCount": 540,
+      "isOpen": true,
+      "activeQueuesCount": 5,
+      "estimatedWaitMinutes": 14,
+      "imageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_7_1",
+          "nameEn": "Maadi - Degla St 216",
+          "nameAr": "فرع المعادي - دجلة شارع 216",
+          "addressEn": "Villa 14, St 216, Degla, Maadi",
+          "addressAr": "فيلا ١٤، شارع ٢١٦، دجلة، المعادي",
+          "latitude": 29.9620,
+          "longitude": 31.2840,
+          "phone": "+20 2 2521 1122",
+          "openingHours": "10:00 AM – 09:30 PM",
+          "counters": [
+            { "id": "c23", "number": 1, "nameEn": "Nail & Spa Bar", "nameAr": "العناية بالأظافر والسبا", "servingTicket": "G-07", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_7_2",
+          "nameEn": "New Cairo - North 70th",
+          "nameAr": "فرع التجمع الخامس - السبعين الشمالي",
+          "addressEn": "North 70th Axis, Plaza Mall",
+          "addressAr": "محور السبعين الشمالي، بلازا مول",
+          "latitude": 30.0380,
+          "longitude": 31.4650,
+          "phone": "+20 101 223 9900",
+          "openingHours": "10:30 AM – 10:00 PM",
+          "counters": [
+            { "id": "c24", "number": 1, "nameEn": "Skin & Glow Care", "nameAr": "العناية بالبشرة والمساج", "servingTicket": "G-03", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_8",
+      "nameEn": "Cairo Fix Auto Repair",
+      "nameAr": "مركز كايرو فيكس لصيانة السيارات",
+      "category": "garages",
+      "rating": 4.6,
+      "reviewCount": 890,
+      "isOpen": true,
+      "activeQueuesCount": 8,
+      "estimatedWaitMinutes": 25,
+      "imageUrl": "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_8_1",
+          "nameEn": "Mohandessin Main Branch",
+          "nameAr": "الفرع الرئيسي - المهندسين",
+          "addressEn": "29 Shehab St, Mohandessin, Giza",
+          "addressAr": "٢٩ شارع شهاب، المهندسين، الجيزة",
+          "latitude": 30.0520,
+          "longitude": 31.2010,
+          "phone": "+20 2 3760 0000",
+          "openingHours": "08:00 AM – 09:00 PM",
+          "counters": [
+            { "id": "c25", "number": 1, "nameEn": "Quick Bay (Oil & Filter)", "nameAr": "حارة سريعة (زيوت وفلاتر)", "servingTicket": "C-18", "isOpen": true },
+            { "id": "c26", "number": 2, "nameEn": "Mechanical Inspection", "nameAr": "فحص ميكانيكي بالكمبيوتر", "servingTicket": "C-12", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_8_2",
+          "nameEn": "New Maadi - Laselki",
+          "nameAr": "فرع المعادي - شارع اللاسلكي",
+          "addressEn": "7 Laselki St, New Maadi",
+          "addressAr": "٧ شارع اللاسلكي، المعادي الجديدة",
+          "latitude": 29.9752,
+          "longitude": 31.2785,
+          "phone": "+20 2 2517 4400",
+          "openingHours": "08:30 AM – 09:00 PM",
+          "counters": [
+            { "id": "c27", "number": 1, "nameEn": "Periodic Maintenance", "nameAr": "الصيانة الدورية والفرامل", "servingTicket": "M-09", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_8_3",
+          "nameEn": "Nasr City - Mostafa El Nahas",
+          "nameAr": "فرع مدينة نصر - مصطفى النحاس",
+          "addressEn": "112 Mostafa El Nahas St, Nasr City",
+          "addressAr": "١١٢ شارع مصطفى النحاس، مدينة نصر",
+          "latitude": 30.0530,
+          "longitude": 31.3650,
+          "phone": "+20 2 2274 5500",
+          "openingHours": "08:30 AM – 09:30 PM",
+          "counters": [
+            { "id": "c28", "number": 1, "nameEn": "Express Workshop", "nameAr": "ورشة الصيانة السريعة", "servingTicket": "C-24", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_9",
+      "nameEn": "Fit & Fix Tyres & Service",
+      "nameAr": "مركز فيت أند فيكس السريع للسيارات",
+      "category": "garages",
+      "rating": 4.7,
+      "reviewCount": 1150,
+      "isOpen": true,
+      "activeQueuesCount": 6,
+      "estimatedWaitMinutes": 15,
+      "imageUrl": "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_9_1",
+          "nameEn": "Dokki - Mossadak",
+          "nameAr": "فرع الدقي - شارع مصدق",
+          "addressEn": "33 Mossadak St, Dokki, Giza",
+          "addressAr": "٣٣ شارع مصدق، الدقي، الجيزة",
+          "latitude": 30.0405,
+          "longitude": 31.2095,
+          "phone": "+20 2 3338 7700",
+          "openingHours": "08:00 AM – 10:00 PM",
+          "counters": [
+            { "id": "c29", "number": 1, "nameEn": "Tyres & Wheel Balancing", "nameAr": "إطارات وضبط زوايا", "servingTicket": "F-04", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_9_2",
+          "nameEn": "Nozha - Joseph Tito",
+          "nameAr": "فرع النزهة - طريق جوزيف تيتو",
+          "addressEn": "Joseph Tito Axis, Nozha El Gedida",
+          "addressAr": "محور جوزيف تيتو، النزهة الجديدة",
+          "latitude": 30.1250,
+          "longitude": 31.3780,
+          "phone": "+20 2 2620 9900",
+          "openingHours": "08:00 AM – 10:00 PM",
+          "counters": [
+            { "id": "c30", "number": 1, "nameEn": "Batteries & Fluids Bay", "nameAr": "بطاريات وزيوت سريعة", "servingTicket": "F-11", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_9_3",
+          "nameEn": "Maadi - Autostrad",
+          "nameAr": "فرع المعادي - طريق الأوتوستراد",
+          "addressEn": "Autostrad Rd, near Total Station, Maadi",
+          "addressAr": "طريق الأوتوستراد، بجوار توتال، المعادي",
+          "latitude": 29.9700,
+          "longitude": 31.2950,
+          "phone": "+20 2 2704 6600",
+          "openingHours": "08:00 AM – 10:00 PM",
+          "counters": [
+            { "id": "c31", "number": 1, "nameEn": "Fast Service Bay", "nameAr": "حارة الخدمة الفورية", "servingTicket": "F-07", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_10",
+      "nameEn": "AutoStar German Car Care",
+      "nameAr": "أوتو ستار الألمانية لصيانة السيارات",
+      "category": "garages",
+      "rating": 4.8,
+      "reviewCount": 430,
+      "isOpen": true,
+      "activeQueuesCount": 4,
+      "estimatedWaitMinutes": 30,
+      "imageUrl": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_10_1",
+          "nameEn": "6th of October Industrial Area",
+          "nameAr": "فرع 6 أكتوبر - المنطقة الصناعية",
+          "addressEn": "3rd Industrial Zone, 6th of October",
+          "addressAr": "المنطقة الصناعية الثالثة، مدينة 6 أكتوبر",
+          "latitude": 29.9320,
+          "longitude": 30.9150,
+          "phone": "+20 2 3820 4400",
+          "openingHours": "09:00 AM – 07:00 PM",
+          "counters": [
+            { "id": "c32", "number": 1, "nameEn": "Diagnostic Station", "nameAr": "فحص كمبيوتر وبرمجة", "servingTicket": "G-02", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_10_2",
+          "nameEn": "1st Settlement Industrial Zone",
+          "nameAr": "فرع التجمع الأول - المنطقة الصناعية",
+          "addressEn": "Workshops Zone, 1st Settlement",
+          "addressAr": "منطقة الورش، التجمع الأول، القاهرة الجديدة",
+          "latitude": 30.0650,
+          "longitude": 31.4550,
+          "phone": "+20 100 554 8822",
+          "openingHours": "09:00 AM – 07:30 PM",
+          "counters": [
+            { "id": "c33", "number": 1, "nameEn": "German Cars Bay", "nameAr": "صيانة السيارات الألمانية", "servingTicket": "G-06", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_11",
+      "nameEn": "Downtown Documentation & Legal Office",
+      "nameAr": "مكتب وسط البلد للاستشارات والتوثيق",
+      "category": "offices",
+      "rating": 4.5,
+      "reviewCount": 670,
+      "isOpen": true,
+      "activeQueuesCount": 9,
+      "estimatedWaitMinutes": 10,
+      "imageUrl": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_11_1",
+          "nameEn": "Downtown - Qasr El Nil",
+          "nameAr": "فرع وسط البلد - شارع قصر النيل",
+          "addressEn": "22 Qasr El Nil St, Downtown Cairo",
+          "addressAr": "٢٢ شارع قصر النيل، وسط البلد، القاهرة",
+          "latitude": 30.0477,
+          "longitude": 31.2316,
+          "phone": "+20 2 2570 0000",
+          "openingHours": "09:00 AM – 05:00 PM",
+          "counters": [
+            { "id": "c34", "number": 1, "nameEn": "Contracts & Authentication", "nameAr": "شباك توثيق العقود", "servingTicket": "L-11", "isOpen": true },
+            { "id": "c35", "number": 2, "nameEn": "Commercial Registry", "nameAr": "السجل التجاري والتوكيلات", "servingTicket": "L-08", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_11_2",
+          "nameEn": "New Cairo - Government Hub",
+          "nameAr": "فرع التجمع الخامس - مجمع المصالح",
+          "addressEn": "Government Complex, Sector 1, New Cairo",
+          "addressAr": "مجمع المصالح الحكومية، القطاع الأول، التجمع الخامس",
+          "latitude": 30.0150,
+          "longitude": 31.4420,
+          "phone": "+20 2 2812 6600",
+          "openingHours": "08:30 AM – 04:30 PM",
+          "counters": [
+            { "id": "c36", "number": 1, "nameEn": "Fast Notary Window", "nameAr": "شباك التوثيق السريع", "servingTicket": "N-04", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_11_3",
+          "nameEn": "Heliopolis - Roxy Square",
+          "nameAr": "فرع مصر الجديدة - ميدان روكسي",
+          "addressEn": "14 Roxy Sq, Heliopolis",
+          "addressAr": "١٤ ميدان روكسي، مصر الجديدة",
+          "latitude": 30.0920,
+          "longitude": 31.3170,
+          "phone": "+20 2 2450 3300",
+          "openingHours": "09:00 AM – 05:00 PM",
+          "counters": [
+            { "id": "c37", "number": 1, "nameEn": "Legal Consultation", "nameAr": "شباك الاستشارات القانونية", "servingTicket": "L-15", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_12",
+      "nameEn": "Smart Citizen Service Center",
+      "nameAr": "مركز خدمة المواطنين الذكي",
+      "category": "offices",
+      "rating": 4.8,
+      "reviewCount": 1120,
+      "isOpen": true,
+      "activeQueuesCount": 14,
+      "estimatedWaitMinutes": 5,
+      "imageUrl": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_12_1",
+          "nameEn": "1st Settlement - Naguib Axis",
+          "nameAr": "فرع التجمع الأول - محور محمد نجيب",
+          "addressEn": "Mohamed Naguib Axis, 1st Settlement",
+          "addressAr": "محور محمد نجيب، التجمع الأول، القاهرة الجديدة",
+          "latitude": 30.0480,
+          "longitude": 31.4620,
+          "phone": "+20 2 2928 8800",
+          "openingHours": "08:00 AM – 06:00 PM",
+          "counters": [
+            { "id": "c38", "number": 1, "nameEn": "Civil Affairs Window 1", "nameAr": "شباك الأحوال المدنية ١", "servingTicket": "S-15", "isOpen": true },
+            { "id": "c39", "number": 2, "nameEn": "Passports & IDs", "nameAr": "شباك الجوازات والبطاقات", "servingTicket": "P-09", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_12_2",
+          "nameEn": "Sheikh Zayed - 8th District",
+          "nameAr": "فرع الشيخ زايد - الحي الثامن",
+          "addressEn": "Block 8, Behind Zayed City Council",
+          "addressAr": "المجاورة الثامنة، خلف جهاز مدينة الشيخ زايد",
+          "latitude": 30.0210,
+          "longitude": 30.9760,
+          "phone": "+20 2 3851 7700",
+          "openingHours": "08:30 AM – 05:30 PM",
+          "counters": [
+            { "id": "c40", "number": 1, "nameEn": "Digital Services Desk", "nameAr": "شباك الخدمات الرقمية الفورية", "servingTicket": "S-03", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_12_3",
+          "nameEn": "Nasr City - Makram Ebeid",
+          "nameAr": "فرع مدينة نصر - مكرم عبيد",
+          "addressEn": "78 Makram Ebeid St, Nasr City",
+          "addressAr": "٧٨ شارع مكرم عبيد، مدينة نصر",
+          "latitude": 30.0620,
+          "longitude": 31.3510,
+          "phone": "+20 2 2275 8800",
+          "openingHours": "08:00 AM – 06:00 PM",
+          "counters": [
+            { "id": "c41", "number": 1, "nameEn": "Citizen Desk 1", "nameAr": "شباك معاملات المواطنين ١", "servingTicket": "C-12", "isOpen": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "place_13",
+      "nameEn": "Egypt Post Express Hub",
+      "nameAr": "مكتب البريد المصري الممتاز",
+      "category": "offices",
+      "rating": 4.6,
+      "reviewCount": 730,
+      "isOpen": true,
+      "activeQueuesCount": 7,
+      "estimatedWaitMinutes": 7,
+      "imageUrl": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=800&q=80",
+      "branches": [
+        {
+          "id": "branch_13_1",
+          "nameEn": "Zamalek - Shagaret El Dorr",
+          "nameAr": "فرع الزمالك - شارع شجرة الدر",
+          "addressEn": "8 Shagaret El Dorr St, Zamalek",
+          "addressAr": "٨ شارع شجرة الدر، الزمالك",
+          "latitude": 30.0635,
+          "longitude": 31.2205,
+          "phone": "+20 2 2736 1100",
+          "openingHours": "08:00 AM – 06:00 PM",
+          "counters": [
+            { "id": "c42", "number": 1, "nameEn": "Express Parcels & Post", "nameAr": "الطرود والبريد السريع", "servingTicket": "B-09", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_13_2",
+          "nameEn": "Attaba - Main Square",
+          "nameAr": "فرع العتبة - الميدان الرئيسي",
+          "addressEn": "Historical Post Office Bldg, Attaba Sq",
+          "addressAr": "مبنى البوستة التاريخي، ميدان العتبة",
+          "latitude": 30.0515,
+          "longitude": 31.2485,
+          "phone": "+20 2 2391 0000",
+          "openingHours": "08:00 AM – 08:00 PM",
+          "counters": [
+            { "id": "c43", "number": 1, "nameEn": "Financial Services", "nameAr": "الخدمات المالية وحوالات البريد", "servingTicket": "F-25", "isOpen": true }
+          ]
+        },
+        {
+          "id": "branch_13_3",
+          "nameEn": "Mohandessin - Syria St",
+          "nameAr": "فرع المهندسين - شارع سوريا",
+          "addressEn": "19 Syria St, Mohandessin",
+          "addressAr": "١٩ شارع سوريا، المهندسين",
+          "latitude": 30.0555,
+          "longitude": 31.2060,
+          "phone": "+20 2 3749 2200",
+          "openingHours": "08:00 AM – 06:00 PM",
+          "counters": [
+            { "id": "c44", "number": 1, "nameEn": "Postal Box & Counter", "nameAr": "شباك المعاملات والتوثيق", "servingTicket": "P-14", "isOpen": true }
+          ]
+        }
+      ]
+    }
+  ]
+}

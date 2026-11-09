@@ -1,4 +1,6 @@
 import SwiftUI
+import AppIntents
+import CoreSpotlight
 
 enum AppScreen {
     case splash
@@ -19,6 +21,7 @@ struct TaboorApp: App {
     @State private var authPath = NavigationPath()
     @AppStorage("app_appearance_mode") private var appearanceMode: String = "system"
     @ObservedObject private var localization = LocalizationManager.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     private var colorSchemeOverride: ColorScheme? {
         switch appearanceMode {
@@ -32,6 +35,13 @@ struct TaboorApp: App {
         // Register Tajawal and Inter TTF fonts into CoreText
         FontRegistration.registerCustomFonts()
         LocalizationManager.shared.currentLanguage = .arabic
+
+        // Configure native iOS notifications & actions
+        NotificationService.shared.configure()
+        NotificationService.shared.requestAuthorization()
+
+        // Register AppShortcuts with Siri
+        TaboorShortcuts.updateAppShortcutParameters()
     }
 
     var body: some Scene {
@@ -150,8 +160,66 @@ struct TaboorApp: App {
             }
             .animation(.easeInOut(duration: 0.35), value: currentScreen)
             .environment(\.layoutDirection, localization.layoutDirection)
-            .preferredColorScheme(colorSchemeOverride)
+            .preferredColorScheme(.light)
             .id(localization.currentLanguage)
+            .onChange(of: scenePhase) { newPhase in
+                QueueLiveActivityManager.shared.handleScenePhaseChange(
+                    newPhase,
+                    activeTicket: QueueDataService.shared.activeTicket
+                )
+            }
+            .onOpenURL { url in
+                if url.scheme == "taboor" {
+                    if url.host == "ticket" || url.path.contains("ticket") {
+                        QueueDataService.shared.openLiveTracking()
+                    } else if url.host == "profile" || url.host == "settings" || url.path.contains("profile") {
+                        QueueDataService.shared.requestedTab = .profile
+                    } else if url.host == "history" || url.path.contains("history") {
+                        QueueDataService.shared.requestedTab = .profile
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            QueueDataService.shared.showHistoryScreen = true
+                        }
+                    } else if url.host == "favorites" || url.path.contains("favorites") {
+                        QueueDataService.shared.requestedTab = .profile
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            QueueDataService.shared.showFavoritesScreen = true
+                        }
+                    } else if url.host == "alerts-settings" || url.path.contains("alerts-settings") {
+                        QueueDataService.shared.requestedTab = .profile
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            QueueDataService.shared.showAlertPreferencesScreen = true
+                        }
+                    } else if url.host == "place" {
+                        let placeId = url.path.replacingOccurrences(of: "/", with: "").isEmpty ? (URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "id" })?.value ?? "place_2") : url.path.replacingOccurrences(of: "/", with: "")
+                        QueueDataService.shared.selectPlaceFromSpotlight(id: placeId)
+                    } else if url.host == "add-calendar" {
+                        QueueDataService.shared.requestedTab = .queue
+                        Task {
+                            if let ticket = QueueDataService.shared.activeTicket {
+                                _ = await AppleCalendarManager.shared.addAppointmentEvent(ticket: ticket, isArabic: LocalizationManager.shared.isArabic)
+                            }
+                        }
+                    } else if url.host == "queue" || url.path.contains("queue") {
+                        QueueDataService.shared.requestedTab = nil
+                        DispatchQueue.main.async {
+                            QueueDataService.shared.requestedTab = .queue
+                            if let idxStr = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "ticket" })?.value, let idx = Int(idxStr) {
+                                QueueDataService.shared.selectedTicketIndex = idx
+                            }
+                        }
+                    } else if url.host == "home" || url.path.contains("home") {
+                        QueueDataService.shared.requestedTab = .home
+                    } else if url.host == "services" || url.path.contains("services") {
+                        QueueDataService.shared.requestedTab = .home
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            QueueDataService.shared.showAllServicesScreen = true
+                        }
+                    }
+                }
+            }
+            .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+                _ = SpotlightService.shared.handleSpotlightActivity(userActivity)
+            }
         }
     }
 }

@@ -137,7 +137,7 @@ public struct ServiceCardView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.14), lineWidth: 0.8)
+                    .strokeBorder(AppColors.cardBorder, lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.03), radius: 6, x: 0, y: 2)
         }
@@ -177,8 +177,8 @@ public struct CategoryFilterPill: View {
             .overlay(
                 Capsule()
                     .strokeBorder(
-                        isSelected ? Color.clear : Color(UIColor.separator).opacity(0.18),
-                        lineWidth: 0.8
+                        isSelected ? Color.clear : AppColors.cardBorder,
+                        lineWidth: 1
                     )
             )
             .shadow(color: isSelected ? AppColors.teal.opacity(0.25) : Color.clear, radius: 4, y: 2)

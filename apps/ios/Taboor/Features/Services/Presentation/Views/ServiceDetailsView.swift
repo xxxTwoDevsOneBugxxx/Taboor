@@ -9,6 +9,7 @@ public struct ServiceDetailsView: View {
 
     @StateObject private var dataService = QueueDataService.shared
     @ObservedObject private var localization = LocalizationManager.shared
+    @ObservedObject private var userLocationService = UserLocationService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
@@ -16,11 +17,97 @@ public struct ServiceDetailsView: View {
     @State private var isJoining: Bool = false
     @State private var showSuccessModal: Bool = false
     @State private var issuedTicketNumber: String = ""
-    @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var showNavigationAppDialog: Bool = false
+    @State private var cameraPosition: MapCameraPosition
+    @State private var routeCoordinates: [CLLocationCoordinate2D]
+    @State private var calculatedRoute: MKRoute? = nil
+    @State private var isCalculatingRoute: Bool = false
+
+    // Booking Mode & Slot Selection
+    @State private var bookingMode: TicketBookingType = .liveQueue
+    @State private var selectedDayIndex: Int = 0
+    @State private var selectedSlot: AppointmentSlot? = nil
+    @State private var showAlreadyBookedAlert: Bool = false
+    @State private var showMaxTicketsAlert: Bool = false
+
+    private func slots(for day: Int) -> [AppointmentSlot] {
+        switch day {
+        case 0: // اليوم (Today)
+            return [
+                AppointmentSlot(time: "03:30 م", timeEn: "03:30 PM", isBooked: true),
+                AppointmentSlot(time: "04:00 م", timeEn: "04:00 PM", isBooked: true),
+                AppointmentSlot(time: "04:30 م", timeEn: "04:30 PM", isBooked: true),
+                AppointmentSlot(time: "05:00 م", timeEn: "05:00 PM", isBooked: false, isRecommended: true),
+                AppointmentSlot(time: "05:30 م", timeEn: "05:30 PM", isBooked: false),
+                AppointmentSlot(time: "06:00 م", timeEn: "06:00 PM", isBooked: false),
+                AppointmentSlot(time: "06:30 م", timeEn: "06:30 PM", isBooked: false),
+                AppointmentSlot(time: "07:00 م", timeEn: "07:00 PM", isBooked: false)
+            ]
+        case 1: // غداً (Tomorrow)
+            return [
+                AppointmentSlot(time: "11:00 ص", timeEn: "11:00 AM", isBooked: false, isRecommended: true),
+                AppointmentSlot(time: "12:00 م", timeEn: "12:00 PM", isBooked: true),
+                AppointmentSlot(time: "01:30 م", timeEn: "01:30 PM", isBooked: false),
+                AppointmentSlot(time: "03:00 م", timeEn: "03:00 PM", isBooked: true),
+                AppointmentSlot(time: "04:00 م", timeEn: "04:00 PM", isBooked: false),
+                AppointmentSlot(time: "05:00 م", timeEn: "05:00 PM", isBooked: false),
+                AppointmentSlot(time: "06:30 م", timeEn: "06:30 PM", isBooked: false),
+                AppointmentSlot(time: "08:00 م", timeEn: "08:00 PM", isBooked: false)
+            ]
+        default: // بعد غد (Day after tomorrow)
+            return [
+                AppointmentSlot(time: "10:30 ص", timeEn: "10:30 AM", isBooked: false, isRecommended: true),
+                AppointmentSlot(time: "11:30 ص", timeEn: "11:30 AM", isBooked: false),
+                AppointmentSlot(time: "01:00 م", timeEn: "01:00 PM", isBooked: false),
+                AppointmentSlot(time: "02:30 م", timeEn: "02:30 PM", isBooked: false),
+                AppointmentSlot(time: "04:00 م", timeEn: "04:00 PM", isBooked: false),
+                AppointmentSlot(time: "05:30 م", timeEn: "05:30 PM", isBooked: false),
+                AppointmentSlot(time: "07:00 م", timeEn: "07:00 PM", isBooked: false),
+                AppointmentSlot(time: "08:30 م", timeEn: "08:30 PM", isBooked: false)
+            ]
+        }
+    }
+
+    private var availableSlots: [AppointmentSlot] {
+        slots(for: selectedDayIndex)
+    }
+
+    // User Location (Dynamic from CoreLocation GPS)
+    private var userLocation: CLLocationCoordinate2D {
+        userLocationService.effectiveCoordinate
+    }
+
+    private var estimatedDriveMinutes: Int {
+        if let calculatedRoute {
+            return max(1, Int(calculatedRoute.expectedTravelTime / 60))
+        }
+        return TaboorPrecomputedRoutes.estimatedMinutes(for: currentBranch)
+    }
+
+    private var displayDistanceString: String {
+        if let calculatedRoute {
+            let km = calculatedRoute.distance / 1000.0
+            return localization.isArabic
+                ? String(format: "%.1f كم", km)
+                : String(format: "%.1f km", km)
+        }
+        let km = TaboorPrecomputedRoutes.distanceKm(for: currentBranch)
+        return localization.isArabic ? "\(km) كم" : "\(km) km"
+    }
 
     public init(place: ServicePlace, onQueueJoined: @escaping () -> Void) {
         self.place = place
         self.onQueueJoined = onQueueJoined
+
+        let firstBranch = place.branches.first
+        if let branch = firstBranch {
+            _routeCoordinates = State(initialValue: TaboorPrecomputedRoutes.route(for: branch))
+            let rect = TaboorPrecomputedRoutes.boundingMapRect(for: branch)
+            _cameraPosition = State(initialValue: .rect(rect))
+        } else {
+            _routeCoordinates = State(initialValue: [])
+            _cameraPosition = State(initialValue: .automatic)
+        }
     }
 
     private var currentBranch: ServiceBranch {
@@ -55,6 +142,9 @@ public struct ServiceDetailsView: View {
                     // 4. Branch Selector Section with Live Queue Counts
                     branchSelectorSection
 
+                    // 4.5. Booking Mode (Live Queue vs Scheduled Appointment Slots)
+                    bookingModeSection
+
                     // 5. About Service Card
                     aboutSection
 
@@ -77,6 +167,19 @@ public struct ServiceDetailsView: View {
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        dataService.toggleFavorite(placeId: place.id)
+                    }
+                }) {
+                    Image(systemName: dataService.isFavorite(placeId: place.id) ? "heart.fill" : "heart")
+                        .foregroundColor(dataService.isFavorite(placeId: place.id) ? .pink : AppColors.ink)
+                        .font(.system(size: 16, weight: .semibold))
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -88,10 +191,59 @@ public struct ServiceDetailsView: View {
         }
         .id(localization.currentLanguage)
         .onAppear {
-            updateCamera(animated: false)
+            syncRouteAndCamera(for: currentBranch)
         }
-        .onChange(of: selectedBranchIndex) { _ in
-            updateCamera(animated: true)
+        .onChange(of: place.id) { _, _ in
+            selectedBranchIndex = 0
+            syncRouteAndCamera(for: currentBranch)
+        }
+        .alert(
+            localization.isArabic ? "اختر تطبيق الملاحة والخرائط" : "Choose Navigation App",
+            isPresented: $showNavigationAppDialog
+        ) {
+            Button(localization.isArabic ? "خرائط آبل (Apple Maps)" : "Apple Maps") {
+                NavigationLauncher.shared.open(app: .appleMaps, latitude: currentBranch.lat, longitude: currentBranch.lng, destinationName: place.localizedName(isArabic: localization.isArabic))
+            }
+
+            Button(localization.isArabic ? "خرائط جوجل (Google Maps)" : "Google Maps") {
+                NavigationLauncher.shared.open(app: .googleMaps, latitude: currentBranch.lat, longitude: currentBranch.lng, destinationName: place.localizedName(isArabic: localization.isArabic))
+            }
+
+            Button(localization.isArabic ? "إلغاء" : "Cancel", role: .cancel) {}
+        } message: {
+            Text(localization.isArabic
+                 ? "اختر التطبيق لبدء التوجيه الصوتي المباشر بالـ GPS."
+                 : "Select an app for turn-by-turn voice GPS navigation.")
+        }
+        .alert(
+            localization.isArabic ? "لديك تذكرة نشطة بالفعل" : "Active Ticket Exists",
+            isPresented: $showAlreadyBookedAlert
+        ) {
+            Button(localization.isArabic ? "عرض تذكرتي" : "View My Ticket") {
+                dismiss()
+                onQueueJoined()
+                dataService.navigateToQueueTab()
+            }
+            Button(localization.isArabic ? "حسناً" : "OK", role: .cancel) {}
+        } message: {
+            Text(localization.isArabic
+                 ? "أنت مسجل حالياً في طابور \(place.nameAr). لا يمكن حجز أكثر من دور لنفس المكان في وقت واحد."
+                 : "You already have an active ticket at \(place.name). You cannot book multiple tickets for the same place.")
+        }
+        .alert(
+            localization.isArabic ? "وصلت للحد الأقصى من الطوابير" : "Maximum Active Queues",
+            isPresented: $showMaxTicketsAlert
+        ) {
+            Button(localization.isArabic ? "إدارة طوابيري" : "Manage Queues") {
+                dismiss()
+                onQueueJoined()
+                dataService.navigateToQueueTab()
+            }
+            Button(localization.isArabic ? "حسناً" : "OK", role: .cancel) {}
+        } message: {
+            Text(localization.isArabic
+                 ? "لديك 3 طوابير/مواعيد نشطة حالياً. يرجى إتمام أو إلغاء أحدها قبل إضافة حجز جديد."
+                 : "You have reached the maximum limit of 3 active queues/appointments. Please complete or cancel one before booking.")
         }
         .sheet(isPresented: $showSuccessModal) {
             ticketSuccessSheet
@@ -102,10 +254,37 @@ public struct ServiceDetailsView: View {
     private var heroMapSection: some View {
         ZStack(alignment: .topTrailing) {
             Map(position: $cameraPosition) {
-                ForEach(Array(place.branches.enumerated()), id: \.offset) { index, branch in
+                // Real Turn-by-Turn Driving Route along Bridges & Streets
+                if !routeCoordinates.isEmpty {
+                    MapPolyline(coordinates: routeCoordinates)
+                        .stroke(
+                            AppColors.teal,
+                            style: StrokeStyle(lineWidth: 5.5, lineCap: .round, lineJoin: .round)
+                        )
+                }
+
+                // User Location Annotation (Fixed Center Anchor)
+                Annotation(localization.isArabic ? "موقعك" : "You", coordinate: userLocation, anchor: .center) {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.teal.opacity(0.20))
+                            .frame(width: 26, height: 26)
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 14, height: 14)
+                            .shadow(color: Color.black.opacity(0.15), radius: 3, y: 1)
+                        Circle()
+                            .fill(AppColors.teal)
+                            .frame(width: 10, height: 10)
+                    }
+                }
+
+                // Place Branches Annotations (Fixed Bottom Anchor to Pin Pointer Tip)
+                ForEach(Array(place.branches.enumerated()), id: \.element.id) { index, branch in
                     Annotation(
                         branch.localizedLabel(isArabic: localization.isArabic),
-                        coordinate: CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng)
+                        coordinate: CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng),
+                        anchor: .bottom
                     ) {
                         BranchMapAnnotationPin(
                             place: place,
@@ -113,26 +292,37 @@ public struct ServiceDetailsView: View {
                             isSelected: selectedBranchIndex == index,
                             isArabic: localization.isArabic,
                             onTap: {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                    selectedBranchIndex = index
-                                }
+                                selectBranch(at: index)
                             }
                         )
                     }
                 }
             }
             .mapStyle(.standard(elevation: .realistic))
-            .frame(height: 240)
+            .frame(height: 265)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(
+                // Subtle bottom vignette for depth
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.10)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .allowsHitTesting(false)
+            )
 
-            // Floating Glass Controls (Apple Maps directions & Recenter)
+            // Floating Glass Controls (Apple Maps directions, ETA, & Recenter)
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    Button(action: openInAppleMaps) {
+                    // Open in Navigation Apps
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        showNavigationAppDialog = true
+                    }) {
                         HStack(spacing: 5) {
                             Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
                                 .font(.system(size: 13, weight: .bold))
-                            Text(localization.isArabic ? "فتح في Apple Maps" : "Apple Maps")
+                            Text(localization.isArabic ? "الاتجاهات والملاحة" : "Directions")
                                 .font(.app(11, .bold, isArabic: localization.isArabic))
                         }
                         .foregroundColor(AppColors.teal)
@@ -143,11 +333,35 @@ public struct ServiceDetailsView: View {
                         .shadow(color: Color.black.opacity(0.12), radius: 6, y: 2)
                     }
 
+                    // ETA Driving Badge
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(AppColors.accentGreen)
+                            .frame(width: 6, height: 6)
+
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(AppColors.teal)
+
+                        Text(localization.isArabic ? "~\(estimatedDriveMinutes) د بالسيارة" : "~\(estimatedDriveMinutes)m drive")
+                            .font(.app(11, .bold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .shadow(color: Color.black.opacity(0.12), radius: 6, y: 2)
+
                     Spacer()
 
+                    // Recenter Button
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        updateCamera(animated: true)
+                        let rect = TaboorPrecomputedRoutes.boundingMapRect(for: currentBranch)
+                        withAnimation(.easeInOut(duration: 0.45)) {
+                            cameraPosition = .rect(rect)
+                        }
                     }) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 12, weight: .bold))
@@ -169,14 +383,14 @@ public struct ServiceDetailsView: View {
                         .foregroundColor(AppColors.teal)
 
                     Text(currentBranch.localizedAddress(isArabic: localization.isArabic))
-                        .font(.app(11, .medium, isArabic: localization.isArabic))
+                        .font(.app(11.5, .medium, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
 
                     Spacer()
 
-                    Text(localization.isArabic ? "\(currentBranch.distanceKm) كم" : "\(currentBranch.distanceKm) km")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                    Text(displayDistanceString)
+                        .font(.system(size: 11.5, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.textSecondary)
                 }
                 .padding(.horizontal, 12)
@@ -194,13 +408,76 @@ public struct ServiceDetailsView: View {
         .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.05), radius: 10, y: 3)
     }
 
-    private func updateCamera(animated: Bool) {
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: currentBranch.lat, longitude: currentBranch.lng),
-            span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
-        )
+    // MARK: - Real Driving Route & Camera Positioning
+    @MainActor
+    private func calculateRoute(for branch: ServiceBranch, animated: Bool) async {
+        isCalculatingRoute = true
+        let startCoord = userLocation
+        let destCoord = CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng)
+
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: startCoord))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: destCoord))
+        request.transportType = .automobile
+
+        let directions = MKDirections(request: request)
+        do {
+            let response = try await directions.calculate()
+            if let route = response.routes.first {
+                var coords = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: route.polyline.pointCount)
+                route.polyline.getCoordinates(&coords, range: NSRange(location: 0, length: route.polyline.pointCount))
+                self.routeCoordinates = coords
+                self.calculatedRoute = route
+                self.isCalculatingRoute = false
+                self.updateCameraForRoute(route: route, animated: animated)
+                return
+            }
+        } catch {
+            print("[ServiceDetailsView] Apple Directions notice: \(error.localizedDescription)")
+        }
+
+        self.isCalculatingRoute = false
+        self.calculatedRoute = nil
+        self.routeCoordinates = TaboorPrecomputedRoutes.route(for: branch)
+        self.updateCameraFallback(for: branch, animated: animated)
+    }
+
+    @MainActor
+    private func updateCameraForRoute(route: MKRoute, animated: Bool) {
+        let mapRect = route.polyline.boundingMapRect
+        // Inset with negative values to add generous margins around route endpoints
+        // Vertical padding is larger (0.65) to give breathing room for floating top & bottom glass controls
+        let dxPadding = max(mapRect.size.width * 0.35, 1800)
+        let dyPadding = max(mapRect.size.height * 0.65, 2600)
+        let paddedRect = mapRect.insetBy(dx: -dxPadding, dy: -dyPadding)
+
         if animated {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            withAnimation(.easeInOut(duration: 0.55)) {
+                cameraPosition = .rect(paddedRect)
+            }
+        } else {
+            cameraPosition = .rect(paddedRect)
+        }
+    }
+
+    @MainActor
+    private func updateCameraFallback(for branch: ServiceBranch, animated: Bool) {
+        let start = userLocation
+        let dest = CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng)
+
+        let midLat = (start.latitude + dest.latitude) / 2
+        let midLng = (start.longitude + dest.longitude) / 2
+
+        let latDelta = max(abs(dest.latitude - start.latitude) * 1.8, 0.02)
+        let lngDelta = max(abs(dest.longitude - start.longitude) * 1.8, 0.02)
+
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: midLat, longitude: midLng),
+            span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lngDelta)
+        )
+
+        if animated {
+            withAnimation(.easeInOut(duration: 0.5)) {
                 cameraPosition = .region(region)
             }
         } else {
@@ -332,6 +609,28 @@ public struct ServiceDetailsView: View {
         .frame(maxWidth: .infinity)
     }
 
+    private func syncRouteAndCamera(for branch: ServiceBranch) {
+        let coords = TaboorPrecomputedRoutes.route(for: branch)
+        let rect = TaboorPrecomputedRoutes.boundingMapRect(for: branch)
+        self.routeCoordinates = coords
+        self.cameraPosition = .rect(rect)
+    }
+
+    private func selectBranch(at index: Int) {
+        guard index < place.branches.count else { return }
+        let branch = place.branches[index]
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+            selectedBranchIndex = index
+        }
+        let coords = TaboorPrecomputedRoutes.route(for: branch)
+        let rect = TaboorPrecomputedRoutes.boundingMapRect(for: branch)
+        withAnimation(.easeInOut(duration: 0.6)) {
+            self.routeCoordinates = coords
+            self.cameraPosition = .rect(rect)
+        }
+    }
+
     // MARK: - 4. Branch Selector Section with Live Queue Counts
     private var branchSelectorSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -357,12 +656,10 @@ public struct ServiceDetailsView: View {
             }
 
             VStack(spacing: 10) {
-                ForEach(Array(place.branches.enumerated()), id: \.offset) { index, branch in
+                ForEach(Array(place.branches.enumerated()), id: \.element.id) { index, branch in
                     let isSelected = selectedBranchIndex == index
                     Button(action: {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
-                            selectedBranchIndex = index
-                        }
+                        selectBranch(at: index)
                     }) {
                         HStack(spacing: 12) {
                             // Radio Indicator
@@ -507,22 +804,266 @@ public struct ServiceDetailsView: View {
         )
     }
 
+    // MARK: - 4.5 Booking Mode Section (Live Queue vs Scheduled Appointment Slots)
+    private var bookingModeSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(localization.isArabic ? "طريقة الحجز" : "Booking Method")
+                    .font(.app(14, .bold, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.textPrimary)
+
+                Spacer()
+
+                Text(bookingMode == .liveQueue
+                     ? (localization.isArabic ? "طابور فوري لحظي" : "Instant Live Queue")
+                     : (localization.isArabic ? "موعد محدد بالساعة" : "Scheduled Slot"))
+                    .font(.app(11.5, .medium, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.teal)
+            }
+
+            // Segmented Picker
+            HStack(spacing: 8) {
+                // Option 1: Live Queue
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        bookingMode = .liveQueue
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 13, weight: .bold))
+                        Text(localization.isArabic ? "طابور فوري (الآن)" : "Live Queue (Now)")
+                            .font(.app(12.5, .bold, isArabic: localization.isArabic))
+                    }
+                    .foregroundColor(bookingMode == .liveQueue ? .white : AppColors.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        bookingMode == .liveQueue
+                            ? AppColors.teal
+                            : Color.black.opacity(colorScheme == .dark ? 0.2 : 0.05)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                // Option 2: Scheduled Slot
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        bookingMode = .scheduled
+                        if selectedSlot == nil {
+                            selectedSlot = availableSlots.first(where: { !$0.isBooked })
+                        }
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 13, weight: .bold))
+                        Text(localization.isArabic ? "موعد مسبق مجدول" : "Schedule Ahead")
+                            .font(.app(12.5, .bold, isArabic: localization.isArabic))
+                    }
+                    .foregroundColor(bookingMode == .scheduled ? .white : AppColors.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        bookingMode == .scheduled
+                            ? AppColors.teal
+                            : Color.black.opacity(colorScheme == .dark ? 0.2 : 0.05)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+
+            if bookingMode == .scheduled {
+                scheduledSlotPickerView
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 13))
+                        .foregroundColor(AppColors.amber)
+
+                    Text(localization.isArabic
+                         ? "يتم إصدار رقم دور فوري ويتم حساب وقت وصولك بالـ GPS تلقائياً"
+                         : "Instant queue ticket issued with live GPS arrival estimate")
+                        .font(.app(11.5, .medium, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .padding(.top, 2)
+            }
+        }
+        .padding(14)
+        .background(AppColors.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(AppColors.cardBorder, lineWidth: 1)
+        )
+    }
+
+    private var scheduledSlotPickerView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+
+            // 1. Day Selector Pills (اليوم / غداً / بعد غد)
+            HStack(spacing: 8) {
+                dayPill(index: 0, titleAr: "اليوم", titleEn: "Today")
+                dayPill(index: 1, titleAr: "غداً", titleEn: "Tomorrow")
+                dayPill(index: 2, titleAr: "بعد غد", titleEn: "In 2 Days")
+            }
+
+            // Notice about capacity
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(AppColors.textSecondary)
+                Text(localization.isArabic
+                     ? "المواعيد المكتملة غير متاحة • تم تمييز أقرب ميعاد متاح ⭐"
+                     : "Booked slots disabled • Closest open slot highlighted ⭐")
+                    .font(.app(11, .regular, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            // 2. Time Slots Grid
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 8),
+                GridItem(.flexible(), spacing: 8),
+                GridItem(.flexible(), spacing: 8),
+                GridItem(.flexible(), spacing: 8)
+            ], spacing: 8) {
+                ForEach(availableSlots) { slot in
+                    slotButton(slot: slot)
+                }
+            }
+        }
+    }
+
+    private func dayPill(index: Int, titleAr: String, titleEn: String) -> some View {
+        Button(action: {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                selectedDayIndex = index
+                let daySlots = slots(for: index)
+                selectedSlot = daySlots.first(where: { !$0.isBooked && $0.isRecommended }) ?? daySlots.first(where: { !$0.isBooked })
+            }
+        }) {
+            Text(localization.isArabic ? titleAr : titleEn)
+                .font(.app(11.5, .bold, isArabic: localization.isArabic))
+                .foregroundColor(selectedDayIndex == index ? AppColors.teal : AppColors.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(
+                    selectedDayIndex == index
+                        ? AppColors.softTeal
+                        : Color.black.opacity(colorScheme == .dark ? 0.2 : 0.04)
+                )
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(selectedDayIndex == index ? AppColors.teal.opacity(0.3) : AppColors.cardBorder, lineWidth: 1)
+                )
+        }
+    }
+
+    private func slotButton(slot: AppointmentSlot) -> some View {
+        Button(action: {
+            if slot.isBooked {
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                return
+            }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                selectedSlot = slot
+            }
+        }) {
+            VStack(spacing: 2) {
+                Text(localization.isArabic ? slot.time : slot.timeEn)
+                    .font(.app(11, .bold, isArabic: localization.isArabic))
+                    .strikethrough(slot.isBooked, color: Color.gray.opacity(0.6))
+
+                if slot.isBooked {
+                    Text(localization.isArabic ? "مكتمل" : "Full")
+                        .font(.app(8.5, .bold, isArabic: localization.isArabic))
+                        .foregroundColor(Color.gray)
+                } else if slot.isRecommended {
+                    Text(localization.isArabic ? "أقرب متاح ⭐" : "Nearest ⭐")
+                        .font(.app(8.5, .bold, isArabic: localization.isArabic))
+                        .foregroundColor(selectedSlot?.id == slot.id ? .white : AppColors.teal)
+                } else {
+                    Text(localization.isArabic ? "متاح" : "Open")
+                        .font(.app(8.5, .regular, isArabic: localization.isArabic))
+                        .foregroundColor(selectedSlot?.id == slot.id ? .white.opacity(0.85) : AppColors.accentGreen)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 7)
+            .background(
+                slot.isBooked
+                    ? Color.gray.opacity(colorScheme == .dark ? 0.15 : 0.08)
+                    : (selectedSlot?.id == slot.id
+                        ? AppColors.teal
+                        : (slot.isRecommended
+                            ? AppColors.teal.opacity(colorScheme == .dark ? 0.2 : 0.1)
+                            : Color.white))
+            )
+            .foregroundColor(
+                slot.isBooked
+                    ? Color.gray.opacity(0.7)
+                    : (selectedSlot?.id == slot.id ? .white : AppColors.textPrimary)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(
+                        slot.isBooked
+                            ? Color.clear
+                            : (selectedSlot?.id == slot.id
+                                ? AppColors.teal
+                                : (slot.isRecommended ? AppColors.teal.opacity(0.4) : AppColors.cardBorder)),
+                        lineWidth: 1
+                    )
+            )
+        }
+    }
+
     // MARK: - Floating Bottom Action Bar
+    private var hasExistingTicket: Bool {
+        dataService.hasActiveTicket(for: place.id)
+    }
+
     private var bottomActionBar: some View {
         VStack(spacing: 0) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(localization.isArabic ? "الانتظار المتوقع" : "Expected Wait")
+                    Text(bookingMode == .scheduled
+                         ? (localization.isArabic ? "الموعد المختار" : "Selected Slot")
+                         : (localization.isArabic ? "الانتظار المتوقع" : "Expected Wait"))
                         .font(.app(11, .regular, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.textSecondary)
 
-                    HStack(spacing: 4) {
-                        Text("~\(currentBranch.estWaitMinutes)")
-                            .font(.system(size: 20, weight: .black, design: .rounded))
-                            .foregroundColor(AppColors.teal)
-                        Text(localization.isArabic ? "دقيقة" : "mins")
-                            .font(.app(13, .bold, isArabic: localization.isArabic))
-                            .foregroundColor(AppColors.textPrimary)
+                    if bookingMode == .scheduled {
+                        let activeTime = selectedSlot?.time ?? (availableSlots.first(where: { !$0.isBooked })?.time ?? "")
+                        let dayName = selectedDayIndex == 0 ? (localization.isArabic ? "اليوم" : "Today") : (selectedDayIndex == 1 ? (localization.isArabic ? "غداً" : "Tomorrow") : (localization.isArabic ? "بعد غد" : "In 2 days"))
+                        HStack(spacing: 5) {
+                            Text(dayName)
+                                .font(.app(13, .bold, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.amber)
+                            Text("•")
+                                .foregroundColor(AppColors.textSecondary)
+                            Text(activeTime)
+                                .font(.system(size: 16, weight: .black, design: .rounded))
+                                .foregroundColor(AppColors.teal)
+                        }
+                    } else {
+                        HStack(spacing: 4) {
+                            Text("~\(currentBranch.estWaitMinutes)")
+                                .font(.system(size: 20, weight: .black, design: .rounded))
+                                .foregroundColor(AppColors.teal)
+                            Text(localization.isArabic ? "دقيقة" : "mins")
+                                .font(.app(13, .bold, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.textPrimary)
+                        }
                     }
                 }
 
@@ -533,19 +1074,27 @@ public struct ServiceDetailsView: View {
                         if isJoining {
                             ProgressView()
                                 .tint(.white)
+                        } else if hasExistingTicket {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 14, weight: .bold))
+                            Text(localization.isArabic ? "عرض تذكرتك الحالية" : "View Active Ticket")
+                                .font(.app(13.5, .bold, isArabic: localization.isArabic))
                         } else {
-                            Image(systemName: "ticket.fill")
-                                .font(.system(size: 15, weight: .bold))
-                            Text(localization.isArabic ? "انضم إلى هذا الطابور" : "Join This Queue")
-                                .font(.app(15, .bold, isArabic: localization.isArabic))
+                            Image(systemName: bookingMode == .scheduled ? "calendar.badge.plus" : "ticket.fill")
+                                .font(.system(size: 14, weight: .bold))
+
+                            Text(bookingMode == .scheduled
+                                 ? (localization.isArabic ? "تأكيد حجز الموعد" : "Confirm Appointment")
+                                 : (localization.isArabic ? "انضم للطابور الآن" : "Join Queue Now"))
+                                .font(.app(14, .bold, isArabic: localization.isArabic))
                         }
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(AppColors.teal)
+                    .background(hasExistingTicket ? AppColors.ink : AppColors.teal)
                     .clipShape(Capsule())
-                    .shadow(color: AppColors.teal.opacity(0.35), radius: 10, y: 4)
+                    .shadow(color: (hasExistingTicket ? AppColors.ink : AppColors.teal).opacity(0.35), radius: 10, y: 4)
                 }
                 .disabled(isJoining)
             }
@@ -586,20 +1135,24 @@ public struct ServiceDetailsView: View {
             }
 
             VStack(spacing: 6) {
-                Text(localization.isArabic ? "تم حجز دورك بنجاح! 🎉" : "Ticket Issued Successfully! 🎉")
+                Text(bookingMode == .scheduled
+                     ? (localization.isArabic ? "تم حجز موعدك بنجاح! 📅" : "Appointment Booked! 📅")
+                     : (localization.isArabic ? "تم حجز دورك بنجاح! 🎉" : "Ticket Issued Successfully! 🎉"))
                     .font(.app(20, .bold, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textPrimary)
 
                 Text(localization.isArabic
-                     ? "رقم تذكرتك في \(place.nameAr)"
-                     : "Your ticket number at \(place.name)")
+                     ? "رقم الحجز في \(place.nameAr)"
+                     : "Your booking at \(place.name)")
                     .font(.app(14, .regular, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textSecondary)
             }
 
             // Ticket Number Capsule
             VStack(spacing: 6) {
-                Text(localization.isArabic ? "رقم التذكرة" : "Ticket Number")
+                Text(bookingMode == .scheduled
+                     ? (localization.isArabic ? "رقم الحجز المؤكد" : "Booking Number")
+                     : (localization.isArabic ? "رقم التذكرة" : "Ticket Number"))
                     .font(.app(12, .medium, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textSecondary)
 
@@ -607,11 +1160,21 @@ public struct ServiceDetailsView: View {
                     .font(.system(size: 46, weight: .black, design: .rounded))
                     .foregroundColor(AppColors.teal)
 
-                Text(localization.isArabic
-                     ? "أمامك \(currentBranch.waiting) في الانتظار — جهز نفسك قبل الموعد"
-                     : "\(currentBranch.waiting) people ahead — please arrive on time")
-                    .font(.app(12, .medium, isArabic: localization.isArabic))
-                    .foregroundColor(AppColors.amber)
+                if bookingMode == .scheduled {
+                    let dayName = selectedDayIndex == 0 ? (localization.isArabic ? "اليوم" : "Today") : (selectedDayIndex == 1 ? (localization.isArabic ? "غداً" : "Tomorrow") : (localization.isArabic ? "بعد غد" : "In 2 days"))
+                    let slotTime = selectedSlot?.time ?? (availableSlots.first(where: { !$0.isBooked })?.time ?? "04:00 م")
+                    Text(localization.isArabic
+                         ? "الموعد: \(dayName) الساعة \(slotTime) • تم التثبيت"
+                         : "Date: \(dayName) at \(slotTime) • Confirmed")
+                        .font(.app(13.5, .bold, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.teal)
+                } else {
+                    Text(localization.isArabic
+                         ? "أمامك \(currentBranch.waiting) في الانتظار — جهز نفسك قبل الموعد"
+                         : "\(currentBranch.waiting) people ahead — please arrive on time")
+                        .font(.app(12, .medium, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.amber)
+                }
             }
             .padding(.horizontal, 32)
             .padding(.vertical, 18)
@@ -625,9 +1188,11 @@ public struct ServiceDetailsView: View {
 
             // Primary Button to View Ticket in Queue Tab
             Button(action: {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 showSuccessModal = false
-                dismiss()
                 onQueueJoined()
+                QueueDataService.shared.navigateToQueueTab()
+                dismiss()
             }) {
                 Text(localization.isArabic ? "عرض تذكرتي في طابوري" : "View My Ticket in Queue")
                     .font(.app(15, .bold, isArabic: localization.isArabic))
@@ -637,6 +1202,38 @@ public struct ServiceDetailsView: View {
                     .background(AppColors.teal)
                     .clipShape(Capsule())
             }
+
+            // Secondary: Share Ticket with Family / Friends Button
+            Button(action: {
+                let shareTicketObj = dataService.activeTicket ?? UserTicket(
+                    ticketNumber: issuedTicketNumber,
+                    serviceName: place.name,
+                    serviceNameAr: place.nameAr,
+                    branchLabel: currentBranch.label,
+                    branchLabelAr: currentBranch.labelAr,
+                    counterLabel: "Counter 2",
+                    counterLabelAr: "شباك رقم 2",
+                    waitingAhead: currentBranch.waiting,
+                    estMinutes: currentBranch.estWaitMinutes,
+                    currentServing: "A-10",
+                    progress: 0.15,
+                    isActive: true
+                )
+                ShareTicketHelper.shareTicket(shareTicketObj, isArabic: localization.isArabic)
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 13, weight: .bold))
+
+                    Text(localization.isArabic ? "مشاركة التذكرة مع العائلة أو الأصدقاء" : "Share Ticket with Family / Friends")
+                        .font(.app(13.5, .bold, isArabic: localization.isArabic))
+                }
+                .foregroundColor(AppColors.teal)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(AppColors.softTeal)
+                .clipShape(Capsule())
+            }
             .padding(.bottom, 16)
         }
         .padding(.horizontal, 24)
@@ -645,12 +1242,34 @@ public struct ServiceDetailsView: View {
     }
 
     private func handleJoinQueue() {
+        if hasExistingTicket {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            showAlreadyBookedAlert = true
+            return
+        }
+
+        if dataService.activeTickets.count >= 3 {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            showMaxTicketsAlert = true
+            return
+        }
+
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         isJoining = true
 
         Task {
             try? await Task.sleep(nanoseconds: 500_000_000)
-            let ticket = dataService.joinQueue(place: place, branch: currentBranch)
+            let dateStr = selectedDayIndex == 0 ? (localization.isArabic ? "اليوم" : "Today") : (selectedDayIndex == 1 ? (localization.isArabic ? "غداً" : "Tomorrow") : (localization.isArabic ? "بعد غد" : "In 2 days"))
+            let timeStr = selectedSlot?.time ?? (availableSlots.first(where: { !$0.isBooked })?.time ?? "04:00 م")
+
+            let ticket = dataService.joinQueue(
+                place: place,
+                branch: currentBranch,
+                bookingType: bookingMode,
+                scheduledDate: bookingMode == .scheduled ? dateStr : nil,
+                scheduledTime: bookingMode == .scheduled ? timeStr : nil
+            )
+
             await MainActor.run {
                 isJoining = false
                 issuedTicketNumber = ticket.ticketNumber
@@ -677,8 +1296,6 @@ public struct BranchMapAnnotationPin: View {
     public let isArabic: Bool
     public let onTap: () -> Void
 
-    @State private var pulse: Bool = false
-
     public var body: some View {
         Button(action: {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -687,7 +1304,7 @@ public struct BranchMapAnnotationPin: View {
             VStack(spacing: 2) {
                 // Floating branch title bubble if selected
                 if isSelected {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Text(branch.localizedLabel(isArabic: isArabic))
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(AppColors.textPrimary)
@@ -699,49 +1316,48 @@ public struct BranchMapAnnotationPin: View {
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(branch.waiting <= 2 ? AppColors.accentGreen : AppColors.amber)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.ultraThinMaterial)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4.5)
+                    .background(Color.white)
                     .clipShape(Capsule())
-                    .shadow(color: Color.black.opacity(0.15), radius: 4, y: 2)
-                    .transition(.scale.combined(with: .opacity))
+                    .overlay(
+                        Capsule().strokeBorder(AppColors.cardBorder, lineWidth: 0.8)
+                    )
+                    .shadow(color: Color.black.opacity(0.12), radius: 4, y: 2)
+                    .fixedSize()
                 }
 
-                // Pin Body
+                // Pin Body (Rock-solid, stationary, no repeating layout jitter)
                 ZStack {
-                    // Pulsing beacon ring when selected
                     if isSelected {
                         Circle()
-                            .stroke(place.color.opacity(0.35), lineWidth: 2)
+                            .fill(place.color.opacity(0.20))
                             .frame(width: 44, height: 44)
-                            .scaleEffect(pulse ? 1.25 : 0.95)
-                            .opacity(pulse ? 0.0 : 0.8)
-                            .onAppear {
-                                withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) {
-                                    pulse = true
-                                }
-                            }
                     }
 
                     Circle()
-                        .fill(isSelected ? place.color : Color(UIColor.systemBackground))
+                        .fill(isSelected ? place.color : Color.white)
                         .frame(width: isSelected ? 34 : 26, height: isSelected ? 34 : 26)
-                        .shadow(color: place.color.opacity(0.4), radius: isSelected ? 6 : 3, y: 2)
+                        .overlay(
+                            Circle().strokeBorder(Color.white, lineWidth: isSelected ? 2 : 1.5)
+                        )
+                        .shadow(color: Color.black.opacity(0.18), radius: isSelected ? 5 : 2.5, y: 2)
 
                     Image(systemName: place.iconName)
                         .font(.system(size: isSelected ? 15 : 12, weight: .bold))
                         .foregroundColor(isSelected ? .white : place.color)
                 }
+                .frame(width: 44, height: 44)
 
                 // Pin Point Triangle
                 Triangle()
-                    .fill(isSelected ? place.color : Color(UIColor.systemBackground))
+                    .fill(isSelected ? place.color : Color.white)
                     .frame(width: 10, height: 6)
                     .offset(y: -2)
             }
+            .fixedSize()
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isSelected)
     }
 }
 

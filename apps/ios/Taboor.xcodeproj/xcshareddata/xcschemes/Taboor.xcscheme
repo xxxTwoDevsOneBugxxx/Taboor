@@ -21,6 +21,20 @@
                ReferencedContainer = "container:Taboor.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "680989664DFFF9936A3FAE3B"
+               BuildableName = "TaboorWidgets.appex"
+               BlueprintName = "TaboorWidgets"
+               ReferencedContainer = "container:Taboor.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

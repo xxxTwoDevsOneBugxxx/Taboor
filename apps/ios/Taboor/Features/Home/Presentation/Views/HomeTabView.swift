@@ -4,11 +4,13 @@ import MapKit
 // MARK: - Redesigned Native iOS 26 Home / Dashboard View
 
 public struct HomeTabView: View {
+    @Binding var selectedTab: TaboorTab
     public let onNavigateToQueue: () -> Void
     public let onNavigateToProfile: () -> Void
 
     @StateObject private var dataService = QueueDataService.shared
     @ObservedObject private var localization = LocalizationManager.shared
+    @ObservedObject private var locationService = UserLocationService.shared
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var user: User? = AuthRepository.shared.getSavedUser()
@@ -22,16 +24,24 @@ public struct HomeTabView: View {
     @State private var showLocationPickerSheet = false
     @State private var showLiveTracking = false
 
-    // Home Mini-Map Coordinates & Camera (Cairo - Nasr City)
-    private let homeUserCoord = CLLocationCoordinate2D(latitude: 30.0460, longitude: 31.3340)
+    // Home Mini-Map Coordinates & Camera
+    private var homeUserCoord: CLLocationCoordinate2D {
+        locationService.effectiveCoordinate
+    }
     private let homeClinicCoord = CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
-    private let homeRouteCoords: [CLLocationCoordinate2D] = [
-        CLLocationCoordinate2D(latitude: 30.0460, longitude: 31.3340),
-        CLLocationCoordinate2D(latitude: 30.0490, longitude: 31.3370),
-        CLLocationCoordinate2D(latitude: 30.0525, longitude: 31.3405),
-        CLLocationCoordinate2D(latitude: 30.0555, longitude: 31.3435),
-        CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
-    ]
+    private var homeRouteCoords: [CLLocationCoordinate2D] {
+        let start = homeUserCoord
+        let end = homeClinicCoord
+        let dLat = end.latitude - start.latitude
+        let dLng = end.longitude - start.longitude
+        return [
+            start,
+            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.25 + 0.0008, longitude: start.longitude + dLng * 0.20 - 0.0005),
+            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.50 - 0.0006, longitude: start.longitude + dLng * 0.55 + 0.0007),
+            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.75 + 0.0004, longitude: start.longitude + dLng * 0.80 + 0.0002),
+            end
+        ]
+    }
     @State private var homeMapCamera: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 30.0520, longitude: 31.3400),
@@ -40,9 +50,11 @@ public struct HomeTabView: View {
     )
 
     public init(
+        selectedTab: Binding<TaboorTab> = .constant(.home),
         onNavigateToQueue: @escaping () -> Void,
         onNavigateToProfile: @escaping () -> Void = {}
     ) {
+        self._selectedTab = selectedTab
         self.onNavigateToQueue = onNavigateToQueue
         self.onNavigateToProfile = onNavigateToProfile
     }
@@ -63,40 +75,37 @@ public struct HomeTabView: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    // 1. Unified Premium Header Bar (Avatar + Greeting + Location + Action Buttons)
-                    topHeaderBar
+            ZStack(alignment: .bottom) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        // 1. Unified Premium Header Bar (Avatar + Greeting + Location + Action Buttons)
+                        topHeaderBar
 
-                    // 2. Interactive Search Bar Card
-                    searchBarCard
+                        // 2. Interactive Search Bar Card
+                        searchBarCard
 
-                    // 3. Dynamic Live Ticket Hero or Booking Invitation
-                    ticketHeroCard
+                        // 3. Dynamic Live Ticket Hero or Booking Invitation
+                        ticketHeroCard
 
-                    // 4. Categories Grid
-                    categoriesSection
+                        // 4. Categories Grid
+                        categoriesSection
 
-                    // 5. "أسرع الطوابير بالقرب منك" (Fast Queues Near You)
-                    fastQueuesSection
+                        // 5. "أسرع الطوابير بالقرب منك" (Fast Queues Near You)
+                        fastQueuesSection
 
-                    // 6. "الأعلى تقييماً" (Top Rated Providers)
-                    topRatedSection
+                        // 6. "الأعلى تقييماً" (Top Rated Providers)
+                        topRatedSection
 
-                    Spacer().frame(height: 100)
+                        Spacer().frame(height: 130)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .background(AppColors.screenBackground.ignoresSafeArea())
             }
-            .background(AppColors.screenBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
-                try? await Task.sleep(nanoseconds: 600_000_000)
-                withAnimation(.spring) {
-                    if let ticket = dataService.activeTicket, ticket.waitingAhead > 1 {
-                        dataService.activeTicket?.waitingAhead -= 1
-                    }
-                }
+                await dataService.refreshAll()
             }
             .sheet(isPresented: $showQRScanner) {
                 QRScannerView(onQueueJoined: {
@@ -107,6 +116,8 @@ public struct HomeTabView: View {
                 NavigationStack {
                     ServiceDetailsView(place: place, onQueueJoined: {
                         selectedPlaceForDetails = nil
+                        isNavigatingToAllServices = false
+                        dataService.isTabBarHidden = false
                         onNavigateToQueue()
                     })
                 }
@@ -121,113 +132,135 @@ public struct HomeTabView: View {
                 AllServicesView(initialCategory: navigateToAllServicesWithCategory) { place in
                     selectedPlaceForDetails = place
                 }
+                .onDisappear {
+                    dataService.isTabBarHidden = false
+                }
+            }
+            .onChange(of: dataService.shouldNavigateToQueueTab) { _, shouldNavigate in
+                if shouldNavigate {
+                    selectedPlaceForDetails = nil
+                    isNavigatingToAllServices = false
+                    showQRScanner = false
+                    showLocationPickerSheet = false
+                    dataService.isTabBarHidden = false
+                    showLiveTracking = true
+                    dataService.shouldNavigateToQueueTab = false
+                }
+            }
+            .onChange(of: dataService.showAllServicesScreen) { _, show in
+                if show {
+                    dataService.isTabBarHidden = true
+                    navigateToAllServicesWithCategory = nil
+                    isNavigatingToAllServices = true
+                    dataService.showAllServicesScreen = false
+                }
             }
             .onAppear {
                 user = AuthRepository.shared.getSavedUser()
+                locationService.requestPermission()
+                if locationService.isAuthorized && locationService.userCoordinate != nil {
+                    selectedLocation = locationService.currentAddress
+                }
+            }
+            .onChange(of: locationService.currentAddress) { _, newAddr in
+                if !newAddr.isEmpty {
+                    selectedLocation = newAddr
+                }
             }
         }
     }
 
-    // MARK: - 1. Option 2: Smart Delivery & Service Utility Header (Apple HIG Style)
+    // MARK: - 1. Brand & Location Header (Matching HTML Native Redesign)
     private var topHeaderBar: some View {
-        HStack(alignment: .center, spacing: 12) {
-            // User Avatar (Circle with Initials, Apple Border & Soft Shadow)
-            Button(action: {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                onNavigateToProfile()
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [AppColors.teal, AppColors.deepTeal],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 38, height: 38)
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
-                        )
-                        .shadow(color: AppColors.teal.opacity(0.25), radius: 4, x: 0, y: 2)
+        HStack(alignment: .center, spacing: 10) {
+            // Brand Side (Logo + taboor. + Location Picker)
+            HStack(spacing: 10) {
+                // Taboor Squircles Logo with official "T & ط" SVG vector mark
+                TaboorLogoIcon(size: 38)
 
-                    let initial = user?.fullName.first.map(String.init) ?? "ط"
-                    Text(initial)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                }
-            }
-            .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
-
-            Spacer()
-
-            // Center: Location Selector (Opens Map Modal Sheet)
-            Button(action: {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                showLocationPickerSheet = true
-            }) {
-                VStack(spacing: 2) {
-                    Text(localization.isArabic ? "الموقع الحالي" : "Current Location")
-                        .font(.app(10.5, .medium, isArabic: localization.isArabic))
-                        .foregroundColor(Color(UIColor.secondaryLabel))
-
-                    HStack(spacing: 4) {
-                        Text(selectedLocation)
-                            .font(.app(14.5, .bold, isArabic: localization.isArabic))
-                            .foregroundColor(Color(UIColor.label))
-
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(AppColors.teal)
+                VStack(alignment: .leading, spacing: 2) {
+                    // Brand Wordmark strictly LTR: "taboor." with Inter Bold font and amber dot
+                    HStack(spacing: 0) {
+                        Text("taboor")
+                            .font(.inter(19, .bold))
+                            .tracking(-0.8)
+                            .foregroundColor(AppColors.ink)
+                        Text(".")
+                            .font(.inter(19, .bold))
+                            .tracking(-0.8)
+                            .foregroundColor(AppColors.amber)
                     }
+                    .environment(\.layoutDirection, .leftToRight)
+
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        showLocationPickerSheet = true
+                    }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "mappin.and.ellipse")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.teal)
+
+                            Text(selectedLocation)
+                                .font(.app(11.5, .medium, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
+
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(AppColors.teal)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .buttonStyle(ScaleButtonStyle(scale: 0.97, pressedOpacity: 0.85))
 
             Spacer()
 
-            // Action Buttons Cluster: QR Scanner & Language
+            // Actions: QR Scanner & Profile / Notifications
             HStack(spacing: 8) {
-                // QR Scanner Button (Circular Apple Style)
+                // QR Scanner
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    qrBounce.toggle()
                     showQRScanner = true
                 }) {
                     Image(systemName: "qrcode.viewfinder")
-                        .font(.system(size: 16, weight: .semibold))
-                        .symbolEffect(.bounce, value: qrBounce)
-                        .foregroundColor(AppColors.teal)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.ink)
                         .frame(width: 38, height: 38)
                         .background(AppColors.cardBackground)
-                        .clipShape(Circle())
+                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                         .overlay(
-                            Circle()
-                                .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18), lineWidth: 0.8)
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                .strokeBorder(AppColors.cardBorder, lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.04), radius: 4, x: 0, y: 1.5)
+                        .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1.5)
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
 
-                // Language Toggle Button (Matching 38x38 Circle)
+                // Profile / Notifications
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        localization.toggleLanguage()
-                    }
+                    onNavigateToProfile()
                 }) {
-                    Text(localization.isArabic ? "EN" : "عربي")
-                        .font(.system(size: 12.5, weight: .bold))
-                        .foregroundColor(AppColors.textPrimary)
-                        .frame(width: 38, height: 38)
-                        .background(AppColors.cardBackground)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18), lineWidth: 0.8)
-                        )
-                        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.04), radius: 4, x: 0, y: 1.5)
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(AppColors.ink)
+                            .frame(width: 38, height: 38)
+                            .background(AppColors.cardBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .strokeBorder(AppColors.cardBorder, lineWidth: 1)
+                            )
+                            .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1.5)
+
+                        Circle()
+                            .fill(AppColors.amber)
+                            .frame(width: 8, height: 8)
+                            .offset(x: -6, y: 6)
+                    }
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
             }
@@ -235,43 +268,45 @@ public struct HomeTabView: View {
         .padding(.vertical, 4)
     }
 
+    private func navigateToServices(category: ServiceCategory? = nil) {
+        dataService.isTabBarHidden = true
+        navigateToAllServicesWithCategory = category
+        isNavigatingToAllServices = true
+    }
+
     // MARK: - 2. Quick Search Card (Option 2: Native White with Filter Pill)
     private var searchBarCard: some View {
         Button(action: {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            navigateToAllServicesWithCategory = nil
-            isNavigatingToAllServices = true
+            navigateToServices()
         }) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
+                    .foregroundColor(AppColors.teal)
 
-                Text(localization.isArabic ? "ابحث عن دكتور، عيادة، صالون..." : "Search clinic, doctor, salon...")
-                    .font(.app(13.5, .regular, isArabic: localization.isArabic))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
+                Text(localization.isArabic ? "ابحث عن دكتور، عيادة، صالون، خدمة..." : "Search clinic, doctor, salon, service...")
+                    .font(.app(13, .regular, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
 
-                // Integrated subtle filter chip
-                HStack(spacing: 4) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 12, weight: .bold))
-                }
-                .foregroundColor(AppColors.teal)
-                .frame(width: 28, height: 28)
-                .background(AppColors.teal.opacity(colorScheme == .dark ? 0.2 : 0.10))
-                .clipShape(Circle())
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(AppColors.teal)
+                    .frame(width: 28, height: 28)
+                    .background(AppColors.softTeal)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .padding(.horizontal, 14)
             .frame(height: 46)
             .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18), lineWidth: 0.8)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(AppColors.cardBorder, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.04), radius: 6, x: 0, y: 2)
+            .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
         }
         .buttonStyle(ScaleButtonStyle(scale: 0.99, pressedOpacity: 0.95))
     }
@@ -304,41 +339,44 @@ public struct HomeTabView: View {
 
             // 2. Bottom Ticket Tray
             VStack(spacing: 12) {
-                // Info row: Clinic info & Ticket badge (Tappable to open live tracking)
+                // Info row: Clinic info full-width & Ticket pill
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     showLiveTracking = true
                 }) {
-                    HStack(alignment: .center, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(ticket.localizedServiceName(isArabic: localization.isArabic))
-                                .font(.app(14.5, .bold, isArabic: localization.isArabic))
-                                .foregroundColor(AppColors.textPrimary)
-                                .lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 6) {
+                        // Title Full Width (Takes 100% of Card Width)
+                        Text(ticket.localizedServiceName(isArabic: localization.isArabic))
+                            .font(.app(16.5, .extraBold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
 
+                        // Subtitle & Ticket Pill Row
+                        HStack(alignment: .center, spacing: 10) {
                             Text("\(ticket.localizedBranch(isArabic: localization.isArabic)) • \(ticket.localizedCounter(isArabic: localization.isArabic))")
-                                .font(.app(11.5, .medium, isArabic: localization.isArabic))
+                                .font(.app(12, .medium, isArabic: localization.isArabic))
                                 .foregroundColor(AppColors.textSecondary)
                                 .lineLimit(1)
+
+                            Spacer(minLength: 4)
+
+                            // Compact Ticket Pill
+                            HStack(spacing: 4) {
+                                Text(localization.isArabic ? "تذكرتك" : "Ticket")
+                                    .font(.app(10, .medium, isArabic: localization.isArabic))
+                                    .foregroundColor(AppColors.textSecondary)
+
+                                Text(ticket.ticketNumber)
+                                    .font(.system(size: 13.5, weight: .black, design: .rounded))
+                                    .foregroundColor(AppColors.teal)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(AppColors.teal.opacity(colorScheme == .dark ? 0.22 : 0.10))
+                            .clipShape(Capsule())
                         }
-
-                        Spacer()
-
-                        // Ticket Badge
-                        VStack(spacing: 1) {
-                            Text(localization.isArabic ? "تذكرتك" : "Ticket")
-                                .font(.app(10, .medium, isArabic: localization.isArabic))
-                                .foregroundColor(AppColors.textSecondary)
-
-                            Text("#\(ticket.ticketNumber)")
-                                .font(.system(size: 20, weight: .black, design: .rounded))
-                                .foregroundColor(AppColors.teal)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(AppColors.teal.opacity(colorScheme == .dark ? 0.22 : 0.10))
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                 }
                 .buttonStyle(.plain)
@@ -513,72 +551,57 @@ public struct HomeTabView: View {
         .frame(height: 120)
     }
 
-    // Uber-Style Promo & Hero Card (When No Ticket is Active)
+    // MARK: - Refined Apple HIG Promo & Hero Card (When No Ticket is Active)
     private var emptyQueueHeroCard: some View {
         Button(action: {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            navigateToAllServicesWithCategory = nil
-            isNavigatingToAllServices = true
+            navigateToServices()
         }) {
-            ZStack {
-                // Card Background with subtle soft gradient & border
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppColors.cardBackground)
-                    .overlay(
-                        LinearGradient(
-                            colors: [
-                                AppColors.cardBackground,
-                                AppColors.teal.opacity(colorScheme == .dark ? 0.09 : 0.04)
-                            ],
-                            startPoint: .topTrailing,
-                            endPoint: .bottomLeading
+            VStack(alignment: .leading, spacing: 10) {
+                // 1. Radar Live Tag
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(AppColors.teal)
+                        .frame(width: 6, height: 6)
+                        .overlay(
+                            Circle()
+                                .stroke(AppColors.teal.opacity(0.4), lineWidth: 1.5)
+                                .scaleEffect(1.6)
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.15), lineWidth: 0.8)
-                    )
-                    .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.05), radius: 10, y: 3)
-
-                HStack(spacing: 14) {
-                    // Content (Leading in RTL is on the Right)
-                    VStack(alignment: .leading, spacing: 5) {
-                        // Sparkle / Save Time Pill
-                        HStack(spacing: 4) {
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 9.5, weight: .bold))
-                            Text(localization.isArabic ? "وفّر وقتك" : "Save Time")
-                                .font(.app(11, .bold, isArabic: localization.isArabic))
-                        }
+                    
+                    Text(localization.isArabic ? "طوابير سريعة بالقرب منك • \(selectedLocation)" : "Fast queues near you • \(selectedLocation)")
+                        .font(.app(11, .bold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.teal)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 3.5)
-                        .background(AppColors.teal.opacity(colorScheme == .dark ? 0.22 : 0.10))
-                        .clipShape(Capsule())
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(AppColors.teal.opacity(0.10))
+                .clipShape(Capsule())
 
-                        // Bold Punchy Headline
+                // 2. Main Row: Title/Description & Radar Vector
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(localization.isArabic ? "احجز دورك قبل ما توصل" : "Reserve your spot ahead")
                             .font(.app(16, .bold, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.textPrimary)
                             .lineLimit(1)
 
-                        // Subtitle
-                        Text(localization.isArabic ? "ادخل طابورك وتابع مكانك في الطريق" : "Join remotely & track your turn on the go")
+                        Text(localization.isArabic ? "انضم لطابورك عن بُعد، وتابع دورك في الطريق بدون انتظار على الكراسي" : "Join remotely & track your turn on the go without waiting in lines")
                             .font(.app(11.5, .regular, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.textSecondary)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .lineSpacing(2)
 
-                        // Uber Pill Button (Brand Teal Gradient)
-                        HStack(spacing: 6) {
-                            Text(localization.isArabic ? "ابدأ الآن" : "Get Started")
-                                .font(.app(12.5, .bold, isArabic: localization.isArabic))
-                            Image(systemName: localization.isArabic ? "arrow.left" : "arrow.right")
-                                .font(.system(size: 10, weight: .bold))
+                        // Clean CTA Button
+                        HStack(spacing: 5) {
+                            Text(localization.isArabic ? "استكشف الطوابير" : "Explore Queues")
+                                .font(.app(12, .bold, isArabic: localization.isArabic))
+                            Image(systemName: localization.isArabic ? "chevron.left" : "chevron.right")
+                                .font(.system(size: 9.5, weight: .bold))
                         }
                         .foregroundColor(.white)
-                        .padding(.horizontal, 15)
-                        .padding(.vertical, 7.5)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
                         .background(
                             LinearGradient(
                                 colors: [AppColors.teal, AppColors.deepTeal],
@@ -587,100 +610,160 @@ public struct HomeTabView: View {
                             )
                         )
                         .clipShape(Capsule())
-                        .shadow(color: AppColors.teal.opacity(colorScheme == .dark ? 0.40 : 0.28), radius: 6, x: 0, y: 2.5)
-                        .padding(.top, 2)
+                        .shadow(color: AppColors.teal.opacity(0.3), radius: 5, y: 2)
+                        .padding(.top, 4)
                     }
 
                     Spacer(minLength: 4)
 
-                    // Left Side / Trailing: 3D-styled ticket artwork
-                    uberTicketIllustration
-                        .frame(width: 82, height: 82)
+                    // 3. Crisp Vector Radar Visual
+                    radarVectorIllustration
+                        .frame(width: 78, height: 78)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+
+                // 4. Integrated Quick Utility Shortcuts Strip
+                Divider().opacity(0.15)
+                    .padding(.top, 2)
+
+                HStack(spacing: 8) {
+                    // Shortcut 1: Scan QR
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        showQRScanner = true
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "qrcode.viewfinder")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(localization.isArabic ? "مسح QR الشباك" : "Scan QR")
+                                .font(.app(10.5, .bold, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.textPrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                        .background(AppColors.screenBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .strokeBorder(AppColors.cardBorder, lineWidth: 0.8)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    // Shortcut 2: Fast wait time shortcut
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        if let fastest = fastQueues.first {
+                            selectedPlaceForDetails = fastest
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.amber)
+                            Text(localization.isArabic ? "أقل انتظار: 3 د" : "Min wait: 3m")
+                                .font(.app(10.5, .bold, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.textPrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                        .background(AppColors.screenBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .strokeBorder(AppColors.cardBorder, lineWidth: 0.8)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    // Shortcut 3: Favorites / Map
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        showLocationPickerSheet = true
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "map.fill")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(AppColors.teal)
+                            Text(localization.isArabic ? "خريطة الطوابير" : "Map Radar")
+                                .font(.app(10.5, .bold, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.textPrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                        .background(AppColors.screenBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .strokeBorder(AppColors.cardBorder, lineWidth: 0.8)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
+            .padding(14)
+            .background(AppColors.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(AppColors.teal.opacity(0.20), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 8, y: 3)
         }
-        .buttonStyle(ScaleButtonStyle(scale: 0.98, pressedOpacity: 0.95))
+        .buttonStyle(ScaleButtonStyle(scale: 0.98, pressedOpacity: 0.96))
     }
 
-    // 3D-Styled Ticket Artwork for Uber-style Hero Card
-    private var uberTicketIllustration: some View {
+    // Vector Radar Graphic (Clean Apple SVG Style)
+    private var radarVectorIllustration: some View {
         ZStack {
-            // Soft glowing background circle
+            // Outer dashed orbit
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            AppColors.teal.opacity(colorScheme == .dark ? 0.35 : 0.22),
-                            AppColors.teal.opacity(0)
-                        ],
-                        center: .center,
-                        startRadius: 8,
-                        endRadius: 42
-                    )
-                )
-                .frame(width: 84, height: 84)
+                .strokeBorder(AppColors.teal.opacity(0.22), style: StrokeStyle(lineWidth: 1.2, dash: [4, 4]))
+                .frame(width: 74, height: 74)
 
-            // Tilted 3D-styled ticket base
-            ZStack {
-                // Ticket body
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [AppColors.teal, AppColors.deepTeal],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 52, height: 42)
-                    .shadow(color: AppColors.teal.opacity(0.40), radius: 6, x: 0, y: 3)
+            // Mid circle
+            Circle()
+                .fill(AppColors.teal.opacity(0.05))
+                .frame(width: 52, height: 52)
+                .overlay(Circle().stroke(AppColors.teal.opacity(0.25), lineWidth: 1))
 
-                // White ticket inner indicators
-                VStack(spacing: 3.5) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white.opacity(0.85))
-                        .frame(width: 26, height: 3.5)
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white.opacity(0.50))
-                        .frame(width: 16, height: 2.5)
-                }
+            // Inner core
+            Circle()
+                .fill(AppColors.teal.opacity(0.12))
+                .frame(width: 28, height: 28)
+                .overlay(Circle().stroke(AppColors.teal, lineWidth: 1.5))
 
-                // Notches on left & right
-                HStack {
-                    Circle()
-                        .fill(AppColors.cardBackground)
-                        .frame(width: 7, height: 7)
-                        .offset(x: -3.5)
-                    Spacer()
-                    Circle()
-                        .fill(AppColors.cardBackground)
-                        .frame(width: 7, height: 7)
-                        .offset(x: 3.5)
-                }
-                .frame(width: 52)
-            }
-            .rotationEffect(.degrees(-10))
+            // Center User Pin
+            Circle()
+                .fill(AppColors.ink)
+                .frame(width: 10, height: 10)
+                .overlay(Circle().fill(Color.white).frame(width: 4, height: 4))
 
-            // Floating mini badge with clock (top-trailing)
+            // Nearby Place 1 (Teal Clinic Pin)
             ZStack {
                 Circle()
-                    .fill(AppColors.deepTeal)
-                    .frame(width: 22, height: 22)
-                    .overlay(Circle().stroke(Color.white, lineWidth: 1.8))
-                    .shadow(color: Color.black.opacity(0.18), radius: 3, y: 1.5)
-
-                Image(systemName: "clock.fill")
-                    .font(.system(size: 10, weight: .bold))
+                    .fill(AppColors.teal)
+                    .frame(width: 16, height: 16)
+                    .shadow(color: AppColors.teal.opacity(0.3), radius: 2)
+                Image(systemName: "cross.fill")
+                    .font(.system(size: 7, weight: .bold))
                     .foregroundColor(.white)
             }
-            .offset(x: 18, y: -15)
+            .offset(x: -22, y: -16)
 
-            // Sparkling star accent (bottom-leading)
-            Image(systemName: "sparkle")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(AppColors.amber)
-                .offset(x: -22, y: 14)
+            // Nearby Place 2 (Amber Salon Pin)
+            ZStack {
+                Circle()
+                    .fill(AppColors.amber)
+                    .frame(width: 14, height: 14)
+                    .shadow(color: AppColors.amber.opacity(0.3), radius: 2)
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 4, height: 4)
+            }
+            .offset(x: 22, y: 18)
         }
     }
 
@@ -695,8 +778,7 @@ public struct HomeTabView: View {
                 Spacer()
 
                 Button(action: {
-                    navigateToAllServicesWithCategory = nil
-                    isNavigatingToAllServices = true
+                    navigateToServices()
                 }) {
                     Text(localization.isArabic ? "عرض الكل" : "See all")
                         .font(.app(13, .bold, isArabic: localization.isArabic))
@@ -707,18 +789,17 @@ public struct HomeTabView: View {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(ServiceCategory.allCases) { category in
                     Button(action: {
-                        navigateToAllServicesWithCategory = category
-                        isNavigatingToAllServices = true
+                        navigateToServices(category: category)
                     }) {
                         HStack(spacing: 10) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(category.color.opacity(colorScheme == .dark ? 0.22 : 0.12))
+                                    .fill(AppColors.softTeal)
                                     .frame(width: 38, height: 38)
 
                                 Image(systemName: category.iconName)
                                     .font(.system(size: 17, weight: .semibold))
-                                    .foregroundColor(category.color)
+                                    .foregroundColor(AppColors.ink)
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
@@ -753,25 +834,18 @@ public struct HomeTabView: View {
         }
     }
 
-    // MARK: - 4. Fast Queues Section
+    // MARK: - 4. Nearby Live Queues (Vertical List matching HTML Redesign)
     private var fastQueuesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppColors.amber)
-
-                    Text(localization.isArabic ? "أسرع الطوابير بالقرب منك" : "Fastest Queues Near You")
-                        .font(.app(16, .bold, isArabic: localization.isArabic))
-                        .foregroundColor(AppColors.textPrimary)
-                }
+                Text(localization.isArabic ? "أسرع الطوابير بالقرب منك" : "Fastest Queues Near You")
+                    .font(.app(16, .bold, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.textPrimary)
 
                 Spacer()
 
                 Button(action: {
-                    navigateToAllServicesWithCategory = nil
-                    isNavigatingToAllServices = true
+                    navigateToServices()
                 }) {
                     Text(localization.isArabic ? "عرض الكل" : "See all")
                         .font(.app(13, .bold, isArabic: localization.isArabic))
@@ -779,129 +853,106 @@ public struct HomeTabView: View {
                 }
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(fastQueues) { place in
-                        fastQueueCard(place: place)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 2)
-            }
-            .padding(.horizontal, -20)
-        }
-    }
+            VStack(spacing: 12) {
+                ForEach(fastQueues) { place in
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        selectedPlaceForDetails = place
+                    }) {
+                        HStack(alignment: .top, spacing: 12) {
+                            // Vector Thumbnail (Aligned to Top)
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(AppColors.softTeal)
+                                    .frame(width: 50, height: 50)
+                                Image(systemName: place.iconName)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(AppColors.ink)
+                            }
 
-    private func fastQueueCard(place: ServicePlace) -> some View {
-        Button(action: {
-            selectedPlaceForDetails = place
-        }) {
-            VStack(alignment: .leading, spacing: 10) {
-                // Top Row: Icon beside the Title, plus Rating pill on the far end
-                HStack(alignment: .top, spacing: 10) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(place.color.opacity(colorScheme == .dark ? 0.22 : 0.12))
-                            .frame(width: 42, height: 42)
-                        Image(systemName: place.iconName)
-                            .font(.system(size: 19, weight: .semibold))
-                            .foregroundColor(place.color)
-                    }
+                            // Details Body (Full sentences visible without truncation)
+                            VStack(alignment: .leading, spacing: 5) {
+                                // Title & Rating Row
+                                HStack(alignment: .top, spacing: 8) {
+                                    Text(place.localizedName(isArabic: localization.isArabic))
+                                        .font(.app(14.5, .bold, isArabic: localization.isArabic))
+                                        .foregroundColor(AppColors.textPrimary)
+                                        .lineLimit(2)
+                                        .lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.leading)
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(place.localizedName(isArabic: localization.isArabic))
-                            .font(.app(13, .bold, isArabic: localization.isArabic))
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineLimit(2)
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 4)
 
-                        if let branch = place.primaryBranch {
-                            Text(branch.localizedLabel(isArabic: localization.isArabic))
-                                .font(.app(11, .regular, isArabic: localization.isArabic))
-                                .foregroundColor(AppColors.textSecondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.9)
+                                    // Rating Pill
+                                    HStack(spacing: 2) {
+                                        Image(systemName: "star.fill")
+                                            .font(.system(size: 9))
+                                            .foregroundColor(AppColors.amber)
+                                        Text(String(format: "%.1f", place.starRating))
+                                            .font(.system(size: 11, weight: .bold))
+                                            .foregroundColor(AppColors.textPrimary)
+                                    }
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(AppColors.amber.opacity(0.12))
+                                    .clipShape(Capsule())
+                                }
+
+                                // Branch & Distance (Wraps cleanly onto next line if long)
+                                if let branch = place.primaryBranch {
+                                    Text("\(branch.localizedLabel(isArabic: localization.isArabic)) • \(branch.distanceKm) كم")
+                                        .font(.app(12, .medium, isArabic: localization.isArabic))
+                                        .foregroundColor(AppColors.textSecondary)
+                                        .lineLimit(2)
+                                        .lineSpacing(1.5)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.leading)
+                                }
+
+                                // Tags Row (Queue count & ETA)
+                                HStack(spacing: 6) {
+                                    Text(localization.isArabic ? "\(place.totalWaiting) انتظار" : "\(place.totalWaiting) in line")
+                                        .font(.app(11, .bold, isArabic: localization.isArabic))
+                                        .foregroundColor(AppColors.ink)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(AppColors.softTeal)
+                                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+                                    Text(localization.isArabic ? "~\(place.primaryBranch?.estWaitMinutes ?? 5) دقائق" : "~\(place.primaryBranch?.estWaitMinutes ?? 5)m")
+                                        .font(.app(11, .bold, isArabic: localization.isArabic))
+                                        .foregroundColor(AppColors.amber)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(AppColors.amber.opacity(0.12))
+                                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                }
+                                .padding(.top, 2)
+                            }
                         }
+                        .padding(14)
+                        .background(AppColors.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(AppColors.cardBorder, lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
                     }
-
-                    Spacer(minLength: 4)
-
-                    // Rating Pill
-                    HStack(spacing: 2) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(AppColors.amber)
-                        Text(String(format: "%.1f", place.starRating))
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(AppColors.textPrimary)
-                    }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(AppColors.amber.opacity(0.12))
-                    .clipShape(Capsule())
+                    .buttonStyle(ScaleButtonStyle(scale: 0.98, pressedOpacity: 0.94))
                 }
-
-                Divider().background(AppColors.cardBorder)
-
-                // Bottom Row: Live Waiting Count & Distance
-                HStack {
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(AppColors.accentGreen)
-                            .frame(width: 6, height: 6)
-                        Text(localization.isArabic
-                             ? "\(place.totalWaiting) انتظار"
-                             : "\(place.totalWaiting) in line")
-                            .font(.app(11, .bold, isArabic: localization.isArabic))
-                            .foregroundColor(AppColors.accentGreen)
-                    }
-
-                    Spacer()
-
-                    if let branch = place.primaryBranch {
-                        HStack(spacing: 3) {
-                            Image(systemName: "location.fill")
-                                .font(.system(size: 9))
-                                .foregroundColor(AppColors.teal)
-                            Text(localization.isArabic ? "\(branch.distanceKm) كم" : "\(branch.distanceKm) km")
-                                .font(.app(11, .bold, isArabic: localization.isArabic))
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-                }
-            }
-            .frame(width: 255)
-            .padding(12)
-            .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(AppColors.cardBorder, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.03), radius: 6, y: 2)
-        }
-        .buttonStyle(ScaleButtonStyle(scale: 0.97, pressedOpacity: 0.92))
-        .contextMenu {
-            Button {
-                selectedPlaceForDetails = place
-            } label: {
-                Label(localization.isArabic ? "عرض التفاصيل والحجز" : "View Details & Book", systemImage: "ticket")
-            }
-
-            ShareLink(item: "\(place.localizedName(isArabic: localization.isArabic)) - https://taboor.app/place/\(place.id)") {
-                Label(localization.isArabic ? "مشاركة المكان" : "Share Place", systemImage: "square.and.arrow.up")
             }
         }
     }
 
-    // MARK: - 5. Top Rated Section
+    // MARK: - 5. Top Rated Section (Refined Apple HIG Standard)
     private var topRatedSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundColor(AppColors.amber)
 
                     Text(localization.isArabic ? "الأعلى تقييماً" : "Top Rated")
@@ -910,28 +961,134 @@ public struct HomeTabView: View {
                 }
 
                 Spacer()
+
+                Button(action: {
+                    navigateToServices()
+                }) {
+                    Text(localization.isArabic ? "عرض الكل" : "See all")
+                        .font(.app(13, .bold, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.teal)
+                }
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 ForEach(topRated) { place in
-                    ServiceCardView(place: place) {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        selectedPlaceForDetails = place
-                    }
-                    .contextMenu {
-                        Button {
-                            selectedPlaceForDetails = place
-                        } label: {
-                            Label(localization.isArabic ? "عرض التفاصيل والحجز" : "View Details & Book", systemImage: "ticket")
-                        }
-
-                        ShareLink(item: "\(place.localizedName(isArabic: localization.isArabic)) - https://taboor.app/place/\(place.id)") {
-                            Label(localization.isArabic ? "مشاركة المكان" : "Share Place", systemImage: "square.and.arrow.up")
-                        }
-                    }
+                    topRatedCard(place: place)
                 }
             }
         }
+    }
+
+    private func topRatedCard(place: ServicePlace) -> some View {
+        Button(action: {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            selectedPlaceForDetails = place
+        }) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Top Row: Place Icon + Full Title & Verified Seal
+                HStack(alignment: .top, spacing: 12) {
+                    // Vector Thumbnail (Soft Teal Background)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(AppColors.softTeal)
+                            .frame(width: 50, height: 50)
+                        Image(systemName: place.iconName)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(AppColors.ink)
+                    }
+
+                    // Place Details (No Truncation)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .top, spacing: 6) {
+                            Text(place.localizedName(isArabic: localization.isArabic))
+                                .font(.app(14.5, .bold, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.textPrimary)
+                                .lineLimit(2)
+                                .lineSpacing(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .multilineTextAlignment(.leading)
+
+                            Spacer(minLength: 4)
+
+                            // Verified Seal
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(AppColors.teal)
+                        }
+
+                        if let branch = place.primaryBranch {
+                            Text("\(branch.localizedLabel(isArabic: localization.isArabic)) • \(branch.distanceKm) كم")
+                                .font(.app(12, .medium, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+
+                Divider().opacity(0.15)
+
+                // Bottom Row: Rating Badge + Live Wait Pill + Quick Book Button
+                HStack(alignment: .center) {
+                    // Golden Star Rating
+                    HStack(spacing: 3) {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(AppColors.amber)
+
+                        Text(String(format: "%.1f", place.starRating))
+                            .font(.system(size: 11.5, weight: .bold))
+                            .foregroundColor(AppColors.textPrimary)
+
+                        Text(localization.isArabic ? "(ممتاز)" : "(Top)")
+                            .font(.app(10.5, .medium, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.amber)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(AppColors.amber.opacity(0.12))
+                    .clipShape(Capsule())
+
+                    // Live Wait Status
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(place.totalWaiting <= 2 ? AppColors.accentGreen : AppColors.amber)
+                            .frame(width: 6, height: 6)
+
+                        Text(localization.isArabic ? "\(place.totalWaiting) انتظار" : "\(place.totalWaiting) in line")
+                            .font(.app(11, .bold, isArabic: localization.isArabic))
+                            .foregroundColor(place.totalWaiting <= 2 ? AppColors.accentGreen : AppColors.amber)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(AppColors.softTeal)
+                    .clipShape(Capsule())
+
+                    Spacer()
+
+                    // Quick CTA Pill
+                    HStack(spacing: 4) {
+                        Text(localization.isArabic ? "حجز دور" : "Join")
+                            .font(.app(11.5, .bold, isArabic: localization.isArabic))
+                        Image(systemName: localization.isArabic ? "chevron.left" : "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                    .foregroundColor(AppColors.teal)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(AppColors.teal.opacity(0.10))
+                    .clipShape(Capsule())
+                }
+            }
+            .padding(14)
+            .background(AppColors.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(AppColors.cardBorder, lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
+        }
+        .buttonStyle(ScaleButtonStyle(scale: 0.98, pressedOpacity: 0.94))
     }
 }
 
@@ -1091,14 +1248,17 @@ public struct LocationPickerSheetView: View {
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             isGpsPulsing = true
+                            UserLocationService.shared.requestPermission()
+                            UserLocationService.shared.startTracking()
+                            let coord = UserLocationService.shared.effectiveCoordinate
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                                activeLatitude = 29.9602
-                                activeLongitude = 31.2569
-                                activeDistrictName = localization.isArabic ? "المعادي، شارع النصر" : "Maadi, El-Nasr St"
-                                activeCityName = localization.isArabic ? "القاهرة" : "Cairo"
+                                activeLatitude = coord.latitude
+                                activeLongitude = coord.longitude
+                                activeDistrictName = UserLocationService.shared.currentAddress
+                                activeCityName = UserLocationService.shared.currentArea
                                 cameraPosition = .region(
                                     MKCoordinateRegion(
-                                        center: CLLocationCoordinate2D(latitude: 29.9602, longitude: 31.2569),
+                                        center: coord,
                                         span: MKCoordinateSpan(latitudeDelta: 0.018, longitudeDelta: 0.018)
                                     )
                                 )

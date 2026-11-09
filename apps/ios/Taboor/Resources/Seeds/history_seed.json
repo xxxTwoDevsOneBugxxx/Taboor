@@ -1,0 +1,51 @@
+{
+  "success": true,
+  "message": "History retrieved successfully",
+  "data": [
+    {
+      "id": "hist_1",
+      "ticketNumber": "M-04",
+      "placeNameAr": "صالون ميرور للحلاقة والتجميل",
+      "placeNameEn": "Mirror Barber & Grooming",
+      "branchNameAr": "فرع الزمالك - شارع البرازيل",
+      "branchNameEn": "Zamalek Branch",
+      "serviceCategory": "salons",
+      "dateStringAr": "أمس – 04:30 م",
+      "dateStringEn": "Yesterday – 04:30 PM",
+      "status": "completed",
+      "durationMinutes": 35,
+      "counterNumber": "كرسي 1",
+      "placeId": "place_2"
+    },
+    {
+      "id": "hist_2",
+      "ticketNumber": "C-19",
+      "placeNameAr": "مركز كايرو فيكس لصيانة السيارات",
+      "placeNameEn": "Cairo Fix Car Workshop",
+      "branchNameAr": "فرع المهندسين - شارع شهاب",
+      "branchNameEn": "Mohandessin Branch",
+      "serviceCategory": "garages",
+      "dateStringAr": "الأسبوع الماضي – 11:15 ص",
+      "dateStringEn": "Last week – 11:15 AM",
+      "status": "completed",
+      "durationMinutes": 25,
+      "counterNumber": "حارة 2",
+      "placeId": "place_3"
+    },
+    {
+      "id": "hist_3",
+      "ticketNumber": "L-08",
+      "placeNameAr": "مكتب وسط البلد للاستشارات والتوثيق",
+      "placeNameEn": "Downtown Documentation Office",
+      "branchNameAr": "فرع وسط البلد - قصر النيل",
+      "branchNameEn": "Downtown Branch",
+      "serviceCategory": "offices",
+      "dateStringAr": "12 أكتوبر 2026",
+      "dateStringEn": "Oct 12, 2026",
+      "status": "cancelled",
+      "durationMinutes": 0,
+      "counterNumber": "شباك 1",
+      "placeId": "place_4"
+    }
+  ]
+}

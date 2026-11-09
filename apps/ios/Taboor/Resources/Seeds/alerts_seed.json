@@ -1,0 +1,50 @@
+{
+  "success": true,
+  "message": "Alerts fetched successfully",
+  "data": [
+    {
+      "id": "alert_1",
+      "type": "turn",
+      "titleAr": "اقترب دورك في عيادة د. سارة!",
+      "titleEn": "Your turn is approaching!",
+      "descAr": "أنت الآن الثاني في طابور عيادة الأسنان (#A-12). يرجى التوجه لغرفة 3.",
+      "descEn": "You are 2nd in line (#A-12) for Dr. Sara Dental Clinic. Please head to Room 3.",
+      "timeAgoAr": "منذ دقيقتين",
+      "timeAgoEn": "2m ago",
+      "isRead": false
+    },
+    {
+      "id": "alert_2",
+      "type": "join",
+      "titleAr": "تم إصدار تذكرتك بنجاح",
+      "titleEn": "Ticket Reserved Successfully",
+      "descAr": "تذكرتك رقم #A-12 محجوزة لدى عيادة د. سارة للأسنان (فرع مدينة نصر).",
+      "descEn": "Ticket #A-12 confirmed at Dr. Sara Dental Clinic (Nasr City).",
+      "timeAgoAr": "منذ 10 دقائق",
+      "timeAgoEn": "10m ago",
+      "isRead": false
+    },
+    {
+      "id": "alert_3",
+      "type": "open",
+      "titleAr": "صالون ميرور بدأ استقبال العملاء",
+      "titleEn": "Mirror Salon Queue Now Open",
+      "descAr": "بدأ استقبال الطابور الصباحي في فرع الزمالك. متوسط الانتظار 10 دقائق.",
+      "descEn": "Morning queue is now open at Zamalek branch. Average wait is 10 mins.",
+      "timeAgoAr": "منذ ساعة",
+      "timeAgoEn": "1h ago",
+      "isRead": true
+    },
+    {
+      "id": "alert_4",
+      "type": "go",
+      "titleAr": "سيارتك جاهزة للاستلام",
+      "titleEn": "Your Car Is Ready for Pickup",
+      "descAr": "انتهت صيانة سيارتك في مركز كايرو فيكس. شكراً لاختيارك طابور.",
+      "descEn": "Service completed at Cairo Fix Auto. Thank you for using Taboor.",
+      "timeAgoAr": "أمس",
+      "timeAgoEn": "Yesterday",
+      "isRead": true
+    }
+  ]
+}

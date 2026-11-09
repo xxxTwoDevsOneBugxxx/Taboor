@@ -44,59 +44,25 @@ public enum AppColors {
     public static let info = Color(hex: 0x2196F3)
 
     // ===== Dynamic / Adaptive Semantic Colors (Light & Dark Mode) =====
-    public static let splashBackground = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.059, green: 0.071, blue: 0.090, alpha: 1.0) // Matches dark background (#0F1217)
-            : UIColor(red: 0.961, green: 0.941, blue: 0.906, alpha: 1.0) // Taboor Cream (#F5F0E7)
-    })
+    public static let splashBackground = Color(hex: 0xF5F0E7)
+    public static let cardBackground = Color.white
+    public static let elevatedCard = Color.white
+    public static let screenBackground = Color(hex: 0xF5F0E7) // Signature Warm Cream (#F5F0E7)
 
-    public static let cardBackground = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.11, green: 0.13, blue: 0.16, alpha: 1.0)
-            : UIColor.white
-    })
+    // Cohesive, warm card border: Ink at 9% opacity (harmonizes with cream background)
+    public static let cardBorder = Color(hex: 0x0B4C56, alpha: 0.09)
 
-    public static let elevatedCard = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.15, green: 0.17, blue: 0.20, alpha: 1.0)
-            : UIColor.white
-    })
+    // Deep Ink text: crisp, premium contrast
+    public static let textPrimary = Color(hex: 0x07333B)
 
-    public static let screenBackground = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(red: 0.059, green: 0.071, blue: 0.090, alpha: 1.0) // Matches Splash & Dark Identity (#0F1217)
-            : UIColor(red: 0.965, green: 0.969, blue: 0.975, alpha: 1.0) // Crisp Clean Modern iOS Tone (#F6F7F9)
-    })
+    // Slate Teal: warm, cohesive secondary text
+    public static let textSecondary = Color(hex: 0x4B6E74)
 
-    public static let cardBorder = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(white: 1.0, alpha: 0.10)
-            : UIColor(red: 0.92, green: 0.92, blue: 0.93, alpha: 1.0)
-    })
+    // Muted Slate Teal: tertiary labels, timestamps, bullets
+    public static let textTertiary = Color(hex: 0x829FA5)
 
-    public static let textPrimary = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor.white
-            : UIColor(red: 0.06, green: 0.25, blue: 0.29, alpha: 1.0) // deepTeal
-    })
-
-    public static let textSecondary = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(white: 0.70, alpha: 1.0)
-            : UIColor(red: 0.46, green: 0.46, blue: 0.46, alpha: 1.0) // gray600
-    })
-
-    public static let textTertiary = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(white: 0.50, alpha: 1.0)
-            : UIColor(red: 0.68, green: 0.68, blue: 0.68, alpha: 1.0)
-    })
-
-    public static let subtleFill = Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark
-            ? UIColor(white: 1.0, alpha: 0.07)
-            : UIColor(red: 0.96, green: 0.96, blue: 0.97, alpha: 1.0)
-    })
+    // Warm subtle fill for inactive chips and badges
+    public static let subtleFill = Color(hex: 0xEDE7DC)
 }
 
 extension Color {

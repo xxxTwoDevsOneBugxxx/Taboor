@@ -1,85 +1,70 @@
 import SwiftUI
 
-// MARK: - Redesigned Native iOS 26 Alerts / Notifications View
+// MARK: - Redesigned Native iOS Alerts / Notifications Tab View (Taboor Palette & Apple HIG)
 
 public struct AlertsTabView: View {
+    @Binding var selectedTab: TaboorTab
     @StateObject private var dataService = QueueDataService.shared
     @ObservedObject private var localization = LocalizationManager.shared
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var filterIndex: Int = 0 // 0 = All, 1 = Unread Only
+    @State private var filterIndex: Int = 0 // 0: All, 1: Unread, 2: Queue Status, 3: Updates
     @State private var showClearConfirm = false
 
-    public init() {}
+    public init(selectedTab: Binding<TaboorTab> = .constant(.alerts)) {
+        self._selectedTab = selectedTab
+    }
 
-    private var displayedAlerts: [AppAlertItem] {
-        if filterIndex == 1 {
+    private var filteredAlerts: [AppAlertItem] {
+        switch filterIndex {
+        case 1:
             return dataService.alerts.filter { !$0.isRead }
+        case 2:
+            return dataService.alerts.filter { $0.type == .turn || $0.type == .join || $0.type == .go }
+        case 3:
+            return dataService.alerts.filter { $0.type == .open || $0.type == .thanks }
+        default:
+            return dataService.alerts
         }
-        return dataService.alerts
-    }
-
-    private var unreadAlerts: [AppAlertItem] {
-        dataService.alerts.filter { !$0.isRead }
-    }
-
-    private var readAlerts: [AppAlertItem] {
-        dataService.alerts.filter { $0.isRead }
     }
 
     public var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    // 1. Top Custom Header Bar (Cohesive with Home & Queue Tabs)
-                    topHeaderBar
+            ZStack(alignment: .bottom) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        // 1. Top Custom Header Bar
+                        topHeaderBar
 
-                    // 2. Custom Filter Segmented Pills
-                    filterPillsBar
+                        // 2. Filter Segmented Chips Bar
+                        filterChipsBar
 
-                    // 3. Alerts Content
-                    if displayedAlerts.isEmpty {
-                        emptyAlertsCard
-                    } else {
-                        if filterIndex == 0 {
-                            // Section: Unread (if any)
-                            if !unreadAlerts.isEmpty {
-                                sectionHeader(localization.isArabic ? "تنبيهات جديدة" : "NEW NOTIFICATIONS")
-                                ForEach(unreadAlerts) { alert in
-                                    alertCard(alert: alert)
-                                }
-                            }
-
-                            // Section: Earlier
-                            if !readAlerts.isEmpty {
-                                sectionHeader(localization.isArabic ? "السابقة" : "EARLIER")
-                                    .padding(.top, unreadAlerts.isEmpty ? 0 : 8)
-                                ForEach(readAlerts) { alert in
-                                    alertCard(alert: alert)
-                                }
-                            }
+                        // 3. Alerts Content List
+                        if filteredAlerts.isEmpty {
+                            emptyAlertsCard
                         } else {
-                            // Filtered Unread Only
-                            ForEach(displayedAlerts) { alert in
-                                alertCard(alert: alert)
+                            VStack(spacing: 12) {
+                                ForEach(filteredAlerts) { alert in
+                                    alertCard(alert: alert)
+                                }
                             }
                         }
-                    }
 
-                    Spacer().frame(height: 60)
+                        Spacer().frame(height: 105)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+                .background(AppColors.screenBackground.ignoresSafeArea())
             }
-            .background(AppColors.screenBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
-                try? await Task.sleep(nanoseconds: 500_000_000)
+                await dataService.refreshAll()
             }
             .alert(localization.isArabic ? "مسح جميع التنبيهات" : "Clear All Alerts", isPresented: $showClearConfirm) {
                 Button(localization.isArabic ? "إلغاء" : "Cancel", role: .cancel) {}
                 Button(localization.isArabic ? "مسح الكل" : "Clear All", role: .destructive) {
-                    withAnimation(.spring) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                         dataService.clearAllAlerts()
                     }
                 }
@@ -91,36 +76,36 @@ public struct AlertsTabView: View {
         }
     }
 
-    // MARK: - 1. Top Header Bar (Cohesive with Home & Queue Tabs)
+    // MARK: - 1. Top Header Bar
     private var topHeaderBar: some View {
         HStack(alignment: .center, spacing: 12) {
-            // Icon Squircle Badge (38x38 with gradient)
+            // Squircle Brand Icon
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [AppColors.teal, AppColors.deepTeal],
+                            colors: [AppColors.ink, AppColors.deepTeal],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 38, height: 38)
+                    .frame(width: 42, height: 42)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
                     )
-                    .shadow(color: AppColors.teal.opacity(0.25), radius: 4, x: 0, y: 2)
+                    .shadow(color: AppColors.ink.opacity(0.2), radius: 6, x: 0, y: 2)
 
                 Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
             }
 
             // Title & Subtitle with Unread Counter Badge
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Text(localization.isArabic ? "التنبيهات" : "Alerts")
-                        .font(.app(20, .bold, isArabic: localization.isArabic))
+                        .font(.app(22, .extraBold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.textPrimary)
 
                     if dataService.unreadAlertsCount > 0 {
@@ -129,240 +114,292 @@ public struct AlertsTabView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 2)
-                            .background(AppColors.accentRed)
+                            .background(AppColors.amber)
                             .clipShape(Capsule())
                     }
                 }
 
-                Text(localization.isArabic ? "إشعارات دورك وتحديثات الطابور" : "Turn updates & queue notifications")
-                    .font(.app(11.5, .medium, isArabic: localization.isArabic))
+                Text(localization.isArabic ? "إشعارات دورك وتحديثات الأماكن" : "Turn updates & place notifications")
+                    .font(.app(12, .medium, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textSecondary)
                     .lineLimit(1)
             }
 
             Spacer()
 
-            // Trailing Action Cluster
-            HStack(spacing: 8) {
-                // "قراءة الكل" Mark All Read Button
-                if dataService.unreadAlertsCount > 0 {
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            dataService.markAllAlertsRead()
-                        }
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 13, weight: .semibold))
-                            Text(localization.isArabic ? "قراءة الكل" : "Read All")
-                                .font(.app(12, .bold, isArabic: localization.isArabic))
-                        }
-                        .foregroundColor(AppColors.teal)
-                        .padding(.horizontal, 10)
-                        .frame(height: 38)
-                        .background(AppColors.cardBackground)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule().strokeBorder(AppColors.teal.opacity(0.25), lineWidth: 0.8)
-                        )
-                        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.04), radius: 4, x: 0, y: 1.5)
-                    }
-                    .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
-                }
-
-                // Clear / Trash Button
-                if !dataService.alerts.isEmpty {
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        showClearConfirm = true
-                    }) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(AppColors.textSecondary)
-                            .frame(width: 38, height: 38)
-                            .background(AppColors.cardBackground)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18), lineWidth: 0.8)
-                            )
-                            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.04), radius: 4, x: 0, y: 1.5)
-                    }
-                    .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
-                }
-            }
-        }
-    }
-
-    // MARK: - 2. Custom Filter Segmented Pills
-    private var filterPillsBar: some View {
-        HStack(spacing: 8) {
-            ForEach([0, 1], id: \.self) { idx in
-                let isSelected = filterIndex == idx
-                let title = idx == 0
-                    ? (localization.isArabic ? "الكل (\(dataService.alerts.count))" : "All (\(dataService.alerts.count))")
-                    : (localization.isArabic ? "غير مقروءة (\(dataService.unreadAlertsCount))" : "Unread (\(dataService.unreadAlertsCount))")
-
+            // Header Action Pill: Mark All Read
+            if dataService.unreadAlertsCount > 0 {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        filterIndex = idx
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                        dataService.markAllAlertsRead()
                     }
                 }) {
-                    Text(title)
-                        .font(.app(13, isSelected ? .bold : .medium, isArabic: localization.isArabic))
-                        .foregroundColor(isSelected ? .white : AppColors.textSecondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(isSelected ? AppColors.teal : AppColors.cardBackground)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(
-                                    isSelected ? Color.clear : Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18),
-                                    lineWidth: 0.8
-                                )
-                        )
-                        .shadow(color: isSelected ? AppColors.teal.opacity(0.3) : Color.black.opacity(colorScheme == .dark ? 0 : 0.03), radius: isSelected ? 4 : 2, x: 0, y: 1)
-                }
-                .buttonStyle(ScaleButtonStyle(scale: 0.96, pressedOpacity: 0.85))
-            }
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 12, weight: .bold))
 
-            Spacer()
+                        Text(localization.isArabic ? "تحديد كمقروء" : "Mark Read")
+                            .font(.app(11.5, .bold, isArabic: localization.isArabic))
+                    }
+                    .foregroundColor(AppColors.teal)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 6)
+                    .background(Color.white)
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule().strokeBorder(AppColors.teal.opacity(0.25), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
+                }
+                .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
+            } else if !dataService.alerts.isEmpty {
+                // Clear button
+                Button(action: {
+                    showClearConfirm = true
+                }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(8)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(AppColors.cardBorder, lineWidth: 1))
+                }
+                .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
+            }
         }
-        .padding(.top, 2)
     }
 
-    // MARK: - Section Header Label
-    private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.app(12, .bold, isArabic: localization.isArabic))
-                .foregroundColor(AppColors.textSecondary)
-            Spacer()
+    // MARK: - 2. Filter Segmented Chips Bar
+    private var filterChipsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                filterChip(index: 0, labelAr: "الكل (\(dataService.alerts.count))", labelEn: "All (\(dataService.alerts.count))")
+                filterChip(index: 1, labelAr: "غير مقروءة (\(dataService.unreadAlertsCount))", labelEn: "Unread (\(dataService.unreadAlertsCount))")
+                filterChip(index: 2, labelAr: "حالة الدور", labelEn: "Queue Status")
+                filterChip(index: 3, labelAr: "تحديثات", labelEn: "Updates")
+            }
+            .padding(.vertical, 2)
         }
-        .padding(.horizontal, 4)
-        .padding(.top, 4)
+    }
+
+    private func filterChip(index: Int, labelAr: String, labelEn: String) -> some View {
+        let isSelected = filterIndex == index
+        return Button(action: {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                filterIndex = index
+            }
+        }) {
+            Text(localization.isArabic ? labelAr : labelEn)
+                .font(.app(12.5, isSelected ? .bold : .medium, isArabic: localization.isArabic))
+                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7.5)
+                .background(isSelected ? AppColors.ink : Color.white)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(isSelected ? Color.clear : AppColors.cardBorder, lineWidth: 1)
+                )
+                .shadow(color: isSelected ? AppColors.ink.opacity(0.18) : Color.black.opacity(0.02), radius: 4, y: 2)
+        }
+        .buttonStyle(ScaleButtonStyle(scale: 0.95, pressedOpacity: 0.85))
     }
 
     // MARK: - 3. Alert Card
     private func alertCard(alert: AppAlertItem) -> some View {
         Button(action: {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            withAnimation(.spring) {
-                dataService.markAlertRead(id: alert.id)
+            if !alert.isRead {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                    dataService.markAlertRead(id: alert.id)
+                }
             }
         }) {
             HStack(alignment: .top, spacing: 14) {
-                // SF Symbol Icon with Type Accent
+                // Leading Icon in Squircle Badge
                 ZStack {
-                    Circle()
-                        .fill(alert.type.color.opacity(colorScheme == .dark ? 0.22 : 0.12))
-                        .frame(width: 42, height: 42)
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(alertIconBackground(for: alert.type))
+                        .frame(width: 44, height: 44)
 
-                    Image(systemName: alert.type.iconName)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(alert.type.color)
+                    Image(systemName: alertIcon(for: alert.type))
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundColor(alertIconColor(for: alert.type))
                 }
 
+                // Alert Details
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline) {
-                        Text(alert.localizedTitle(isArabic: localization.isArabic))
-                            .font(.app(15, alert.isRead ? .medium : .bold, isArabic: localization.isArabic))
+                        Text(localization.isArabic ? alert.titleAr : alert.titleEn)
+                            .font(.app(14.5, .bold, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Spacer(minLength: 8)
+                        Spacer()
 
-                        Text(alert.localizedTimeAgo(isArabic: localization.isArabic))
-                            .font(.app(11, .regular, isArabic: localization.isArabic))
-                            .foregroundColor(AppColors.textTertiary)
-                            .fixedSize()
+                        // Unread Pulse Amber Dot
+                        if !alert.isRead {
+                            Circle()
+                                .fill(AppColors.amber)
+                                .frame(width: 8, height: 8)
+                        }
                     }
 
-                    Text(alert.localizedDesc(isArabic: localization.isArabic))
-                        .font(.app(13, .regular, isArabic: localization.isArabic))
+                    Text(localization.isArabic ? alert.descAr : alert.descEn)
+                        .font(.app(12.5, .regular, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.textSecondary)
-                        .lineSpacing(2)
-                        .multilineTextAlignment(.leading)
-                }
+                        .lineSpacing(3)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                if !alert.isRead {
-                    Circle()
-                        .fill(AppColors.teal)
-                        .frame(width: 8, height: 8)
-                        .padding(.top, 4)
+                    // Footer: Relative Time & Category Tag
+                    HStack(spacing: 6) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 10))
+                            Text(localization.isArabic ? alert.timeAgoAr : alert.timeAgoEn)
+                                .font(.app(11, .regular, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.textTertiary)
+
+                        Text("•")
+                            .foregroundColor(AppColors.textTertiary)
+
+                        Text(alertCategoryTag(for: alert.type))
+                            .font(.app(10.5, .bold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.teal)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(AppColors.softTeal)
+                            .clipShape(Capsule())
+                    }
+                    .padding(.top, 4)
                 }
             }
             .padding(14)
-            .background(AppColors.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(
-                        alert.isRead
-                            ? Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.15)
-                            : AppColors.teal.opacity(0.35),
-                        lineWidth: alert.isRead ? 0.8 : 1.2
-                    )
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(!alert.isRead ? AppColors.amber.opacity(0.35) : AppColors.cardBorder, lineWidth: 1.2)
             )
-            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.03), radius: 5, x: 0, y: 2)
+            .shadow(color: Color.black.opacity(!alert.isRead ? 0.04 : 0.02), radius: 6, y: 2)
         }
-        .buttonStyle(ScaleButtonStyle(scale: 0.99, pressedOpacity: 0.95))
+        .buttonStyle(ScaleButtonStyle(scale: 0.98, pressedOpacity: 0.92))
         .contextMenu {
+            Button(role: .destructive) {
+                withAnimation(.spring) {
+                    dataService.deleteAlert(id: alert.id)
+                }
+            } label: {
+                Label(localization.isArabic ? "حذف التنبيه" : "Delete", systemImage: "trash")
+            }
+
             if !alert.isRead {
                 Button {
-                    dataService.markAlertRead(id: alert.id)
+                    withAnimation(.spring) {
+                        dataService.markAlertRead(id: alert.id)
+                    }
                 } label: {
-                    Label(localization.isArabic ? "تحديد كمقروء" : "Mark as Read", systemImage: "envelope.open")
+                    Label(localization.isArabic ? "تحديد كمقروء" : "Mark as Read", systemImage: "checkmark.circle")
                 }
-            }
-            Button(role: .destructive) {
-                dataService.deleteAlert(id: alert.id)
-            } label: {
-                Label(localization.isArabic ? "حذف التنبيه" : "Delete Alert", systemImage: "trash")
             }
         }
     }
 
-    // MARK: - Empty State Card
+    // Helper functions for Alert Type Icon & Styling
+    private func alertIcon(for type: AlertType) -> String {
+        switch type {
+        case .turn: return "clock.badge.fill"
+        case .join: return "ticket.fill"
+        case .go: return "checkmark.seal.fill"
+        case .open: return "door.left.hand.open"
+        case .thanks: return "star.circle.fill"
+        }
+    }
+
+    private func alertIconColor(for type: AlertType) -> Color {
+        switch type {
+        case .turn: return AppColors.amber
+        case .join: return AppColors.teal
+        case .go: return AppColors.accentGreen
+        case .open: return AppColors.indigo
+        case .thanks: return AppColors.teal
+        }
+    }
+
+    private func alertIconBackground(for type: AlertType) -> Color {
+        switch type {
+        case .turn: return AppColors.amber.opacity(0.12)
+        case .join: return AppColors.softTeal
+        case .go: return AppColors.accentGreen.opacity(0.12)
+        case .open: return AppColors.indigo.opacity(0.12)
+        case .thanks: return AppColors.softTeal
+        }
+    }
+
+    private func alertCategoryTag(for type: AlertType) -> String {
+        if localization.isArabic {
+            switch type {
+            case .turn: return "اقتراب الدور"
+            case .join: return "تأكيد الحجز"
+            case .go: return "انتهاء الزيارة"
+            case .open: return "فتح الطابور"
+            case .thanks: return "تقييم وتجربة"
+            }
+        } else {
+            switch type {
+            case .turn: return "Turn Alert"
+            case .join: return "Reservation"
+            case .go: return "Completed"
+            case .open: return "Queue Open"
+            case .thanks: return "Feedback"
+            }
+        }
+    }
+
+    // MARK: - Empty Alerts State
     private var emptyAlertsCard: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(AppColors.teal.opacity(colorScheme == .dark ? 0.20 : 0.10))
-                    .frame(width: 64, height: 64)
+                    .fill(AppColors.softTeal)
+                    .frame(width: 70, height: 70)
 
                 Image(systemName: "bell.slash")
-                    .font(.system(size: 28, weight: .medium))
+                    .font(.system(size: 26, weight: .semibold))
                     .foregroundColor(AppColors.teal)
             }
+            .padding(.top, 14)
 
             VStack(spacing: 4) {
-                Text(localization.isArabic ? "لا توجد تنبيهات" : "No Alerts")
-                    .font(.app(17, .bold, isArabic: localization.isArabic))
+                Text(localization.isArabic ? "لا توجد تنبيهات جديدة" : "No Alerts Found")
+                    .font(.app(16, .extraBold, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textPrimary)
 
                 Text(localization.isArabic
-                     ? "ستظهر هنا إشعارات اقتراب دورك وتحديثات حالة الطابور لحظة بلحظة."
-                     : "You'll be notified here when your turn is approaching and queue status updates.")
-                    .font(.app(13, .regular, isArabic: localization.isArabic))
+                     ? "ستظهر هنا إشعارات دورك عند اقترابه وتحديثات الأماكن المحجوزة"
+                     : "Turn alerts and updates from places you joined will appear here")
+                    .font(.app(12.5, .regular, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
+                    .padding(.horizontal, 24)
             }
-            .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
-        .background(AppColors.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.vertical, 32)
+        .padding(.horizontal, 16)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.35 : 0.18), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(AppColors.cardBorder, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0 : 0.03), radius: 6, x: 0, y: 2)
-        .padding(.top, 12)
+        .shadow(color: Color.black.opacity(0.02), radius: 6, y: 2)
     }
 }

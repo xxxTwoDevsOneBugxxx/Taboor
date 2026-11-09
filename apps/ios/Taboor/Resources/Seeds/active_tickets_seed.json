@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "message": "Active tickets retrieved successfully",
+  "data": [
+    {
+      "id": "ticket_1",
+      "ticketNumber": "A-12",
+      "serviceName": "Dar Al Fouad Hospital",
+      "serviceNameAr": "مستشفى دار الفؤاد - العيادات الخارجية",
+      "branchLabel": "Internal Medicine Clinic",
+      "branchLabelAr": "عيادة الباطنة والقلب • د. أحمد شاكر",
+      "counterLabel": "Counter 3",
+      "counterLabelAr": "شباك رقم 3",
+      "waitingAhead": 2,
+      "estMinutes": 8,
+      "currentServing": "A-10",
+      "progress": 0.75,
+      "isActive": true,
+      "bookingType": "liveQueue",
+      "placeId": "place_1",
+      "latitude": 30.0585,
+      "longitude": 31.3465
+    },
+    {
+      "id": "ticket_2",
+      "ticketNumber": "M-24",
+      "serviceName": "Mirror Barber & Grooming",
+      "serviceNameAr": "صالون ميرور للحلاقة والتجميل",
+      "branchLabel": "Zamalek Main Branch",
+      "branchLabelAr": "فرع الزمالك الرئيسي",
+      "counterLabel": "Chair 2",
+      "counterLabelAr": "كرسي رقم 2",
+      "waitingAhead": 0,
+      "estMinutes": 0,
+      "currentServing": "M-20",
+      "progress": 0.0,
+      "isActive": true,
+      "bookingType": "scheduled",
+      "placeId": "place_2",
+      "latitude": 30.0612,
+      "longitude": 31.2185,
+      "scheduledDate": "2026-11-10",
+      "scheduledTimeSlot": "04:30 PM",
+      "doctorNameAr": "كريم عبد العزيز",
+      "specialityAr": "مصفف شعر رئيسي"
+    }
+  ]
+}

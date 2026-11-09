@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 // MARK: - Service Category
 
@@ -119,6 +120,18 @@ public struct ServiceBranch: Identifiable, Hashable, Codable {
     public func localizedAddress(isArabic: Bool) -> String {
         isArabic ? addressAr : address
     }
+
+    public var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: lat, longitude: lng)
+    }
+
+    public func realDistanceFormatted(isArabic: Bool) -> String {
+        UserLocationService.shared.formattedDistance(to: coordinate, isArabic: isArabic)
+    }
+
+    public var realEstimatedDriveMinutes: Int {
+        UserLocationService.shared.estimatedDriveMinutes(to: coordinate)
+    }
 }
 
 // MARK: - Service Place
@@ -219,6 +232,27 @@ public struct ServicePlace: Identifiable, Hashable {
 
 // MARK: - User Active Queue Ticket
 
+public enum TicketBookingType: String, Codable {
+    case liveQueue
+    case scheduled
+}
+
+public struct AppointmentSlot: Identifiable, Hashable {
+    public let id: String
+    public let time: String // e.g. "04:00 م"
+    public let timeEn: String // e.g. "04:00 PM"
+    public let isBooked: Bool
+    public let isRecommended: Bool
+
+    public init(id: String = UUID().uuidString, time: String, timeEn: String, isBooked: Bool = false, isRecommended: Bool = false) {
+        self.id = id
+        self.time = time
+        self.timeEn = timeEn
+        self.isBooked = isBooked
+        self.isRecommended = isRecommended
+    }
+}
+
 public struct UserTicket: Identifiable, Equatable, Codable {
     public let id: String
     public var ticketNumber: String
@@ -234,6 +268,12 @@ public struct UserTicket: Identifiable, Equatable, Codable {
     public var progress: Double
     public var joinedAt: Date
     public var isActive: Bool
+    public var bookingType: TicketBookingType
+    public var scheduledDate: String?
+    public var scheduledTime: String?
+    public var placeId: String?
+    public var latitude: Double?
+    public var longitude: Double?
 
     public init(
         id: String = UUID().uuidString,
@@ -249,7 +289,13 @@ public struct UserTicket: Identifiable, Equatable, Codable {
         currentServing: String = "A-10",
         progress: Double = 0.70,
         joinedAt: Date = Date(),
-        isActive: Bool = true
+        isActive: Bool = true,
+        bookingType: TicketBookingType = .liveQueue,
+        scheduledDate: String? = nil,
+        scheduledTime: String? = nil,
+        placeId: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil
     ) {
         self.id = id
         self.ticketNumber = ticketNumber
@@ -265,6 +311,12 @@ public struct UserTicket: Identifiable, Equatable, Codable {
         self.progress = progress
         self.joinedAt = joinedAt
         self.isActive = isActive
+        self.bookingType = bookingType
+        self.scheduledDate = scheduledDate
+        self.scheduledTime = scheduledTime
+        self.placeId = placeId
+        self.latitude = latitude
+        self.longitude = longitude
     }
 
     public func localizedServiceName(isArabic: Bool) -> String {
@@ -318,6 +370,14 @@ public struct TicketHistoryItem: Identifiable, Equatable, Codable {
         self.dateString = dateString
         self.status = status
         self.durationMinutes = durationMinutes
+    }
+
+    public func localizedServiceName(isArabic: Bool) -> String {
+        isArabic ? serviceNameAr : serviceName
+    }
+
+    public func localizedBranch(isArabic: Bool) -> String {
+        isArabic ? branchLabelAr : branchLabel
     }
 }
 

@@ -10,6 +10,8 @@ targets:
     deploymentTarget: "26.0"
     sources:
       - path: Taboor
+    dependencies:
+      - target: TaboorWidgets
     info:
       path: Taboor/Info.plist
       properties:
@@ -19,8 +21,17 @@ targets:
           - en
           - ar
         CFBundleIdentifier: com.taboor.ios
+        CFBundleURLTypes:
+          - CFBundleURLName: "com.taboor.ios"
+            CFBundleURLSchemes:
+              - "taboor"
+        NSSupportsLiveActivities: YES
+        NSSupportsLiveActivitiesFrequentUpdates: YES
+        NSSiriUsageDescription: "استخدام سيري للاستعلام الصوتي عن دورك وتأجيل المواعيد صوتياً"
+        NSLocationWhenInUseUsageDescription: "نحتاج إلى موقعك الجغرافي لعرض أقرب العيادات والخدمات إليك وحساب المسافة ووقت الوصول بدقة."
         UILaunchScreen:
           UIColorName: LaunchScreenBackground
+        UIUserInterfaceStyle: Light
         UIAppFonts:
           - "Tajawal-Regular.ttf"
           - "Tajawal-Medium.ttf"
@@ -39,11 +50,36 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: "1.0.0"
+
+  TaboorWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: TaboorWidgets
+      - path: Taboor/Core/LiveActivity/QueueActivityAttributes.swift
+    info:
+      path: TaboorWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: "TaboorWidgets"
+        CFBundleIdentifier: com.taboor.ios.TaboorWidgets
+        NSExtension:
+          NSExtensionPointIdentifier: "com.apple.widgetkit-extension"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.taboor.ios.TaboorWidgets
+        DEVELOPMENT_TEAM: UFBWC7D67P
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+
 schemes:
   Taboor:
     build:
       targets:
         Taboor: all
+        TaboorWidgets: all
     run:
       config: Debug
       environmentVariables:

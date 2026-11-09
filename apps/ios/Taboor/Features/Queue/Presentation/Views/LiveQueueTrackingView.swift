@@ -11,6 +11,7 @@ public struct LiveQueueTrackingView: View {
 
     @State private var showCancelAlert = false
     @State private var postponeTrigger = false
+    @State private var showNavigationAppDialog = false
 
     // Interactive Bottom Sheet Detents (Scrollable/Draggable)
     @State private var isSheetCollapsed: Bool = false
@@ -28,17 +29,30 @@ public struct LiveQueueTrackingView: View {
         return raw
     }
 
-    // Real Route Coordinates (Cairo - Nasr City)
-    private let userCoord = CLLocationCoordinate2D(latitude: 30.0460, longitude: 31.3340)
-    private let navCoord = CLLocationCoordinate2D(latitude: 30.0525, longitude: 31.3405)
+    // Dynamic Route Coordinates (Starts from Real User GPS Coordinate)
+    private var userCoord: CLLocationCoordinate2D {
+        UserLocationService.shared.effectiveCoordinate
+    }
     private let clinicCoord = CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
-    private let routeCoordinates: [CLLocationCoordinate2D] = [
-        CLLocationCoordinate2D(latitude: 30.0460, longitude: 31.3340),
-        CLLocationCoordinate2D(latitude: 30.0490, longitude: 31.3370),
-        CLLocationCoordinate2D(latitude: 30.0525, longitude: 31.3405),
-        CLLocationCoordinate2D(latitude: 30.0555, longitude: 31.3435),
-        CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
-    ]
+    private var navCoord: CLLocationCoordinate2D {
+        let u = userCoord
+        let c = clinicCoord
+        return CLLocationCoordinate2D(latitude: (u.latitude + c.latitude) / 2.0, longitude: (u.longitude + c.longitude) / 2.0)
+    }
+
+    private var routeCoordinates: [CLLocationCoordinate2D] {
+        let start = userCoord
+        let end = clinicCoord
+        let dLat = end.latitude - start.latitude
+        let dLng = end.longitude - start.longitude
+        return [
+            start,
+            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.25 + 0.0008, longitude: start.longitude + dLng * 0.20 - 0.0005),
+            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.50 - 0.0006, longitude: start.longitude + dLng * 0.55 + 0.0007),
+            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.75 + 0.0004, longitude: start.longitude + dLng * 0.80 + 0.0002),
+            end
+        ]
+    }
 
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -57,8 +71,8 @@ public struct LiveQueueTrackingView: View {
                     realAppleMapView(ticket: ticket)
                         .ignoresSafeArea()
 
-                    // 2. Top Floating Live Status Capsule & Dismiss Button
-                    VStack {
+                    // 2. Top Floating Live Status Capsule & In-App Navigation Card
+                    VStack(spacing: 6) {
                         HStack(spacing: 12) {
                             // Floating Close Button
                             Button(action: {
@@ -86,6 +100,9 @@ public struct LiveQueueTrackingView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 10)
 
+                        // In-App Turn-By-Turn Direction Card
+                        inAppTurnByTurnCard(ticket: ticket)
+
                         Spacer()
                     }
 
@@ -94,6 +111,16 @@ public struct LiveQueueTrackingView: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
                 .toolbar(.hidden, for: .navigationBar)
+                .onAppear {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        dataService.isTabBarHidden = true
+                    }
+                }
+                .onDisappear {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        dataService.isTabBarHidden = false
+                    }
+                }
             } else {
                 VStack(spacing: 16) {
                     Text(localization.isArabic ? "لا يوجد دور نشط حالياً" : "No active ticket")
@@ -109,6 +136,26 @@ public struct LiveQueueTrackingView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(AppColors.screenBackground.ignoresSafeArea())
             }
+        }
+        .alert(
+            localization.isArabic ? "فتح الملاحة والاتجاهات" : "Open Navigation & Directions",
+            isPresented: $showNavigationAppDialog
+        ) {
+            Button(localization.isArabic ? "خرائط آبل (Apple Maps)" : "Apple Maps") {
+                let name = dataService.activeTicket?.localizedServiceName(isArabic: localization.isArabic) ?? (localization.isArabic ? "العيادة" : "Clinic")
+                NavigationLauncher.shared.open(app: .appleMaps, latitude: clinicCoord.latitude, longitude: clinicCoord.longitude, destinationName: name)
+            }
+
+            Button(localization.isArabic ? "خرائط جوجل (Google Maps)" : "Google Maps") {
+                let name = dataService.activeTicket?.localizedServiceName(isArabic: localization.isArabic) ?? (localization.isArabic ? "العيادة" : "Clinic")
+                NavigationLauncher.shared.open(app: .googleMaps, latitude: clinicCoord.latitude, longitude: clinicCoord.longitude, destinationName: name)
+            }
+
+            Button(localization.isArabic ? "إلغاء" : "Cancel", role: .cancel) {}
+        } message: {
+            Text(localization.isArabic
+                 ? "اختر التطبيق لبدء التوجيه الصوتي المباشر بالـ GPS."
+                 : "Select an app for turn-by-turn voice GPS navigation.")
         }
         .alert(localization.isArabic ? "إلغاء التذكرة" : "Cancel Ticket", isPresented: $showCancelAlert) {
             Button(localization.isArabic ? "تراجع" : "Keep", role: .cancel) {}
@@ -273,6 +320,92 @@ public struct LiveQueueTrackingView: View {
         .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.08), radius: 10, y: 4)
     }
 
+    // MARK: - 2.5 In-App Turn-By-Turn Direction Card
+    private func inAppTurnByTurnCard(ticket: UserTicket) -> some View {
+        HStack(spacing: 12) {
+            // Maneuver Turn Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.teal, AppColors.deepTeal],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: "arrow.turn.up.right")
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(localization.isArabic ? "بعد 350 متر" : "In 350m")
+                        .font(.app(11.5, .extraBold, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.teal)
+
+                    Text("•")
+                        .font(.system(size: 10))
+                        .foregroundColor(AppColors.textTertiary)
+
+                    let distText = UserLocationService.shared.formattedDistance(to: clinicCoord, isArabic: localization.isArabic)
+                    let minsText = "~\(UserLocationService.shared.estimatedDriveMinutes(to: clinicCoord)) " + (localization.isArabic ? "دقائق" : "mins")
+                    Text(localization.isArabic ? "المتبقي \(distText) (\(minsText))" : "\(distText) remaining (\(minsText))")
+                        .font(.app(11, .medium, isArabic: localization.isArabic))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Text(localization.isArabic ? "انعطف يميناً إلى شارع النصر" : "Turn right onto El-Nasr St")
+                    .font(.app(13.5, .bold, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            // Quick Launcher for External Maps
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                showNavigationAppDialog = true
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "map.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(localization.isArabic ? "ملاحة" : "Maps")
+                        .font(.app(11, .bold, isArabic: localization.isArabic))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    LinearGradient(
+                        colors: [AppColors.ink, AppColors.deepTeal],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(Capsule())
+                .shadow(color: AppColors.ink.opacity(0.18), radius: 4, y: 2)
+            }
+            .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppColors.cardBackground.opacity(0.96))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Color(UIColor.separator).opacity(colorScheme == .dark ? 0.3 : 0.15), lineWidth: 0.8)
+                )
+        )
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.08), radius: 8, y: 3)
+        .padding(.horizontal, 16)
+        .padding(.top, 2)
+    }
+
     // MARK: - 3. Modal Bottom Sheet (Uber / Talabat Style)
     private func bottomTrackingDrawer(ticket: UserTicket) -> some View {
         VStack(spacing: 10) {
@@ -387,19 +520,20 @@ public struct LiveQueueTrackingView: View {
                             .foregroundColor(AppColors.textPrimary)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 9.5)
-                            .background(Color(UIColor.secondarySystemBackground))
+                            .background(AppColors.softTeal)
                             .clipShape(Capsule())
                             .overlay(
-                                Capsule().strokeBorder(Color(UIColor.separator).opacity(0.25), lineWidth: 0.8)
+                                Capsule().strokeBorder(AppColors.cardBorder, lineWidth: 1)
                             )
                         }
                         .sensoryFeedback(.impact(weight: .medium), trigger: postponeTrigger)
 
                         Button(action: {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             showCancelAlert = true
                         }) {
                             HStack(spacing: 6) {
-                                Image(systemName: "xmark.circle")
+                                Image(systemName: "xmark.circle.fill")
                                 Text(localization.isArabic ? "إلغاء الدور" : "Cancel")
                             }
                             .font(.app(12, .bold, isArabic: localization.isArabic))
@@ -412,6 +546,49 @@ public struct LiveQueueTrackingView: View {
                                 Capsule().strokeBorder(AppColors.accentRed.opacity(0.30), lineWidth: 0.8)
                             )
                         }
+                    }
+
+                    // External GPS Navigation App Launcher
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        showNavigationAppDialog = true
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                                .font(.system(size: 12, weight: .bold))
+                            Text(localization.isArabic ? "فتح الملاحة بالخرائط (Apple / Google Maps)" : "Open in External Maps & GPS")
+                                .font(.app(12, .bold, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.teal)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background(AppColors.softTeal)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(AppColors.teal.opacity(0.25), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.96, pressedOpacity: 0.85))
+
+                    // Native Actionable iOS Notification Test Trigger
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        NotificationService.shared.sendTurnApproachingNotification(for: ticket)
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "bell.badge.fill")
+                                .font(.system(size: 11, weight: .bold))
+                            Text(localization.isArabic ? "تجربة إشعار باقتراب الدور (أزرار تفاعلية)" : "Test Interactive Turn Notification")
+                                .font(.app(11.5, .bold, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.teal)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(AppColors.softTeal.opacity(0.8))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(AppColors.teal.opacity(0.2), lineWidth: 0.8)
+                        )
                     }
                 }
                 .opacity(max(0, 1.0 - Double(currentSheetOffset / 90.0)))
@@ -460,11 +637,11 @@ public struct LiveQueueTrackingView: View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
-                    .fill(isUser ? AppColors.teal : (isCurrent ? AppColors.amber : Color(UIColor.secondarySystemBackground)))
+                    .fill(isUser ? AppColors.teal : (isCurrent ? AppColors.amber : AppColors.softTeal))
                     .frame(width: 36, height: 36)
                     .overlay(
                         Circle()
-                            .strokeBorder(isUser ? AppColors.teal : Color(UIColor.separator).opacity(0.3), lineWidth: isUser ? 2 : 0.8)
+                            .strokeBorder(isUser ? AppColors.teal : AppColors.cardBorder, lineWidth: isUser ? 2 : 1)
                     )
 
                 Text(number)
