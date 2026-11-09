@@ -11,7 +11,8 @@ This document serves as the single source of truth for architectural standards, 
 ### Monorepo Structure
 * **`apps/api`**: Backend Web API built with **ASP.NET Core (.NET 10)**.
 * **`apps/dashboard`**: Web Management Portal built with **React / TanStack Start / TanStack Router** and Tailwind CSS.
-* **`apps/mobile`**: Mobile application for end customers built with **Flutter** (iOS & Android).
+* **`apps/android`**: Native Android application built with **Kotlin & Jetpack Compose (Material 3)**.
+* **`apps/ios`**: Native iOS application built with **Swift & SwiftUI**.
 
 ---
 
