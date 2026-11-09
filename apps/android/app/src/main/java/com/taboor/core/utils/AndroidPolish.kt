@@ -21,6 +21,24 @@ import androidx.compose.ui.platform.LocalHapticFeedback
  * - Breathing pulsing animations for live indicators
  */
 
+fun Modifier.bounceClick(
+    scaleDown: Float = 0.96f
+): Modifier = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) scaleDown else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "bounceSpring"
+    )
+
+    this.scale(scale)
+}
+
 /**
  * Bouncy press animation using spring physics with subtle haptic tactile feedback.
  */
@@ -28,8 +46,10 @@ fun Modifier.bounceClick(
     scaleDown: Float = 0.96f,
     withRipple: Boolean = false,
     rippleColor: Color = Color.Unspecified,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ): Modifier = composed {
+    if (!enabled) return@composed this
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptic = LocalHapticFeedback.current

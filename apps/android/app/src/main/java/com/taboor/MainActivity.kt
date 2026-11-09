@@ -2,6 +2,7 @@ package com.taboor
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import org.maplibre.android.MapLibre
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -23,9 +24,13 @@ import com.taboor.features.home.presentation.HomeScreen
 import com.taboor.features.home.presentation.HomeBottomTab
 import com.taboor.features.home.presentation.allservices.AllServicesScreen
 import com.taboor.features.home.presentation.details.ServiceDetailsScreen
+import com.taboor.features.home.presentation.favorites.FavoritePlacesScreen
+import com.taboor.features.home.presentation.history.TicketHistoryScreen
 import com.taboor.features.home.presentation.profile.ChangePasswordScreen
 import com.taboor.features.home.presentation.profile.EditProfileScreen
 import com.taboor.features.home.presentation.qr.QrScannerScreen
+import com.taboor.features.home.presentation.settings.SmartAlertPreferencesScreen
+import com.taboor.features.home.presentation.tracking.LiveQueueTrackingScreen
 import com.taboor.features.onboarding.presentation.OnboardingScreen
 import com.taboor.features.splash.presentation.SplashScreen
 
@@ -40,12 +45,17 @@ enum class AppDestination {
     SERVICE_DETAILS,
     EDIT_PROFILE,
     CHANGE_PASSWORD,
-    QR_SCANNER
+    QR_SCANNER,
+    LIVE_TRACKING,
+    TICKET_HISTORY,
+    FAVORITE_PLACES,
+    SMART_ALERT_PREFERENCES
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MapLibre.getInstance(this)
         enableEdgeToEdge()
 
         val appContainer = (application as TaboorApplication).appContainer
@@ -80,7 +90,11 @@ class MainActivity : ComponentActivity() {
                         AppDestination.ALL_SERVICES,
                         AppDestination.EDIT_PROFILE,
                         AppDestination.CHANGE_PASSWORD,
-                        AppDestination.QR_SCANNER -> currentDestination = AppDestination.HOME
+                        AppDestination.QR_SCANNER,
+                        AppDestination.LIVE_TRACKING,
+                        AppDestination.TICKET_HISTORY,
+                        AppDestination.FAVORITE_PLACES,
+                        AppDestination.SMART_ALERT_PREFERENCES -> currentDestination = AppDestination.HOME
                         else -> {}
                     }
                 }
@@ -169,6 +183,18 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToChangePassword = {
                                     currentDestination = AppDestination.CHANGE_PASSWORD
                                 },
+                                onNavigateToHistory = {
+                                    currentDestination = AppDestination.TICKET_HISTORY
+                                },
+                                onNavigateToFavorites = {
+                                    currentDestination = AppDestination.FAVORITE_PLACES
+                                },
+                                onNavigateToAlertPreferences = {
+                                    currentDestination = AppDestination.SMART_ALERT_PREFERENCES
+                                },
+                                onNavigateToLiveTracking = {
+                                    currentDestination = AppDestination.LIVE_TRACKING
+                                },
                                 onOpenQrScanner = {
                                     currentDestination = AppDestination.QR_SCANNER
                                 },
@@ -186,6 +212,7 @@ class MainActivity : ComponentActivity() {
                                     currentDestination = AppDestination.HOME
                                 },
                                 onJoinedQueue = {
+                                    currentHomeTab = HomeBottomTab.QUEUE
                                     currentDestination = AppDestination.HOME
                                 }
                             )
@@ -226,6 +253,42 @@ class MainActivity : ComponentActivity() {
                                     currentDestination = AppDestination.HOME
                                 },
                                 onScanSuccess = {
+                                    currentDestination = AppDestination.HOME
+                                }
+                            )
+                        }
+
+                        AppDestination.LIVE_TRACKING -> {
+                            LiveQueueTrackingScreen(
+                                onNavigateBack = {
+                                    currentDestination = AppDestination.HOME
+                                }
+                            )
+                        }
+
+                        AppDestination.TICKET_HISTORY -> {
+                            TicketHistoryScreen(
+                                onNavigateBack = {
+                                    currentDestination = AppDestination.HOME
+                                }
+                            )
+                        }
+
+                        AppDestination.FAVORITE_PLACES -> {
+                            FavoritePlacesScreen(
+                                onNavigateBack = {
+                                    currentDestination = AppDestination.HOME
+                                },
+                                onNavigateToDetails = { place ->
+                                    selectedPlace = place
+                                    currentDestination = AppDestination.SERVICE_DETAILS
+                                }
+                            )
+                        }
+
+                        AppDestination.SMART_ALERT_PREFERENCES -> {
+                            SmartAlertPreferencesScreen(
+                                onNavigateBack = {
                                     currentDestination = AppDestination.HOME
                                 }
                             )

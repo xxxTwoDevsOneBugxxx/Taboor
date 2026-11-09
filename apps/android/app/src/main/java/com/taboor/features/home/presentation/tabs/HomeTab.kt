@@ -1,6 +1,7 @@
 package com.taboor.features.home.presentation.tabs
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,7 +14,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,15 +27,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taboor.core.components.TaboorLogoIcon
+import com.taboor.core.components.TaboorMapView
 import com.taboor.core.localization.LocalAppStrings
 import com.taboor.core.localization.LocaleManager
+import com.taboor.core.location.TaboorPrecomputedRoutes
 import com.taboor.core.services.LocationService
 import com.taboor.core.services.SessionManager
 import com.taboor.core.theme.AppColors
@@ -65,28 +76,21 @@ fun HomeTab(
     onNavigateToDetails: (ServicePlace) -> Unit,
     onNavigateToAllServices: (ServiceCategory?) -> Unit,
     onNavigateToQueueTab: () -> Unit,
-    onOpenQrScanner: () -> Unit
+    onOpenQrScanner: () -> Unit,
+    onOpenLiveTracking: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val strings = LocalAppStrings.current
     val isArabic = LocaleManager.isArabic
     val currentUser by SessionManager.currentUser.collectAsState()
+    val activeTicket by ServiceRepository.activeTicket.collectAsState()
+    val selectedLocation by ServiceRepository.selectedLocation.collectAsState()
+    val favoriteIds by ServiceRepository.favoritePlaceIds.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
-    var userLocationName by remember { mutableStateOf<String?>(null) }
-    var isResolvingLocation by remember { mutableStateOf(false) }
+    var showLocationSheet by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
-
-    // Resolve device GPS location
-    LaunchedEffect(isArabic) {
-        isResolvingLocation = true
-        val pos = LocationService.getCurrentPosition(context)
-        val lat = pos?.first ?: LocationService.DEFAULT_LAT
-        val lng = pos?.second ?: LocationService.DEFAULT_LNG
-        userLocationName = LocationService.getAreaName(context, lat, lng, isArabic)
-        isResolvingLocation = false
-    }
 
     val currentHour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     val greeting = when {
@@ -106,6 +110,8 @@ fun HomeTab(
     val displayName = currentUser?.fullName?.takeIf { it.isNotBlank() } ?: if (isArabic) "محمد أحمد" else "Mohamed Ahmed"
     val avatarInitial = displayName.trim().take(1).uppercase()
 
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = {
@@ -121,189 +127,174 @@ fun HomeTab(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 110.dp)
+            contentPadding = PaddingValues(top = statusBarTop + 6.dp, bottom = 110.dp)
         ) {
         // ==========================================
-        // 1. Header (Greeting + User avatar + Location Chip + QR button)
+        // 1. Unified Brand & Location Header (Matching iOS 1:1)
         // ==========================================
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // User avatar with online status badge
-                Box(modifier = Modifier.size(48.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(AppColors.Teal, AppColors.DeepTeal)
-                                )
-                            )
-                            .shadow(
-                                elevation = 10.dp,
-                                shape = RoundedCornerShape(16.dp),
-                                ambientColor = AppColors.Teal.copy(alpha = 0.25f)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = avatarInitial,
-                            fontFamily = Inter,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = AppColors.Paper
-                        )
-                    }
-                    // Green online badge
-                    Box(
-                        modifier = Modifier
-                            .size(13.dp)
-                            .align(Alignment.BottomEnd)
-                            .clip(CircleShape)
-                            .background(AppColors.Success)
-                            .border(2.dp, AppColors.Paper, CircleShape)
-                            .pulseEffect(minScale = 0.88f, maxScale = 1.25f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Greeting & Name
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = greeting,
-                        fontFamily = Tajawal,
-                        fontSize = 12.5.sp,
-                        color = AppColors.Gray600
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = displayName,
-                        fontFamily = Tajawal,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Location Chip
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = AppColors.Paper,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200),
-                    shadowElevation = 2.dp,
-                    modifier = Modifier.clickable {
-                        isResolvingLocation = true
-                        val pos = LocationService.getCurrentPosition(context)
-                        val lat = pos?.first ?: LocationService.DEFAULT_LAT
-                        val lng = pos?.second ?: LocationService.DEFAULT_LNG
-                        coroutineScope.launch {
-                            userLocationName = LocationService.getAreaName(context, lat, lng, isArabic)
-                            isResolvingLocation = false
-                        }
-                    }
+                // Brand Side: Logo Icon + "taboor." + Location Dropdown
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                    ) {
-                        if (isResolvingLocation) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(13.dp),
-                                color = AppColors.Teal,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
+                    TaboorLogoIcon(size = 38.dp)
+
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        // Wordmark strictly LTR: "taboor."
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "taboor",
+                                    fontFamily = Inter,
+                                    fontSize = 19.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.8).sp,
+                                    color = AppColors.Ink
+                                )
+                                Text(
+                                    text = ".",
+                                    fontFamily = Inter,
+                                    fontSize = 19.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = (-0.8).sp,
+                                    color = AppColors.Amber
+                                )
+                            }
+                        }
+
+                        // Location chip button
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .bounceClick(scaleDown = 0.95f) { showLocationSheet = true }
+                        ) {
                             Icon(
                                 imageVector = Icons.Rounded.LocationOn,
                                 contentDescription = null,
                                 tint = AppColors.Teal,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = selectedLocation,
+                                fontFamily = Tajawal,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AppColors.TextSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 200.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(
+                                imageVector = Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = AppColors.Teal,
+                                modifier = Modifier.size(13.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = userLocationName ?: (if (isArabic) "ميدان التحرير" else "Tahrir Square"),
-                            fontFamily = Tajawal,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = AppColors.Ink
-                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
-                // QR Scanner Quick Launch
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = AppColors.Paper,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200),
-                    shadowElevation = 2.dp,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .bounceClick(scaleDown = 0.92f) { onOpenQrScanner() }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Rounded.QrCodeScanner,
-                            contentDescription = strings.scanQrTitle,
-                            tint = AppColors.Teal,
-                            modifier = Modifier.size(20.dp)
-                        )
+                // Action Buttons: QR Scanner & Notifications Bell
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // QR Scanner button
+                    Surface(
+                        shape = RoundedCornerShape(11.dp),
+                        color = AppColors.CardBackground,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .bounceClick(scaleDown = 0.94f) { onOpenQrScanner() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.QrCodeScanner,
+                                contentDescription = strings.scanQrTitle,
+                                tint = AppColors.Ink,
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                    }
+
+                    // Notification bell button with amber badge
+                    Surface(
+                        shape = RoundedCornerShape(11.dp),
+                        color = AppColors.CardBackground,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .bounceClick(scaleDown = 0.94f) { onNavigateToQueueTab() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Notifications,
+                                contentDescription = null,
+                                tint = AppColors.Ink,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            // Amber notification indicator dot
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 7.dp, end = 7.dp)
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(AppColors.Amber)
+                            )
+                        }
                     }
                 }
             }
         }
 
         // ==========================================
-        // 2. Search Bar & Quick Suggestion Pills
+        // 2. Interactive Search Bar Card (Matching iOS 1:1)
         // ==========================================
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
             ) {
                 // Search Bar Container
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = AppColors.Paper,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200.copy(alpha = 0.8f)),
-                    shadowElevation = 3.dp,
+                    shape = RoundedCornerShape(14.dp),
+                    color = AppColors.CardBackground,
+                    shadowElevation = 1.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 4.dp),
+                            .padding(horizontal = 14.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Search,
                             contentDescription = null,
-                            tint = AppColors.Gray500,
-                            modifier = Modifier.size(22.dp)
+                            tint = AppColors.Teal,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = {
                                 Text(
-                                    text = strings.homeSearchHint,
+                                    text = if (isArabic) "ابحث عن دكتور، عيادة، صالون، خدمة..." else "Search clinic, doctor, salon, service...",
                                     fontFamily = Tajawal,
-                                    fontSize = 13.5.sp,
-                                    color = AppColors.Gray400
+                                    fontSize = 13.sp,
+                                    color = AppColors.TextSecondary
                                 )
                             },
                             singleLine = true,
@@ -316,30 +307,30 @@ fun HomeTab(
                             ),
                             textStyle = androidx.compose.ui.text.TextStyle(
                                 fontFamily = Tajawal,
-                                fontSize = 14.5.sp,
+                                fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = AppColors.Ink
+                                color = AppColors.TextPrimary
                             ),
                             modifier = Modifier.weight(1f)
                         )
                         if (searchQuery.isNotEmpty()) {
                             IconButton(
                                 onClick = { searchQuery = "" },
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(26.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Clear,
                                     contentDescription = null,
-                                    tint = AppColors.Gray500,
-                                    modifier = Modifier.size(18.dp)
+                                    tint = AppColors.TextSecondary,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         } else {
                             // Filter tune icon in softTeal capsule
                             Box(
                                 modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(AppColors.SoftTeal)
                                     .clickable { onNavigateToAllServices(null) },
                                 contentAlignment = Alignment.Center
@@ -348,66 +339,8 @@ fun HomeTab(
                                     imageVector = Icons.Rounded.Tune,
                                     contentDescription = null,
                                     tint = AppColors.Teal,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                            }
-                        }
-                    }
-                }
-
-                // Quick Search Suggestion Pills Row (when search query is empty)
-                AnimatedVisibility(visible = searchQuery.isEmpty()) {
-                    val suggestions = if (isArabic) {
-                        listOf(
-                            Triple(Icons.Rounded.MedicalServices, "عيادة أسنان", AppColors.Teal),
-                            Triple(Icons.Rounded.ContentCut, "صالون حلاقة", AppColors.Indigo),
-                            Triple(Icons.Rounded.CarRepair, "صيانة سيارات", AppColors.Amber),
-                            Triple(Icons.Rounded.Visibility, "ليزك وعيون", AppColors.Teal),
-                            Triple(Icons.Rounded.Business, "استشارة قانونية", AppColors.Ink)
-                        )
-                    } else {
-                        listOf(
-                            Triple(Icons.Rounded.MedicalServices, "Dental Clinic", AppColors.Teal),
-                            Triple(Icons.Rounded.ContentCut, "Barber & Salon", AppColors.Indigo),
-                            Triple(Icons.Rounded.CarRepair, "Car Repair", AppColors.Amber),
-                            Triple(Icons.Rounded.Visibility, "Eye Clinic", AppColors.Teal),
-                            Triple(Icons.Rounded.Business, "Legal Office", AppColors.Ink)
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp)
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        suggestions.forEach { (icon, label, color) ->
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = AppColors.Paper,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200),
-                                modifier = Modifier.clickable { searchQuery = label }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = color,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = label,
-                                        fontFamily = Tajawal,
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = AppColors.Ink
-                                    )
-                                }
                             }
                         }
                     }
@@ -416,305 +349,493 @@ fun HomeTab(
         }
 
         // ==========================================
-        // 3. Hero Active Virtual Queue Ticket Card
+        // 3. Hero Active Virtual Queue Ticket Card or Booking Invitation
         // ==========================================
         item {
             Spacer(modifier = Modifier.height(18.dp))
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .bounceClick(scaleDown = 0.975f) { onNavigateToQueueTab() },
-                shape = RoundedCornerShape(24.dp),
-                shadowElevation = 10.dp
-            ) {
-                Box(
+            val ticket = activeTicket
+            if (ticket != null) {
+                // 1:1 with iOS activeTicketCard (Uber Trip Tray with Live Route Map)
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(AppColors.Ink, Color(0xFF0F5A67))
-                            )
-                        )
-                        .padding(20.dp)
+                        .padding(horizontal = 20.dp)
+                        .bounceClick(scaleDown = 0.985f) { onOpenLiveTracking() },
+                    shape = RoundedCornerShape(22.dp),
+                    color = AppColors.CardBackground,
+                    shadowElevation = 1.5.dp
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // Top Row: Live Sync Status Pill + Ticket Number
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Left pill with pulsing amber dot
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(AppColors.Paper.copy(alpha = 0.15f))
-                                    .padding(horizontal = 10.dp, vertical = 5.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .clip(CircleShape)
-                                            .background(AppColors.Amber)
-                                            .pulseEffect(minScale = 0.82f, maxScale = 1.35f)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = if (isArabic) "طابور نشط ومباشر" else "Live Queue Active",
-                                        fontFamily = Tajawal,
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AppColors.Paper
-                                    )
-                                }
-                            }
-
-                            // Right: Ticket Number
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = if (isArabic) "رقم التذكرة" else "Ticket No.",
-                                    fontFamily = Tajawal,
-                                    fontSize = 11.sp,
-                                    color = AppColors.Gray300
-                                )
-                                Text(
-                                    text = "A-12",
-                                    fontFamily = Inter,
-                                    fontSize = 26.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = AppColors.Paper,
-                                    letterSpacing = 1.2.sp
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Venue & Branch
-                        Text(
-                            text = if (isArabic) "عيادة د. سارة للأسنان" else "Dr. Sara Dental Clinic",
-                            fontFamily = Tajawal,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.Paper
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = if (isArabic) "فرع وسط البلد" else "Downtown Branch",
-                            fontFamily = Tajawal,
-                            fontSize = 12.5.sp,
-                            color = AppColors.Gray300
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Queue Dynamics Counter Row (Two equal stat boxes)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            // Box 1: People ahead & Estimated wait
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(Color.Black.copy(alpha = 0.2f))
-                                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                            ) {
-                                Column {
-                                    Text(
-                                        text = if (isArabic) "2 أفراد قبلك" else "2 people ahead",
-                                        fontFamily = Tajawal,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = AppColors.Paper
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = if (isArabic) "~10 دقيقة انتظار" else "~10 min wait",
-                                        fontFamily = Tajawal,
-                                        fontSize = 11.sp,
-                                        color = AppColors.Gray300
-                                    )
-                                }
-                            }
-
-                            // Box 2: Smart Travel Alert Pill ("تحرك الآن!")
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(AppColors.Teal.copy(alpha = 0.35f))
-                                    .border(1.dp, AppColors.Teal.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                            ) {
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.DirectionsCar,
-                                            contentDescription = null,
-                                            tint = AppColors.Amber,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = if (isArabic) "تحرك الآن!" else "Head out now!",
-                                            fontFamily = Tajawal,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color = AppColors.Amber
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = if (isArabic) "المسافة 7 د بالسيارة" else "7 min drive",
-                                        fontFamily = Tajawal,
-                                        fontSize = 11.sp,
-                                        color = AppColors.Paper
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Visual Progress Bar (Amber bar)
-                        LinearProgressIndicator(
-                            progress = { 0.75f },
+                        // 1. Top Wide Map View (Tapping opens the full-screen live tracking view!)
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            color = AppColors.Amber,
-                            trackColor = AppColors.Paper.copy(alpha = 0.18f)
+                                .height(125.dp)
+                                .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+                        ) {
+                            // Real interactive OpenStreetMap / CartoDB map
+                            TaboorMapView(
+                                branchLat = ticket.latitude ?: 30.0585,
+                                branchLng = ticket.longitude ?: 31.3466,
+                                branchTitle = ticket.localizedServiceName(isArabic),
+                                branchAddress = ticket.localizedBranch(isArabic),
+                                branchId = ticket.branchId,
+                                isFullScreen = false,
+                                showControls = false,
+                                showInfoChip = false,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            // Subtle gradient overlay for depth & tap-to-expand
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.08f))
+                                        )
+                                    )
+                                    .clickable { onOpenLiveTracking() }
+                            )
+
+                            // Floating Live ETA Badge & Expand CTA
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Live Status Floating Badge
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = Color.White.copy(alpha = 0.92f),
+                                    shadowElevation = 1.dp
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(7.dp)
+                                                .clip(CircleShape)
+                                                .background(AppColors.AccentGreen)
+                                                .pulseEffect(minScale = 0.8f, maxScale = 1.3f)
+                                        )
+                                        Text(
+                                            text = if (isArabic) "دورك خلال ${ticket.estMinutes} دقائق" else "Your turn in ~${ticket.estMinutes}m",
+                                            fontFamily = Tajawal,
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppColors.TextPrimary
+                                        )
+                                    }
+                                }
+
+                                // Expand / Live Map Hint Button
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = Color.White.copy(alpha = 0.92f),
+                                    shadowElevation = 1.dp
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Map,
+                                            contentDescription = null,
+                                            tint = AppColors.Teal,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Text(
+                                            text = if (isArabic) "تتبع مباشر" else "Live Map",
+                                            fontFamily = Tajawal,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AppColors.Teal
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = AppColors.RowDivider
                         )
+
+                        // 2. Bottom Ticket Tray
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Title Full Width
+                            Text(
+                                text = ticket.localizedServiceName(isArabic),
+                                fontFamily = Tajawal,
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = AppColors.TextPrimary,
+                                maxLines = 2,
+                                lineHeight = 22.sp,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            // Subtitle & Ticket Pill Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${ticket.localizedBranch(isArabic)} • ${ticket.localizedCounter(isArabic)}",
+                                    fontFamily = Tajawal,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AppColors.TextSecondary,
+                                    maxLines = 2,
+                                    lineHeight = 16.sp,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Compact Ticket Pill
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = AppColors.SoftTeal.copy(alpha = 0.8f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = if (isArabic) "تذكرتك" else "Ticket",
+                                            fontFamily = Tajawal,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = AppColors.TextSecondary
+                                        )
+                                        Text(
+                                            text = ticket.ticketNumber,
+                                            fontFamily = Inter,
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = AppColors.Teal
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Progress Bar
+                            LinearProgressIndicator(
+                                progress = { ticket.progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(5.dp)
+                                    .clip(RoundedCornerShape(4.dp)),
+                                color = AppColors.Teal,
+                                trackColor = AppColors.SoftTeal
+                            )
+
+                            // Stats & Live Track CTA Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // People ahead with amber dot
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(AppColors.Amber)
+                                    )
+                                    Text(
+                                        text = if (isArabic) "أمامك ${ticket.waitingAhead} في الانتظار" else "${ticket.waitingAhead} ahead of you",
+                                        fontFamily = Tajawal,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.Amber
+                                    )
+                                }
+
+                                // Primary Live Tracking CTA
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    shadowElevation = 1.5.dp,
+                                    modifier = Modifier.bounceClick(scaleDown = 0.96f) { onOpenLiveTracking() }
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    colors = listOf(AppColors.Teal, AppColors.DeepTeal)
+                                                )
+                                            )
+                                            .padding(horizontal = 12.dp, vertical = 6.5.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Navigation,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(11.dp)
+                                            )
+                                            Text(
+                                                text = if (isArabic) "تتبع مباشر" else "Live Track",
+                                                fontFamily = Tajawal,
+                                                fontSize = 12.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Refined Apple HIG Promo & Hero Card (When No Ticket is Active) - 1:1 with iOS emptyQueueHeroCard
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .bounceClick(scaleDown = 0.98f) { onNavigateToAllServices(null) },
+                    shape = RoundedCornerShape(20.dp),
+                    color = AppColors.CardBackground,
+                    shadowElevation = 1.5.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // 1. Radar Live Tag
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(30.dp))
+                                .background(AppColors.Teal.copy(alpha = 0.10f))
+                                .padding(horizontal = 9.dp, vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(AppColors.Teal)
+                                    .pulseEffect(minScale = 0.85f, maxScale = 1.35f)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isArabic) "طوابير سريعة بالقرب منك • $selectedLocation" else "Fast queues near you • $selectedLocation",
+                                fontFamily = Tajawal,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AppColors.Teal
+                            )
+                        }
+
+                        // 2. Main Row: Title / Subtitle & Radar Vector
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = if (isArabic) "احجز دورك قبل ما توصل" else "Reserve your spot ahead",
+                                    fontFamily = Tajawal,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.TextPrimary
+                                )
+                                Text(
+                                    text = if (isArabic) "انضم لطابورك عن بُعد، وتابع دورك في الطريق بدون انتظار على الكراسي" else "Join remotely & track your turn on the go without waiting in lines",
+                                    fontFamily = Tajawal,
+                                    fontSize = 11.5.sp,
+                                    lineHeight = 16.sp,
+                                    color = AppColors.TextSecondary,
+                                    maxLines = 2
+                                )
+                                // CTA Button
+                                Button(
+                                    onClick = { onNavigateToAllServices(null) },
+                                    shape = RoundedCornerShape(30.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.Teal),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                    modifier = Modifier
+                                        .padding(top = 4.dp)
+                                        .height(34.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                    ) {
+                                        Text(
+                                            text = if (isArabic) "استكشف الطوابير" else "Explore Queues",
+                                            fontFamily = Tajawal,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(10.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // Radar Vector Illustration
+                            RadarVectorIllustration(modifier = Modifier.size(76.dp))
+                        }
+
+                        // 3. Integrated Quick Utility Shortcuts Strip
+                        HorizontalDivider(
+                            color = AppColors.RowDivider,
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Shortcut 1: Scan QR
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = AppColors.Background,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onOpenQrScanner() }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.QrCodeScanner,
+                                        contentDescription = null,
+                                        tint = AppColors.TextPrimary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isArabic) "مسح QR الشباك" else "Scan QR",
+                                        fontFamily = Tajawal,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.TextPrimary,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+
+                            // Shortcut 2: Fast wait time
+                            val fastestPlace = fastPlaces.firstOrNull()
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = AppColors.Background,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        if (fastestPlace != null) onNavigateToDetails(fastestPlace)
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Bolt,
+                                        contentDescription = null,
+                                        tint = AppColors.Amber,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isArabic) "أقل انتظار: 3 د" else "Min wait: 3m",
+                                        fontFamily = Tajawal,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.TextPrimary,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+
+                            // Shortcut 3: Map Radar
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = AppColors.Background,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { showLocationSheet = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Map,
+                                        contentDescription = null,
+                                        tint = AppColors.Teal,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isArabic) "خريطة الطوابير" else "Map Radar",
+                                        fontFamily = Tajawal,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AppColors.TextPrimary,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
         // ==========================================
-        // 4. Quick Action Highlights Bar
+        // 4. Categories Section (2-Column Grid matching Swift 1:1)
         // ==========================================
         item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Action 1: QR Code
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .bounceClick(scaleDown = 0.95f) { onOpenQrScanner() },
-                    shape = RoundedCornerShape(16.dp),
-                    color = AppColors.Paper,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200.copy(alpha = 0.8f)),
-                    shadowElevation = 2.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(AppColors.Teal.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.QrCodeScanner,
-                                contentDescription = null,
-                                tint = AppColors.Teal,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = if (isArabic) "مسح كود الفرع" else "Scan QR Code",
-                                fontFamily = Tajawal,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = if (isArabic) "للدخول الفوري" else "Walk-in join",
-                                fontFamily = Tajawal,
-                                fontSize = 10.5.sp,
-                                color = AppColors.Gray500,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-
-                // Action 2: Saved Time Stat
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .bounceClick(scaleDown = 0.95f) { onNavigateToAllServices(null) },
-                    shape = RoundedCornerShape(16.dp),
-                    color = AppColors.Paper,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200.copy(alpha = 0.8f)),
-                    shadowElevation = 2.dp
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(AppColors.Indigo.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.HourglassBottom,
-                                contentDescription = null,
-                                tint = AppColors.Indigo,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = if (isArabic) "وفرت 4.5 س" else "Saved 4.5 hrs",
-                                fontFamily = Tajawal,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = if (isArabic) "من وقت الانتظار" else "Total time saved",
-                                fontFamily = Tajawal,
-                                fontSize = 10.5.sp,
-                                color = AppColors.Gray500,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // ==========================================
-        // 5. Category Discovery Header & Capsule Slider
-        // ==========================================
-        item {
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -723,87 +844,103 @@ fun HomeTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (isArabic) "الخدمات والأنشطة" else "Browse Categories",
+                    text = if (isArabic) "التصنيفات الرئيسية" else "Main Categories",
                     fontFamily = Tajawal,
-                    fontSize = 18.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppColors.Ink
+                    color = AppColors.TextPrimary
                 )
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onNavigateToAllServices(null) }
-                        .padding(horizontal = 6.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = strings.homeSeeAll,
-                        fontFamily = Tajawal,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Teal
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                        contentDescription = null,
-                        tint = AppColors.Teal,
-                        modifier = Modifier.size(11.dp)
-                    )
-                }
+                Text(
+                    text = if (isArabic) "عرض الكل" else "See all",
+                    fontFamily = Tajawal,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColors.Teal,
+                    modifier = Modifier.clickable { onNavigateToAllServices(null) }
+                )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Capsule Chips Slider
-            val categories = listOf(
-                Triple(ServiceCategory.CLINICS, if (isArabic) "عيادات وأطباء" else "Clinics & Doctors", AppColors.Teal),
-                Triple(ServiceCategory.SALONS, if (isArabic) "صالونات وتجميل" else "Salons & Barber", AppColors.Indigo),
-                Triple(ServiceCategory.GARAGES, if (isArabic) "صيانة سيارات" else "Auto Repair", AppColors.Amber),
-                Triple(ServiceCategory.OFFICES, if (isArabic) "مصالح ومكاتب" else "Offices & Legal", AppColors.Ink)
+            val allCats = listOf(
+                ServiceCategory.CLINICS,
+                ServiceCategory.SALONS,
+                ServiceCategory.GARAGES,
+                ServiceCategory.OFFICES
             )
+            val pairs = allCats.chunked(2)
 
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                categories.forEach { (cat, title, color) ->
-                    Surface(
-                        shape = RoundedCornerShape(30.dp),
-                        color = AppColors.Paper,
-                        border = androidx.compose.foundation.BorderStroke(1.1.dp, AppColors.Gray200),
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.clickable { onNavigateToAllServices(cat) }
+                pairs.forEach { rowCategories ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(color.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = cat.icon,
-                                    contentDescription = null,
-                                    tint = color,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                        rowCategories.forEach { category ->
+                            val placesCount = allPlaces.count { it.category == category }
+                            val (catBg, catColor) = when (category) {
+                                ServiceCategory.CLINICS -> Pair(Color(0xFFE6F7F5), Color(0xFF0D9488))
+                                ServiceCategory.SALONS -> Pair(Color(0xFFF3E8FF), Color(0xFF7C3AED))
+                                ServiceCategory.GARAGES -> Pair(Color(0xFFFEF3C7), Color(0xFFD97706))
+                                ServiceCategory.OFFICES -> Pair(Color(0xFFEFF6FF), Color(0xFF2563EB))
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = title,
-                                fontFamily = Tajawal,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Ink
-                            )
+
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .bounceClick(scaleDown = 0.97f) { onNavigateToAllServices(category) },
+                                shape = RoundedCornerShape(18.dp),
+                                color = Color.White,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                shadowElevation = 1.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(RoundedCornerShape(13.dp))
+                                            .background(catBg)
+                                            .border(1.dp, catColor.copy(alpha = 0.25f), RoundedCornerShape(13.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = category.icon,
+                                            contentDescription = null,
+                                            tint = catColor,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = category.localizedTitle(isArabic),
+                                            fontFamily = Tajawal,
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = if (isArabic) "$placesCount أماكن" else "$placesCount places",
+                                            fontFamily = Tajawal,
+                                            fontSize = 11.5.sp,
+                                            color = Color(0xFF64748B)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -815,7 +952,7 @@ fun HomeTab(
         // ==========================================
         if (searchQuery.isEmpty() && fastPlaces.isNotEmpty()) {
             item {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -871,7 +1008,7 @@ fun HomeTab(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -884,16 +1021,15 @@ fun HomeTab(
 
                         Surface(
                             modifier = Modifier
-                                .width(250.dp)
+                                .width(260.dp)
                                 .bounceClick(scaleDown = 0.965f) { onNavigateToDetails(place) },
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(18.dp),
                             color = AppColors.Paper,
-                            border = androidx.compose.foundation.BorderStroke(1.2.dp, AppColors.Success.copy(alpha = 0.22f)),
-                            shadowElevation = 3.dp
+                            shadowElevation = 1.dp
                         ) {
                             Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.SpaceBetween
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 // Top row: icon + name + star & distance
                                 Row(
@@ -902,8 +1038,8 @@ fun HomeTab(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(42.dp)
-                                            .clip(RoundedCornerShape(13.dp))
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(12.dp))
                                             .background(place.color.copy(alpha = 0.1f)),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -911,7 +1047,7 @@ fun HomeTab(
                                             imageVector = place.icon,
                                             contentDescription = null,
                                             tint = place.color,
-                                            modifier = Modifier.size(22.dp)
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -922,16 +1058,17 @@ fun HomeTab(
                                             fontSize = 13.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = AppColors.Ink,
-                                            maxLines = 1,
+                                            maxLines = 2,
+                                            lineHeight = 17.5.sp,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Spacer(modifier = Modifier.height(3.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Star,
                                                 contentDescription = null,
                                                 tint = AppColors.Amber,
-                                                modifier = Modifier.size(13.dp)
+                                                modifier = Modifier.size(12.dp)
                                             )
                                             Spacer(modifier = Modifier.width(2.dp))
                                             Text(
@@ -955,8 +1092,6 @@ fun HomeTab(
                                         }
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.height(14.dp))
 
                                 // Bottom Row: Live wait pill + Action button
                                 Row(
@@ -1083,108 +1218,319 @@ fun HomeTab(
         } else {
             items(filteredPlaces) { place ->
                 val mainBranch = place.branches.first()
+                val isOpen = place.branches.any { it.isOpen }
+                val branchDist = TaboorPrecomputedRoutes.getDistanceKm(
+                    mainBranch.id,
+                    mainBranch.lat ?: 30.0585,
+                    mainBranch.lng ?: 31.3466
+                )
+                val estDriveMin = TaboorPrecomputedRoutes.getEstimatedMinutes(
+                    mainBranch.id,
+                    mainBranch.lat ?: 30.0585,
+                    mainBranch.lng ?: 31.3466
+                )
+
+                val (catBg, catColor) = when (place.category) {
+                    ServiceCategory.CLINICS -> Pair(Color(0xFFE6F7F5), Color(0xFF0D9488))
+                    ServiceCategory.SALONS -> Pair(Color(0xFFF3E8FF), Color(0xFF7C3AED))
+                    ServiceCategory.GARAGES -> Pair(Color(0xFFFEF3C7), Color(0xFFD97706))
+                    ServiceCategory.OFFICES -> Pair(Color(0xFFEFF6FF), Color(0xFF2563EB))
+                }
 
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .bounceClick(scaleDown = 0.975f) { onNavigateToDetails(place) },
-                    shape = RoundedCornerShape(20.dp),
-                    color = AppColors.Paper,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Gray200.copy(alpha = 0.8f)),
-                    shadowElevation = 2.dp
+                        .bounceClick(scaleDown = 0.98f) { onNavigateToDetails(place) },
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color.White,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    shadowElevation = 1.dp
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Place Icon
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(place.color.copy(alpha = 0.08f)),
-                            contentAlignment = Alignment.Center
+                        // Row 1: Icon + Name/Rating + Open/Closed Tag
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top
                         ) {
-                            Icon(
-                                imageVector = place.icon,
-                                contentDescription = null,
-                                tint = place.color,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(catBg)
+                                    .border(1.dp, catColor.copy(alpha = 0.25f), RoundedCornerShape(14.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = place.icon,
+                                    contentDescription = null,
+                                    tint = catColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
-                        // Place Details
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = place.localizedName(isArabic),
-                                fontFamily = Tajawal,
-                                fontSize = 15.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                mainBranch.distanceKm?.let { dist ->
-                                    Icon(
-                                        imageVector = Icons.Rounded.LocationOn,
-                                        contentDescription = null,
-                                        tint = AppColors.Gray500,
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(2.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
                                     Text(
-                                        text = strings.distanceAway(dist),
+                                        text = place.localizedName(isArabic),
                                         fontFamily = Tajawal,
-                                        fontSize = 11.5.sp,
-                                        color = AppColors.Gray600
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("•", color = AppColors.Gray400, fontSize = 10.sp)
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Rounded.Verified,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0D9488),
+                                        modifier = Modifier.size(15.dp)
+                                    )
                                 }
 
-                                Icon(
-                                    imageVector = Icons.Rounded.Groups,
-                                    contentDescription = null,
-                                    tint = AppColors.Gray500,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = strings.peopleWaiting(place.totalWaiting),
-                                    fontFamily = Tajawal,
-                                    fontSize = 11.5.sp,
-                                    color = AppColors.Gray600
-                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Star,
+                                            contentDescription = null,
+                                            tint = Color(0xFFF59E0B),
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = "%.1f".format(place.starRating),
+                                            fontFamily = Tajawal,
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                    }
+                                    Text("•", color = Color(0xFFCBD5E1), fontSize = 10.sp)
+                                    Text(
+                                        text = "${place.branches.size} ${if (isArabic) "فروع" else "branches"}",
+                                        fontFamily = Tajawal,
+                                        fontSize = 11.5.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                    Text("•", color = Color(0xFFCBD5E1), fontSize = 10.sp)
+                                    Text(
+                                        text = if (isOpen) {
+                                            if (isArabic) "مفتوح الآن" else "Open"
+                                        } else {
+                                            if (isArabic) "مغلق" else "Closed"
+                                        },
+                                        fontFamily = Tajawal,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isOpen) Color(0xFF059669) else Color(0xFFDC2626)
+                                    )
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        // Teal "احجز الآن" Button
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(AppColors.Teal)
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        // Row 2: Bottom Status & Action Button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = strings.joinNow,
-                                fontFamily = Tajawal,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Paper
-                            )
+                            // Waiting Pill
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isOpen) Color(0xFFD1FAE5) else Color(0xFFFEE2E2)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isOpen) Icons.Rounded.Bolt else Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = if (isOpen) Color(0xFF065F46) else Color(0xFF991B1B),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = if (isOpen) {
+                                            if (isArabic) "${place.totalWaiting} في الانتظار" else "${place.totalWaiting} in line"
+                                        } else {
+                                            if (isArabic) "مغلق حالياً" else "Closed"
+                                        },
+                                        fontFamily = Tajawal,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isOpen) Color(0xFF065F46) else Color(0xFF991B1B)
+                                    )
+                                }
+                            }
+
+                            // Distance and drive time
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.NearMe,
+                                    contentDescription = null,
+                                    tint = Color(0xFF0D9488),
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = "$branchDist ${if (isArabic) "كم" else "km"} (~$estDriveMin د)",
+                                    fontFamily = Tajawal,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F766E)
+                                )
+                            }
+
+                            // Action button
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isOpen) Color(0xFF0D9488) else Color(0xFFF1F5F9),
+                                modifier = Modifier.bounceClick(scaleDown = 0.94f) {
+                                    onNavigateToDetails(place)
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text(
+                                        text = if (isOpen) strings.joinNow else if (isArabic) "تفاصيل" else "Details",
+                                        fontFamily = Tajawal,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isOpen) Color.White else Color(0xFF334155)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                                        contentDescription = null,
+                                        tint = if (isOpen) Color.White else Color(0xFF64748B),
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+    }
+
+    if (showLocationSheet) {
+        com.taboor.features.home.presentation.location.LocationPickerBottomSheet(
+            currentLocation = selectedLocation,
+            onLocationSelected = { loc ->
+                ServiceRepository.updateSelectedLocation(loc)
+            },
+            onDismiss = { showLocationSheet = false }
+        )
+    }
 }
+
+/**
+ * Crisp Vector Radar Visual mirroring iOS `radarVectorIllustration`
+ */
+@Composable
+private fun RadarVectorIllustration(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        // Outer dashed orbit
+        Canvas(modifier = Modifier.size(74.dp)) {
+            drawCircle(
+                color = AppColors.Teal.copy(alpha = 0.22f),
+                style = Stroke(
+                    width = 1.2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                )
+            )
+        }
+
+        // Mid circle
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(AppColors.Teal.copy(alpha = 0.05f))
+                .border(1.dp, AppColors.Teal.copy(alpha = 0.25f), CircleShape)
+        )
+
+        // Inner core
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(AppColors.Teal.copy(alpha = 0.12f))
+                .border(1.5.dp, AppColors.Teal, CircleShape)
+        )
+
+        // Center User Pin
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(AppColors.Ink),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            )
+        }
+
+        // Nearby Place 1 (Teal Clinic Pin)
+        Box(
+            modifier = Modifier
+                .offset(x = (-22).dp, y = (-16).dp)
+                .size(16.dp)
+                .clip(CircleShape)
+                .background(AppColors.Teal),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(9.dp)
+            )
+        }
+
+        // Nearby Place 2 (Amber Salon Pin)
+        Box(
+            modifier = Modifier
+                .offset(x = 22.dp, y = 18.dp)
+                .size(14.dp)
+                .clip(CircleShape)
+                .background(AppColors.Amber),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+            )
+        }
+    }
 }

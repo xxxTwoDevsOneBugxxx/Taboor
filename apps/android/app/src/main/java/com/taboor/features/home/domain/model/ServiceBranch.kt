@@ -1,6 +1,7 @@
 package com.taboor.features.home.domain.model
 
 data class ServiceBranch(
+    val id: String = "",
     val label: String,
     val labelAr: String? = null,
     val distanceKm: String? = null,

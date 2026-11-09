@@ -12,9 +12,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ConfirmationNumber
@@ -35,11 +37,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taboor.core.localization.LocalAppStrings
 import com.taboor.core.theme.AppColors
+import com.taboor.core.theme.Tajawal
 import com.taboor.features.home.domain.model.ServiceCategory
 import com.taboor.features.home.domain.model.ServicePlace
 import com.taboor.features.home.presentation.tabs.AlertsTab
@@ -62,6 +67,10 @@ fun HomeScreen(
     onNavigateToAllServices: (ServiceCategory?) -> Unit,
     onNavigateToEditProfile: () -> Unit,
     onNavigateToChangePassword: () -> Unit,
+    onNavigateToHistory: () -> Unit = {},
+    onNavigateToFavorites: () -> Unit = {},
+    onNavigateToAlertPreferences: () -> Unit = {},
+    onNavigateToLiveTracking: () -> Unit = {},
     onOpenQrScanner: () -> Unit,
     onSignOut: () -> Unit
 ) {
@@ -75,9 +84,7 @@ fun HomeScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { _ ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
+            modifier = Modifier.fillMaxSize()
         ) {
             // Smooth tab transition matching Flutter _FadeIndexedStack
             AnimatedContent(
@@ -93,30 +100,35 @@ fun HomeScreen(
                         onNavigateToDetails = onNavigateToDetails,
                         onNavigateToAllServices = onNavigateToAllServices,
                         onNavigateToQueueTab = { onTabChange(HomeBottomTab.QUEUE) },
-                        onOpenQrScanner = onOpenQrScanner
+                        onOpenQrScanner = onOpenQrScanner,
+                        onOpenLiveTracking = onNavigateToLiveTracking
                     )
                     HomeBottomTab.QUEUE -> QueueTab(
-                        onExploreServices = { onTabChange(HomeBottomTab.HOME) }
+                        onExploreServices = { onTabChange(HomeBottomTab.HOME) },
+                        onOpenLiveTracking = onNavigateToLiveTracking
                     )
                     HomeBottomTab.ALERTS -> AlertsTab()
                     HomeBottomTab.PROFILE -> ProfileTab(
                         onNavigateToEditProfile = onNavigateToEditProfile,
                         onNavigateToChangePassword = onNavigateToChangePassword,
+                        onNavigateToHistory = onNavigateToHistory,
+                        onNavigateToFavorites = onNavigateToFavorites,
+                        onNavigateToAlertPreferences = onNavigateToAlertPreferences,
                         onSignOut = onSignOut
                     )
                 }
             }
 
-            // Floating Capsule Bottom Navigation Bar with sliding pill indicator
+            // Floating Capsule Bottom Navigation Bar with sliding active indicator
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .padding(horizontal = 20.dp, vertical = 10.dp)
             ) {
                 FloatingCapsuleNavBar(
-                    currentTab = selectedTab,
+                    selectedTab = selectedTab,
                     onTabSelected = onTabChange
                 )
             }
@@ -124,42 +136,56 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Floating Capsule Navigation Bar with Smooth Spring Sliding Active Indicator
+ * Updated with the new clean colors (Ink / TextTertiary), Tajawal typography,
+ * amber active indicator bar, and alert badge dot.
+ */
 @Composable
 private fun FloatingCapsuleNavBar(
-    currentTab: HomeBottomTab,
-    onTabSelected: (HomeBottomTab) -> Unit
+    selectedTab: HomeBottomTab,
+    onTabSelected: (HomeBottomTab) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val tabs = remember { listOf(HomeBottomTab.HOME, HomeBottomTab.QUEUE, HomeBottomTab.ALERTS, HomeBottomTab.PROFILE) }
+    val selectedIndex = tabs.indexOf(selectedTab)
+    val navShape = remember { RoundedCornerShape(32.dp) }
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(66.dp)
+            .height(68.dp)
             .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = AppColors.DeepTeal.copy(alpha = 0.12f),
-                spotColor = AppColors.DeepTeal.copy(alpha = 0.22f)
+                elevation = 20.dp,
+                shape = navShape,
+                spotColor = AppColors.Ink.copy(alpha = 0.22f),
+                ambientColor = AppColors.Ink.copy(alpha = 0.12f)
+            )
+            .border(
+                width = 1.dp,
+                color = AppColors.Ink.copy(alpha = 0.10f),
+                shape = navShape
             ),
-        shape = RoundedCornerShape(24.dp),
-        color = AppColors.Paper.copy(alpha = 0.94f),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White.copy(alpha = 0.5f))
+        shape = navShape,
+        color = Color.White.copy(alpha = 0.96f),
+        tonalElevation = 0.dp
     ) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 6.dp, vertical = 6.dp)
+                .padding(6.dp)
         ) {
-            val itemWidth = maxWidth / 4
+            val totalWidth = maxWidth
+            val itemWidth = totalWidth / 4
 
-            // Mathematical calculation of bias across 4 tabs:
-            // 0 -> -1f (Start), 1 -> -0.333f, 2 -> +0.333f, 3 -> +1f (End)
-            // BiasAlignment in Compose automatically handles RTL flipping!
-            val targetBias = when (currentTab) {
-                HomeBottomTab.HOME -> -1f
-                HomeBottomTab.QUEUE -> -1f / 3f
-                HomeBottomTab.ALERTS -> 1f / 3f
-                HomeBottomTab.PROFILE -> 1f
+            // BiasAlignment: -1f is Start (Right in RTL, Left in LTR), +1f is End
+            val targetBias = when (selectedIndex) {
+                0 -> -1f
+                1 -> -0.333f
+                2 -> 0.333f
+                3 -> 1f
+                else -> -1f
             }
 
             val animatedBias by animateFloatAsState(
@@ -171,15 +197,23 @@ private fun FloatingCapsuleNavBar(
                 label = "navPillSlide"
             )
 
-            // Smoothly sliding active background pill
+            // Smoothly sliding active indicator bar (Amber bar, no background pill)
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(itemWidth - 4.dp)
+                    .width(itemWidth)
                     .align(BiasAlignment(animatedBias, 0f))
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(AppColors.SoftTeal)
-            )
+            ) {
+                // Amber active indicator bar at the bottom of the active tab
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 6.dp)
+                        .size(width = 16.dp, height = 3.dp)
+                        .clip(RoundedCornerShape(1.5.dp))
+                        .background(AppColors.Amber)
+                )
+            }
 
             // Interactive Navigation Item Buttons
             Row(
@@ -191,15 +225,15 @@ private fun FloatingCapsuleNavBar(
                     label = strings.navHome,
                     iconOutline = Icons.Outlined.Home,
                     iconFilled = Icons.Rounded.Home,
-                    isSelected = currentTab == HomeBottomTab.HOME,
+                    isSelected = selectedTab == HomeBottomTab.HOME,
                     onClick = { onTabSelected(HomeBottomTab.HOME) },
                     modifier = Modifier.weight(1f)
                 )
                 NavBarItem(
-                    label = strings.navQueue,
+                    label = "طوابيري",
                     iconOutline = Icons.Outlined.ConfirmationNumber,
                     iconFilled = Icons.Rounded.ConfirmationNumber,
-                    isSelected = currentTab == HomeBottomTab.QUEUE,
+                    isSelected = selectedTab == HomeBottomTab.QUEUE,
                     onClick = { onTabSelected(HomeBottomTab.QUEUE) },
                     modifier = Modifier.weight(1f)
                 )
@@ -207,15 +241,16 @@ private fun FloatingCapsuleNavBar(
                     label = strings.navAlerts,
                     iconOutline = Icons.Outlined.Notifications,
                     iconFilled = Icons.Rounded.Notifications,
-                    isSelected = currentTab == HomeBottomTab.ALERTS,
+                    isSelected = selectedTab == HomeBottomTab.ALERTS,
                     onClick = { onTabSelected(HomeBottomTab.ALERTS) },
+                    hasAlertBadge = true,
                     modifier = Modifier.weight(1f)
                 )
                 NavBarItem(
                     label = strings.navProfile,
                     iconOutline = Icons.Outlined.Person,
                     iconFilled = Icons.Rounded.Person,
-                    isSelected = currentTab == HomeBottomTab.PROFILE,
+                    isSelected = selectedTab == HomeBottomTab.PROFILE,
                     onClick = { onTabSelected(HomeBottomTab.PROFILE) },
                     modifier = Modifier.weight(1f)
                 )
@@ -231,15 +266,16 @@ private fun NavBarItem(
     iconFilled: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
+    hasAlertBadge: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val iconColor by animateColorAsState(
-        targetValue = if (isSelected) AppColors.Teal else AppColors.Gray500,
+        targetValue = if (isSelected) AppColors.Ink else AppColors.TextTertiary,
         animationSpec = tween(durationMillis = 200),
         label = "navIconColor"
     )
     val labelColor by animateColorAsState(
-        targetValue = if (isSelected) AppColors.Ink else AppColors.Gray600,
+        targetValue = if (isSelected) AppColors.Ink else AppColors.TextTertiary,
         animationSpec = tween(durationMillis = 200),
         label = "navLabelColor"
     )
@@ -257,7 +293,7 @@ private fun NavBarItem(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -271,23 +307,36 @@ private fun NavBarItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = if (isSelected) iconFilled else iconOutline,
-                contentDescription = label,
-                tint = iconColor,
-                modifier = Modifier
-                    .size(23.dp)
-                    .scale(iconScale)
-            )
-            Spacer(modifier = Modifier.height(3.dp))
+            Box(contentAlignment = Alignment.TopEnd) {
+                Icon(
+                    imageVector = if (isSelected) iconFilled else iconOutline,
+                    contentDescription = label,
+                    tint = iconColor,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .scale(iconScale)
+                )
+                if (hasAlertBadge) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = 4.dp, y = (-2).dp)
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(AppColors.Amber)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
+                fontFamily = Tajawal,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     color = labelColor,
                     fontSize = 11.sp
                 )
             )
+            Spacer(modifier = Modifier.height(3.dp))
         }
     }
 }

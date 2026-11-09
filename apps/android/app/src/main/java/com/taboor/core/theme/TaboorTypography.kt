@@ -20,8 +20,10 @@ import com.taboor.R
 val Tajawal = FontFamily(
     Font(R.font.tajawal_regular, FontWeight.Normal),
     Font(R.font.tajawal_medium, FontWeight.Medium),
+    Font(R.font.tajawal_bold, FontWeight.SemiBold),
     Font(R.font.tajawal_bold, FontWeight.Bold),
-    Font(R.font.tajawal_extrabold, FontWeight.ExtraBold)
+    Font(R.font.tajawal_extrabold, FontWeight.ExtraBold),
+    Font(R.font.tajawal_extrabold, FontWeight.Black)
 )
 
 val Cairo = FontFamily(
@@ -52,7 +54,7 @@ object AppTextStyles {
         fontFamily = Tajawal,
         fontSize = size,
         fontWeight = weight,
-        color = color ?: AppColors.DeepTeal,
+        color = color ?: AppColors.TextPrimary,
         lineHeight = lineHeight
     )
 
@@ -62,7 +64,7 @@ object AppTextStyles {
     fun heading(
         size: TextUnit = 18.sp,
         weight: FontWeight = FontWeight.Bold,
-        color: Color = AppColors.Primary
+        color: Color = AppColors.TextPrimary
     ) = TextStyle(
         fontFamily = Tajawal,
         fontSize = size,
@@ -81,7 +83,7 @@ object AppTextStyles {
         fontFamily = Tajawal,
         fontSize = size,
         fontWeight = weight,
-        color = color ?: AppColors.Gray600
+        color = color ?: AppColors.TextSecondary
     )
 
     /**
@@ -103,7 +105,7 @@ object AppTextStyles {
      */
     fun fieldLabel(
         size: TextUnit = 14.sp,
-        color: Color = AppColors.DeepTeal
+        color: Color = AppColors.TextPrimary
     ) = TextStyle(
         fontFamily = Tajawal,
         fontSize = size,
@@ -116,7 +118,7 @@ object AppTextStyles {
      */
     fun fieldHint(
         size: TextUnit = 13.sp,
-        color: Color = AppColors.Gray400
+        color: Color = AppColors.TextTertiary
     ) = TextStyle(
         fontFamily = Tajawal,
         fontSize = size,
@@ -126,26 +128,26 @@ object AppTextStyles {
 }
 
 val TaboorTypography = Typography(
-    // Displays & Headlines in Tajawal
-    displayLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 54.sp),
-    displayMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 42.sp),
-    displaySmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 34.sp),
-    headlineLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp),
-    headlineMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 26.sp),
-    headlineSmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.SemiBold, fontSize = 22.sp),
+    // Displays & Headlines in Tajawal with Deep Ink
+    displayLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 54.sp, color = AppColors.TextPrimary),
+    displayMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 42.sp, color = AppColors.TextPrimary),
+    displaySmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 34.sp, color = AppColors.TextPrimary),
+    headlineLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.ExtraBold, fontSize = 30.sp, color = AppColors.TextPrimary),
+    headlineMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 26.sp, color = AppColors.TextPrimary),
+    headlineSmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, color = AppColors.TextPrimary),
 
     // Screen Titles and Place Card Names in Tajawal
-    titleLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 20.sp),
-    titleMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-    titleSmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Medium, fontSize = 14.sp),
+    titleLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = AppColors.TextPrimary),
+    titleMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = AppColors.TextPrimary),
+    titleSmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = AppColors.TextPrimary),
 
     // Body texts, descriptions, and addresses in Tajawal
-    bodyLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp),
-    bodyMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
-    bodySmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Normal, fontSize = 12.5.sp, lineHeight = 17.sp),
+    bodyLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp, color = AppColors.TextPrimary),
+    bodyMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp, color = AppColors.TextPrimary),
+    bodySmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Normal, fontSize = 12.5.sp, lineHeight = 17.sp, color = AppColors.TextSecondary),
 
     // Labels, Badges, Chips, and Buttons
-    labelLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 14.sp),
-    labelMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Medium, fontSize = 12.sp),
-    labelSmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Medium, fontSize = 11.sp)
+    labelLarge = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AppColors.TextPrimary),
+    labelMedium = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Medium, fontSize = 12.sp, color = AppColors.TextSecondary),
+    labelSmall = TextStyle(fontFamily = Tajawal, fontWeight = FontWeight.Medium, fontSize = 11.sp, color = AppColors.TextTertiary)
 )

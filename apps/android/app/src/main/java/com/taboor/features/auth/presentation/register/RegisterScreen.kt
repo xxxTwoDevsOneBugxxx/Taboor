@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -86,7 +86,7 @@ fun RegisterScreen(
                     }
                 }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = strings.back,
                         tint = AppColors.DeepTeal
                     )
@@ -566,7 +566,7 @@ private fun StepDetails(
                             )
                         }
                         if (index < com.taboor.features.auth.domain.model.Country.allCountries.size - 1) {
-                            HorizontalDivider(color = AppColors.Gray200.copy(alpha = 0.5f))
+                            HorizontalDivider(thickness = 0.5.dp, color = AppColors.RowDivider)
                         }
                     }
                 }
