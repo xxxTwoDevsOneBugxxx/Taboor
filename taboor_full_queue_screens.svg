@@ -1,0 +1,601 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 960" width="1350" height="960" style="background:#EAE4D9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="inkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B4C56" />
+      <stop offset="100%" stop-color="#07333B" />
+    </linearGradient>
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#159F99" />
+      <stop offset="100%" stop-color="#0B4C56" />
+    </linearGradient>
+    <linearGradient id="softTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2FAF7" />
+      <stop offset="100%" stop-color="#E3F3EE" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6A253" />
+      <stop offset="100%" stop-color="#E28935" />
+    </linearGradient>
+    <linearGradient id="heroDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B4C56" />
+      <stop offset="100%" stop-color="#05262C" />
+    </linearGradient>
+
+    <!-- Drop Shadows -->
+    <filter id="phoneShadow" x="-10%" y="-5%" width="120%" height="115%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#07333B" flood-opacity="0.16" />
+    </filter>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#0B4C56" flood-opacity="0.07" />
+    </filter>
+    <filter id="dockShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#07333B" flood-opacity="0.22" />
+    </filter>
+  </defs>
+
+  <!-- Title & Description Header -->
+  <g transform="translate(675, 42)" text-anchor="middle">
+    <text y="0" font-size="25" font-weight="800" fill="#07333B">معاينة صفحة «طوابيري» كاملة في إطار هاتف حقيقي (iPhone)</text>
+    <text y="24" font-size="14" font-weight="500" fill="#6A8084">شاهد كيف يظهر كرت التذكرة مع الهيدر، أزرار التحكم السريع، سجل الزيارات، وشريط التنقل السفلي</text>
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- SCREEN 1: BENTO PASS (MODULAR & CLEAN)                          -->
+  <!-- ============================================================== -->
+  <g transform="translate(45, 85)">
+    <!-- Header Badge -->
+    <rect x="100" y="0" width="190" height="28" rx="14" fill="#0B4C56" />
+    <text x="195" y="19" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">المقترح 1: Bento Pass العصري</text>
+
+    <!-- Phone Frame Outer -->
+    <rect x="0" y="38" width="390" height="800" rx="46" fill="#0D1117" stroke="#30363D" stroke-width="4" filter="url(#phoneShadow)" />
+    <!-- Screen Glass -->
+    <rect x="8" y="46" width="374" height="784" rx="40" fill="#F5F0E7" />
+
+    <!-- Dynamic Island -->
+    <rect x="135" y="58" width="120" height="30" rx="15" fill="#000000" />
+    <circle cx="230" cy="73" r="5" fill="#1C1C1E" />
+    <circle cx="160" cy="73" r="4" fill="#082A3A" />
+
+    <!-- iOS Status Bar (9:41, Icons) -->
+    <text x="44" y="78" font-size="13" font-weight="600" fill="#07333B">9:41</text>
+    <g transform="translate(325, 68)" fill="#07333B">
+      <path d="M0 8 h3 v2 h-3 z M4 6 h3 v4 h-3 z M8 4 h3 v6 h-3 z M12 2 h3 v8 h-3 z" />
+      <path d="M19 2 a6 6 0 0 1 8 0 M21 5 a3 3 0 0 1 4 0 M23 8 a1 1 0 1 1 0 1" stroke="#07333B" stroke-width="1.2" fill="none" />
+    </g>
+
+    <!-- Screen Content Body -->
+    <!-- 1. Top Header Bar -->
+    <g transform="translate(24, 106)">
+      <rect x="0" y="0" width="40" height="40" rx="12" fill="url(#inkGrad)" />
+      <!-- Ticket Icon -->
+      <path d="M13 14 h14 v12 h-14 z" fill="none" stroke="#FFFFFF" stroke-width="2" rx="2" />
+      <line x1="17" y1="20" x2="23" y2="20" stroke="#F6A253" stroke-width="2" stroke-linecap="round" />
+
+      <!-- Title & Live Badge -->
+      <g transform="translate(50, 8)">
+        <text x="0" y="14" font-size="19" font-weight="800" fill="#07333B">طوابيري</text>
+        <rect x="68" y="2" width="46" height="18" rx="9" fill="#10B981" fill-opacity="0.14" />
+        <circle cx="77" cy="11" r="3" fill="#10B981" />
+        <text x="96" y="15" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مباشر</text>
+        <text x="0" y="30" font-size="11" font-weight="500" fill="#6A8084">متابعة حية لتذكرتك وموقعك في الطابور</text>
+      </g>
+
+      <!-- Map Button -->
+      <circle cx="316" cy="20" r="18" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+      <path d="M310 16 l4 -3 l4 3 l4 -3 v9 l-4 3 l-4 -3 l-4 3 z" fill="none" stroke="#159F99" stroke-width="1.6" />
+    </g>
+
+    <!-- 2. Bento Active Ticket Card -->
+    <g transform="translate(24, 172)">
+      <!-- Main White Card -->
+      <rect x="0" y="0" width="326" height="270" rx="22" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1.2" filter="url(#cardShadow)" />
+
+      <!-- Top Row: Hospital Full Width -->
+      <g transform="translate(14, 14)">
+        <rect x="0" y="0" width="38" height="38" rx="11" fill="url(#tealGrad)" />
+        <path d="M15 11 h8 v6 h6 v8 h-6 v6 h-8 v-6 h-6 v-8 h6 z" fill="#FFFFFF" />
+
+        <g transform="translate(46, 6)">
+          <text x="0" y="14" font-size="14" font-weight="800" fill="#07333B">مستشفى دار الفؤاد</text>
+          <text x="0" y="28" font-size="11" font-weight="500" fill="#6A8084">العيادات الخارجية • عيادة القلب</text>
+        </g>
+      </g>
+
+      <!-- Bento Tile 1: Ticket Hero -->
+      <rect x="14" y="64" width="298" height="74" rx="15" fill="url(#softTealGrad)" stroke="#159F99" stroke-opacity="0.2" stroke-width="1" />
+      <g transform="translate(26, 78)">
+        <text x="0" y="14" font-size="10.5" font-weight="700" fill="#159F99">رقم تذكرتك</text>
+        <text x="0" y="46" font-size="34" font-weight="900" fill="#07333B" letter-spacing="1">A-104</text>
+      </g>
+      <!-- Now Serving Pill -->
+      <g transform="translate(202, 85)">
+        <text x="96" y="12" font-size="10" font-weight="500" fill="#6A8084" text-anchor="end">الدور الحالي</text>
+        <rect x="22" y="20" width="76" height="26" rx="13" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <text x="60" y="38" font-size="14" font-weight="800" fill="#07333B" text-anchor="middle">A-101</text>
+      </g>
+
+      <!-- Bento Tile 2 & 3: Waiting Ahead + Est Time -->
+      <g transform="translate(14, 148)">
+        <!-- Waiting Ahead -->
+        <rect x="0" y="0" width="144" height="50" rx="12" fill="#FDFBF7" stroke="#E5E0D8" stroke-width="1" />
+        <circle cx="24" cy="25" r="14" fill="#F6A253" fill-opacity="0.15" />
+        <path d="M19 29 a5 5 0 0 1 10 0 M24 22 a3 3 0 1 1 0 -6 a3 3 0 0 1 0 6" fill="#F6A253" />
+        <text x="45" y="20" font-size="10" font-weight="500" fill="#6A8084">أمامك في الطابور</text>
+        <text x="45" y="38" font-size="15" font-weight="900" fill="#F6A253">3 أشخاص</text>
+
+        <!-- Estimated Wait -->
+        <g transform="translate(154, 0)">
+          <rect x="0" y="0" width="144" height="50" rx="12" fill="#FDFBF7" stroke="#E5E0D8" stroke-width="1" />
+          <circle cx="24" cy="25" r="14" fill="#159F99" fill-opacity="0.15" />
+          <circle cx="24" cy="25" r="7" stroke="#159F99" stroke-width="1.8" fill="none" />
+          <path d="M24 21 v4 h3" stroke="#159F99" stroke-width="1.5" stroke-linecap="round" />
+          <text x="45" y="20" font-size="10" font-weight="500" fill="#6A8084">الوقت التقديري</text>
+          <text x="45" y="38" font-size="15" font-weight="900" fill="#159F99">~8 دقائق</text>
+        </g>
+      </g>
+
+      <!-- Progress Track & Window -->
+      <g transform="translate(14, 212)">
+        <rect x="0" y="0" width="298" height="6" rx="3" fill="#E3F3EE" />
+        <rect x="0" y="0" width="210" height="6" rx="3" fill="url(#tealGrad)" />
+        <text x="0" y="24" font-size="10.5" font-weight="500" fill="#6A8084">شباك الخدمة: نافذة رقم 3</text>
+        <text x="298" y="24" font-size="11" font-weight="800" fill="#159F99" text-anchor="end">70%</text>
+      </g>
+
+      <!-- Distance Strip -->
+      <g transform="translate(14, 244)">
+        <circle cx="8" cy="8" r="6" fill="#159F99" fill-opacity="0.15" />
+        <circle cx="8" cy="8" r="2.5" fill="#159F99" />
+        <text x="20" y="12" font-size="10" font-weight="600" fill="#07333B">تبعد 850 متر عن موقعك الحالي (~4 د بالسيارة)</text>
+      </g>
+    </g>
+
+    <!-- 3. Quick Action Buttons Row -->
+    <g transform="translate(24, 456)">
+      <!-- Postpone Button -->
+      <rect x="0" y="0" width="158" height="42" rx="14" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+      <g transform="translate(24, 25)" fill="#07333B">
+        <circle cx="10" cy="-3" r="7" stroke="#F6A253" stroke-width="1.6" fill="none" />
+        <text x="24" y="1" font-size="12" font-weight="700">تأجيل 10 دقائق</text>
+      </g>
+
+      <!-- Cancel Button -->
+      <g transform="translate(168, 0)">
+        <rect x="0" y="0" width="158" height="42" rx="14" fill="#FEE2E2" fill-opacity="0.6" stroke="#FCA5A5" stroke-width="1" />
+        <g transform="translate(36, 25)" fill="#DC2626">
+          <text x="20" y="1" font-size="12" font-weight="700">إلغاء التذكرة</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 4. Previous Visits Header & History Card -->
+    <g transform="translate(24, 514)">
+      <text x="0" y="14" font-size="14" font-weight="800" fill="#07333B">سجل الزيارات السابقة</text>
+      <text x="326" y="14" font-size="11" font-weight="600" fill="#159F99" text-anchor="end">عرض الكل</text>
+
+      <!-- Past Ticket 1 -->
+      <g transform="translate(0, 24)">
+        <rect x="0" y="0" width="326" height="66" rx="16" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <rect x="12" y="13" width="40" height="40" rx="11" fill="#F5F0E7" />
+        <path d="M25 25 h14 v14 h-14 z" fill="#0B4C56" fill-opacity="0.1" />
+        <text x="62" y="28" font-size="12.5" font-weight="700" fill="#07333B">صيدلية العزبي - فرع المعادي</text>
+        <text x="62" y="44" font-size="10.5" font-weight="500" fill="#6A8084">أمس، 04:30 م • تذكرة C-12</text>
+        <rect x="254" y="22" width="60" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text x="284" y="37" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مكتملة</text>
+      </g>
+
+      <!-- Past Ticket 2 -->
+      <g transform="translate(0, 98)">
+        <rect x="0" y="0" width="326" height="66" rx="16" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <rect x="12" y="13" width="40" height="40" rx="11" fill="#F5F0E7" />
+        <text x="62" y="28" font-size="12.5" font-weight="700" fill="#07333B">مركز فودافون - خدمة العملاء</text>
+        <text x="62" y="44" font-size="10.5" font-weight="500" fill="#6A8084">3 نوفمبر • تذكرة B-88</text>
+        <rect x="254" y="22" width="60" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text x="284" y="37" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مكتملة</text>
+      </g>
+    </g>
+
+    <!-- 5. Floating Bottom Navigation Dock -->
+    <g transform="translate(36, 736)" filter="url(#dockShadow)">
+      <rect x="0" y="0" width="302" height="60" rx="30" fill="#07333B" stroke="#0B4C56" stroke-width="1.5" />
+      
+      <!-- Active Queue Indicator Pill -->
+      <rect x="76" y="8" width="72" height="44" rx="22" fill="#F6A253" />
+
+      <!-- Tabs: Home, Queue (Active), Alerts, Profile -->
+      <!-- Tab 1: Home -->
+      <g transform="translate(38, 30)" fill="#8FA5A9">
+        <path d="M-8 4 l8 -7 l8 7 v6 h-5 v-4 h-6 v4 h-5 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">الرئيسية</text>
+      </g>
+
+      <!-- Tab 2: Queue (Active) -->
+      <g transform="translate(112, 30)" fill="#07333B">
+        <circle cx="0" cy="1" r="7" stroke="#07333B" stroke-width="1.8" fill="none" />
+        <line x1="0" y1="-3" x2="0" y2="1" stroke="#07333B" stroke-width="1.6" stroke-linecap="round" />
+        <line x1="0" y1="1" x2="3" y2="1" stroke="#07333B" stroke-width="1.6" stroke-linecap="round" />
+        <text x="0" y="16" font-size="9" font-weight="800" text-anchor="middle">طوابيري</text>
+      </g>
+
+      <!-- Tab 3: Alerts -->
+      <g transform="translate(186, 30)" fill="#8FA5A9">
+        <path d="M-5 3 a5 5 0 0 1 10 0 v3 l2 2 h-14 l2 -2 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">التنبيهات</text>
+      </g>
+
+      <!-- Tab 4: Profile -->
+      <g transform="translate(260, 30)" fill="#8FA5A9">
+        <circle cx="0" cy="-2" r="4" />
+        <path d="M-6 7 a6 6 0 0 1 12 0 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">حسابي</text>
+      </g>
+    </g>
+
+    <!-- iOS Home Indicator -->
+    <rect x="135" y="818" width="120" height="4" rx="2" fill="#07333B" fill-opacity="0.3" />
+  </g>
+
+
+  <!-- ============================================================== -->
+  <!-- SCREEN 2: APPLE WALLET PASS (EXECUTIVE DARK HEADER)            -->
+  <!-- ============================================================== -->
+  <g transform="translate(480, 85)">
+    <!-- Header Badge -->
+    <rect x="100" y="0" width="190" height="28" rx="14" fill="#07333B" />
+    <text x="195" y="19" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">المقترح 2: Apple Wallet الفخم</text>
+
+    <!-- Phone Frame Outer -->
+    <rect x="0" y="38" width="390" height="800" rx="46" fill="#0D1117" stroke="#30363D" stroke-width="4" filter="url(#phoneShadow)" />
+    <!-- Screen Glass -->
+    <rect x="8" y="46" width="374" height="784" rx="40" fill="#F5F0E7" />
+
+    <!-- Dynamic Island -->
+    <rect x="135" y="58" width="120" height="30" rx="15" fill="#000000" />
+    <circle cx="230" cy="73" r="5" fill="#1C1C1E" />
+    <circle cx="160" cy="73" r="4" fill="#082A3A" />
+
+    <!-- iOS Status Bar (9:41, Icons) -->
+    <text x="44" y="78" font-size="13" font-weight="600" fill="#07333B">9:41</text>
+    <g transform="translate(325, 68)" fill="#07333B">
+      <path d="M0 8 h3 v2 h-3 z M4 6 h3 v4 h-3 z M8 4 h3 v6 h-3 z M12 2 h3 v8 h-3 z" />
+      <path d="M19 2 a6 6 0 0 1 8 0 M21 5 a3 3 0 0 1 4 0 M23 8 a1 1 0 1 1 0 1" stroke="#07333B" stroke-width="1.2" fill="none" />
+    </g>
+
+    <!-- Screen Content Body -->
+    <!-- Top Header Bar -->
+    <g transform="translate(24, 106)">
+      <rect x="0" y="0" width="40" height="40" rx="12" fill="url(#inkGrad)" />
+      <path d="M13 14 h14 v12 h-14 z" fill="none" stroke="#FFFFFF" stroke-width="2" rx="2" />
+      <line x1="17" y1="20" x2="23" y2="20" stroke="#F6A253" stroke-width="2" stroke-linecap="round" />
+
+      <g transform="translate(50, 8)">
+        <text x="0" y="14" font-size="19" font-weight="800" fill="#07333B">طوابيري</text>
+        <rect x="68" y="2" width="46" height="18" rx="9" fill="#10B981" fill-opacity="0.14" />
+        <circle cx="77" cy="11" r="3" fill="#10B981" />
+        <text x="96" y="15" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مباشر</text>
+        <text x="0" y="30" font-size="11" font-weight="500" fill="#6A8084">متابعة حية لتذكرتك وموقعك في الطابور</text>
+      </g>
+
+      <circle cx="316" cy="20" r="18" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+      <path d="M310 16 l4 -3 l4 3 l4 -3 v9 l-4 3 l-4 -3 l-4 3 z" fill="none" stroke="#159F99" stroke-width="1.6" />
+    </g>
+
+    <!-- 2. Apple Wallet Pass Style Active Card -->
+    <g transform="translate(24, 172)">
+      <!-- Card Container with Dark Top Header -->
+      <rect x="0" y="0" width="326" height="276" rx="24" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1.2" filter="url(#cardShadow)" />
+
+      <!-- Dark Ink Hero Header (Apple Wallet Pass style) -->
+      <path d="M0 24 a24 24 0 0 1 24 -24 h278 a24 24 0 0 1 24 24 v110 h-326 z" fill="url(#heroDarkGrad)" />
+      
+      <!-- Subtle Pattern in Header -->
+      <circle cx="300" cy="30" r="70" fill="#159F99" fill-opacity="0.12" />
+
+      <!-- Header Content -->
+      <g transform="translate(16, 14)">
+        <rect x="0" y="0" width="38" height="38" rx="11" fill="#FFFFFF" fill-opacity="0.12" stroke="#FFFFFF" stroke-opacity="0.2" />
+        <path d="M15 11 h8 v6 h6 v8 h-6 v6 h-8 v-6 h-6 v-8 h6 z" fill="#F6A253" />
+
+        <g transform="translate(46, 6)">
+          <text x="0" y="14" font-size="14" font-weight="800" fill="#FFFFFF">مستشفى دار الفؤاد</text>
+          <text x="0" y="28" font-size="11" font-weight="500" fill="#B0C4C7">العيادات الخارجية • عيادة القلب</text>
+        </g>
+      </g>
+
+      <!-- Center Radial Progress & Ticket Number inside Header -->
+      <g transform="translate(22, 66)">
+        <text x="0" y="12" font-size="10.5" font-weight="700" fill="#F6A253">تذكرتك الحالية</text>
+        <text x="0" y="44" font-size="34" font-weight="900" fill="#FFFFFF" letter-spacing="1">A-104</text>
+      </g>
+
+      <!-- Circular Radial Progress Gauge -->
+      <g transform="translate(246, 85)">
+        <circle cx="28" cy="10" r="26" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="4.5" fill="none" />
+        <circle cx="28" cy="10" r="26" stroke="#F6A253" stroke-width="4.5" stroke-dasharray="163" stroke-dashoffset="48" stroke-linecap="round" fill="none" transform="rotate(-90 28 10)" />
+        <text x="28" y="8" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">أمامك</text>
+        <text x="28" y="21" font-size="12" font-weight="900" fill="#F6A253" text-anchor="middle">3</text>
+      </g>
+
+      <!-- Bottom Body Info (White Area) -->
+      <g transform="translate(16, 148)">
+        <!-- Now Serving + Wait Time + Window -->
+        <g transform="translate(0, 0)">
+          <text x="0" y="12" font-size="10" font-weight="500" fill="#6A8084">الدور الحالي</text>
+          <text x="0" y="32" font-size="18" font-weight="900" fill="#07333B">A-101</text>
+        </g>
+        <g transform="translate(100, 0)">
+          <text x="0" y="12" font-size="10" font-weight="500" fill="#6A8084">الوقت المتبقي</text>
+          <text x="0" y="32" font-size="18" font-weight="900" fill="#159F99">~8 د</text>
+        </g>
+        <g transform="translate(200, 0)">
+          <text x="0" y="12" font-size="10" font-weight="500" fill="#6A8084">شباك الخدمة</text>
+          <text x="0" y="32" font-size="16" font-weight="800" fill="#07333B">نافذة 3</text>
+        </g>
+
+        <!-- Divider Line -->
+        <line x1="0" y1="46" x2="294" y2="46" stroke="#E5E0D8" stroke-width="1" />
+
+        <!-- Barcode / QR Simulation for Reception Check-in -->
+        <g transform="translate(0, 56)">
+          <!-- Simulated barcode lines -->
+          <g fill="#07333B" opacity="0.85">
+            <rect x="0" y="0" width="3" height="26" />
+            <rect x="5" y="0" width="1.5" height="26" />
+            <rect x="9" y="0" width="4" height="26" />
+            <rect x="16" y="0" width="2" height="26" />
+            <rect x="20" y="0" width="5" height="26" />
+            <rect x="28" y="0" width="2" height="26" />
+            <rect x="33" y="0" width="3.5" height="26" />
+            <rect x="39" y="0" width="1.5" height="26" />
+            <rect x="43" y="0" width="4" height="26" />
+            <rect x="50" y="0" width="2" height="26" />
+            <rect x="55" y="0" width="5" height="26" />
+            <rect x="63" y="0" width="1.5" height="26" />
+            <rect x="67" y="0" width="3" height="26" />
+          </g>
+          <text x="78" y="16" font-size="10.5" font-weight="600" fill="#07333B">امسح الكود ضوئياً عند وصولك</text>
+          <text x="294" y="16" font-size="10" font-weight="700" fill="#159F99" text-anchor="end">خريطة الفرع ↗</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 3. Quick Action Buttons Row -->
+    <g transform="translate(24, 462)">
+      <rect x="0" y="0" width="158" height="42" rx="14" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+      <g transform="translate(24, 25)" fill="#07333B">
+        <circle cx="10" cy="-3" r="7" stroke="#F6A253" stroke-width="1.6" fill="none" />
+        <text x="24" y="1" font-size="12" font-weight="700">تأجيل 10 دقائق</text>
+      </g>
+
+      <g transform="translate(168, 0)">
+        <rect x="0" y="0" width="158" height="42" rx="14" fill="#FEE2E2" fill-opacity="0.6" stroke="#FCA5A5" stroke-width="1" />
+        <g transform="translate(36, 25)" fill="#DC2626">
+          <text x="20" y="1" font-size="12" font-weight="700">إلغاء التذكرة</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 4. Previous Visits Header & History Card -->
+    <g transform="translate(24, 520)">
+      <text x="0" y="14" font-size="14" font-weight="800" fill="#07333B">سجل الزيارات السابقة</text>
+      <text x="326" y="14" font-size="11" font-weight="600" fill="#159F99" text-anchor="end">عرض الكل</text>
+
+      <g transform="translate(0, 24)">
+        <rect x="0" y="0" width="326" height="64" rx="16" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <rect x="12" y="12" width="40" height="40" rx="11" fill="#F5F0E7" />
+        <text x="62" y="27" font-size="12.5" font-weight="700" fill="#07333B">صيدلية العزبي - فرع المعادي</text>
+        <text x="62" y="43" font-size="10.5" font-weight="500" fill="#6A8084">أمس، 04:30 م • تذكرة C-12</text>
+        <rect x="254" y="21" width="60" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text x="284" y="36" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مكتملة</text>
+      </g>
+
+      <g transform="translate(0, 96)">
+        <rect x="0" y="0" width="326" height="64" rx="16" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <rect x="12" y="12" width="40" height="40" rx="11" fill="#F5F0E7" />
+        <text x="62" y="27" font-size="12.5" font-weight="700" fill="#07333B">مركز فودافون - خدمة العملاء</text>
+        <text x="62" y="43" font-size="10.5" font-weight="500" fill="#6A8084">3 نوفمبر • تذكرة B-88</text>
+        <rect x="254" y="21" width="60" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text x="284" y="36" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مكتملة</text>
+      </g>
+    </g>
+
+    <!-- 5. Floating Bottom Navigation Dock -->
+    <g transform="translate(36, 736)" filter="url(#dockShadow)">
+      <rect x="0" y="0" width="302" height="60" rx="30" fill="#07333B" stroke="#0B4C56" stroke-width="1.5" />
+      <rect x="76" y="8" width="72" height="44" rx="22" fill="#F6A253" />
+
+      <g transform="translate(38, 30)" fill="#8FA5A9">
+        <path d="M-8 4 l8 -7 l8 7 v6 h-5 v-4 h-6 v4 h-5 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">الرئيسية</text>
+      </g>
+      <g transform="translate(112, 30)" fill="#07333B">
+        <circle cx="0" cy="1" r="7" stroke="#07333B" stroke-width="1.8" fill="none" />
+        <line x1="0" y1="-3" x2="0" y2="1" stroke="#07333B" stroke-width="1.6" stroke-linecap="round" />
+        <line x1="0" y1="1" x2="3" y2="1" stroke="#07333B" stroke-width="1.6" stroke-linecap="round" />
+        <text x="0" y="16" font-size="9" font-weight="800" text-anchor="middle">طوابيري</text>
+      </g>
+      <g transform="translate(186, 30)" fill="#8FA5A9">
+        <path d="M-5 3 a5 5 0 0 1 10 0 v3 l2 2 h-14 l2 -2 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">التنبيهات</text>
+      </g>
+      <g transform="translate(260, 30)" fill="#8FA5A9">
+        <circle cx="0" cy="-2" r="4" />
+        <path d="M-6 7 a6 6 0 0 1 12 0 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">حسابي</text>
+      </g>
+    </g>
+
+    <!-- iOS Home Indicator -->
+    <rect x="135" y="818" width="120" height="4" rx="2" fill="#07333B" fill-opacity="0.3" />
+  </g>
+
+
+  <!-- ============================================================== -->
+  <!-- SCREEN 3: STREAMLINE MINIMAL (CLEAN & AIRY)                     -->
+  <!-- ============================================================== -->
+  <g transform="translate(915, 85)">
+    <!-- Header Badge -->
+    <rect x="100" y="0" width="190" height="28" rx="14" fill="#159F99" />
+    <text x="195" y="19" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">المقترح 3: Streamline فائق البساطة</text>
+
+    <!-- Phone Frame Outer -->
+    <rect x="0" y="38" width="390" height="800" rx="46" fill="#0D1117" stroke="#30363D" stroke-width="4" filter="url(#phoneShadow)" />
+    <!-- Screen Glass -->
+    <rect x="8" y="46" width="374" height="784" rx="40" fill="#F5F0E7" />
+
+    <!-- Dynamic Island -->
+    <rect x="135" y="58" width="120" height="30" rx="15" fill="#000000" />
+    <circle cx="230" cy="73" r="5" fill="#1C1C1E" />
+    <circle cx="160" cy="73" r="4" fill="#082A3A" />
+
+    <!-- iOS Status Bar (9:41, Icons) -->
+    <text x="44" y="78" font-size="13" font-weight="600" fill="#07333B">9:41</text>
+    <g transform="translate(325, 68)" fill="#07333B">
+      <path d="M0 8 h3 v2 h-3 z M4 6 h3 v4 h-3 z M8 4 h3 v6 h-3 z M12 2 h3 v8 h-3 z" />
+      <path d="M19 2 a6 6 0 0 1 8 0 M21 5 a3 3 0 0 1 4 0 M23 8 a1 1 0 1 1 0 1" stroke="#07333B" stroke-width="1.2" fill="none" />
+    </g>
+
+    <!-- Screen Content Body -->
+    <!-- Top Header Bar -->
+    <g transform="translate(24, 106)">
+      <rect x="0" y="0" width="40" height="40" rx="12" fill="url(#inkGrad)" />
+      <path d="M13 14 h14 v12 h-14 z" fill="none" stroke="#FFFFFF" stroke-width="2" rx="2" />
+      <line x1="17" y1="20" x2="23" y2="20" stroke="#F6A253" stroke-width="2" stroke-linecap="round" />
+
+      <g transform="translate(50, 8)">
+        <text x="0" y="14" font-size="19" font-weight="800" fill="#07333B">طوابيري</text>
+        <rect x="68" y="2" width="46" height="18" rx="9" fill="#10B981" fill-opacity="0.14" />
+        <circle cx="77" cy="11" r="3" fill="#10B981" />
+        <text x="96" y="15" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مباشر</text>
+        <text x="0" y="30" font-size="11" font-weight="500" fill="#6A8084">متابعة حية لتذكرتك وموقعك في الطابور</text>
+      </g>
+
+      <circle cx="316" cy="20" r="18" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+      <path d="M310 16 l4 -3 l4 3 l4 -3 v9 l-4 3 l-4 -3 l-4 3 z" fill="none" stroke="#159F99" stroke-width="1.6" />
+    </g>
+
+    <!-- 2. Minimal Clean Active Ticket Card -->
+    <g transform="translate(24, 172)">
+      <rect x="0" y="0" width="326" height="268" rx="24" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1.2" filter="url(#cardShadow)" />
+
+      <!-- Minimal Brand Row -->
+      <g transform="translate(18, 16)">
+        <rect x="0" y="0" width="36" height="36" rx="10" fill="url(#tealGrad)" />
+        <path d="M14 10 h8 v5 h5 v8 h-5 v5 h-8 v-5 h-5 v-8 h5 z" fill="#FFFFFF" />
+
+        <g transform="translate(44, 4)">
+          <text x="0" y="14" font-size="14" font-weight="800" fill="#07333B">مستشفى دار الفؤاد</text>
+          <text x="0" y="28" font-size="11" font-weight="500" fill="#6A8084">العيادات الخارجية • عيادة القلب</text>
+        </g>
+      </g>
+
+      <!-- Giant Center Ticket Number -->
+      <g transform="translate(163, 115)" text-anchor="middle">
+        <text y="0" font-size="11" font-weight="700" fill="#159F99" letter-spacing="1">رقم التذكرة</text>
+        <text y="42" font-size="46" font-weight="900" fill="#07333B" letter-spacing="2">A-104</text>
+        <rect x="-45" y="52" width="90" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text y="67" font-size="10.5" font-weight="700" fill="#059669">أنت التالي قريباً</text>
+      </g>
+
+      <!-- 3 Split Metrics Horizontal Pills -->
+      <g transform="translate(16, 204)">
+        <rect x="0" y="0" width="294" height="48" rx="14" fill="#F8F6F0" />
+        
+        <!-- Metric 1: Current Serving -->
+        <g transform="translate(48, 20)" text-anchor="middle">
+          <text y="0" font-size="10" font-weight="500" fill="#6A8084">الدور الحالي</text>
+          <text y="18" font-size="14" font-weight="800" fill="#07333B">A-101</text>
+        </g>
+
+        <!-- Divider 1 -->
+        <line x1="98" y1="10" x2="98" y2="38" stroke="#E5E0D8" stroke-width="1" />
+
+        <!-- Metric 2: Waiting -->
+        <g transform="translate(147, 20)" text-anchor="middle">
+          <text y="0" font-size="10" font-weight="500" fill="#6A8084">أمامك</text>
+          <text y="18" font-size="14" font-weight="800" fill="#F6A253">3 أشخاص</text>
+        </g>
+
+        <!-- Divider 2 -->
+        <line x1="196" y1="10" x2="196" y2="38" stroke="#E5E0D8" stroke-width="1" />
+
+        <!-- Metric 3: Time -->
+        <g transform="translate(245, 20)" text-anchor="middle">
+          <text y="0" font-size="10" font-weight="500" fill="#6A8084">الوقت</text>
+          <text y="18" font-size="14" font-weight="800" fill="#159F99">~8 د</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 3. Quick Action Buttons Row -->
+    <g transform="translate(24, 456)">
+      <rect x="0" y="0" width="158" height="42" rx="14" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+      <g transform="translate(24, 25)" fill="#07333B">
+        <circle cx="10" cy="-3" r="7" stroke="#F6A253" stroke-width="1.6" fill="none" />
+        <text x="24" y="1" font-size="12" font-weight="700">تأجيل 10 دقائق</text>
+      </g>
+
+      <g transform="translate(168, 0)">
+        <rect x="0" y="0" width="158" height="42" rx="14" fill="#FEE2E2" fill-opacity="0.6" stroke="#FCA5A5" stroke-width="1" />
+        <g transform="translate(36, 25)" fill="#DC2626">
+          <text x="20" y="1" font-size="12" font-weight="700">إلغاء التذكرة</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 4. Previous Visits Header & History Card -->
+    <g transform="translate(24, 514)">
+      <text x="0" y="14" font-size="14" font-weight="800" fill="#07333B">سجل الزيارات السابقة</text>
+      <text x="326" y="14" font-size="11" font-weight="600" fill="#159F99" text-anchor="end">عرض الكل</text>
+
+      <g transform="translate(0, 24)">
+        <rect x="0" y="0" width="326" height="66" rx="16" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <rect x="12" y="13" width="40" height="40" rx="11" fill="#F5F0E7" />
+        <text x="62" y="28" font-size="12.5" font-weight="700" fill="#07333B">صيدلية العزبي - فرع المعادي</text>
+        <text x="62" y="44" font-size="10.5" font-weight="500" fill="#6A8084">أمس، 04:30 م • تذكرة C-12</text>
+        <rect x="254" y="22" width="60" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text x="284" y="37" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مكتملة</text>
+      </g>
+
+      <g transform="translate(0, 98)">
+        <rect x="0" y="0" width="326" height="66" rx="16" fill="#FFFFFF" stroke="#E5E0D8" stroke-width="1" />
+        <rect x="12" y="13" width="40" height="40" rx="11" fill="#F5F0E7" />
+        <text x="62" y="28" font-size="12.5" font-weight="700" fill="#07333B">مركز فودافون - خدمة العملاء</text>
+        <text x="62" y="44" font-size="10.5" font-weight="500" fill="#6A8084">3 نوفمبر • تذكرة B-88</text>
+        <rect x="254" y="22" width="60" height="22" rx="11" fill="#10B981" fill-opacity="0.12" />
+        <text x="284" y="37" font-size="9.5" font-weight="700" fill="#059669" text-anchor="middle">مكتملة</text>
+      </g>
+    </g>
+
+    <!-- 5. Floating Bottom Navigation Dock -->
+    <g transform="translate(36, 736)" filter="url(#dockShadow)">
+      <rect x="0" y="0" width="302" height="60" rx="30" fill="#07333B" stroke="#0B4C56" stroke-width="1.5" />
+      <rect x="76" y="8" width="72" height="44" rx="22" fill="#F6A253" />
+
+      <g transform="translate(38, 30)" fill="#8FA5A9">
+        <path d="M-8 4 l8 -7 l8 7 v6 h-5 v-4 h-6 v4 h-5 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">الرئيسية</text>
+      </g>
+      <g transform="translate(112, 30)" fill="#07333B">
+        <circle cx="0" cy="1" r="7" stroke="#07333B" stroke-width="1.8" fill="none" />
+        <line x1="0" y1="-3" x2="0" y2="1" stroke="#07333B" stroke-width="1.6" stroke-linecap="round" />
+        <line x1="0" y1="1" x2="3" y2="1" stroke="#07333B" stroke-width="1.6" stroke-linecap="round" />
+        <text x="0" y="16" font-size="9" font-weight="800" text-anchor="middle">طوابيري</text>
+      </g>
+      <g transform="translate(186, 30)" fill="#8FA5A9">
+        <path d="M-5 3 a5 5 0 0 1 10 0 v3 l2 2 h-14 l2 -2 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">التنبيهات</text>
+      </g>
+      <g transform="translate(260, 30)" fill="#8FA5A9">
+        <circle cx="0" cy="-2" r="4" />
+        <path d="M-6 7 a6 6 0 0 1 12 0 z" />
+        <text x="0" y="16" font-size="8.5" font-weight="600" text-anchor="middle">حسابي</text>
+      </g>
+    </g>
+
+    <!-- iOS Home Indicator -->
+    <rect x="135" y="818" width="120" height="4" rx="2" fill="#07333B" fill-opacity="0.3" />
+  </g>
+</svg>
