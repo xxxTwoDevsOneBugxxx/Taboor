@@ -34,4 +34,5 @@ artifacts/
 
 ## macOS
 .DS_Store
-**/.DS_Store
+**/.DS_Storepublish/
+**/publish/
