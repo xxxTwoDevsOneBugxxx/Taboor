@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "883513859636",
+    "project_id": "taboor-app-2026",
+    "storage_bucket": "taboor-app-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:883513859636:android:ad6076aae3bbcbce54f461",
+        "android_client_info": {
+          "package_name": "com.taboor.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "883513859636-r4pm0tu8015cibhv7f7hrjiakm3en6hh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taboor.app",
+            "certificate_hash": "272958f4fa3711a6c2dbefdd1dcf886fdad7dc9d"
+          }
+        },
+        {
+          "client_id": "883513859636-tu9m85e6vrmjb969omdpctd2ss80cc1o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCE1DiH-wyY12NAr7n9lSnHTTikvSvRISY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "883513859636-tu9m85e6vrmjb969omdpctd2ss80cc1o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "883513859636-vt8brp5ui54ati1mg3u7elbnuv1sardl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.taboor.ios"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
