@@ -168,6 +168,62 @@ public final class AuthRepository: AuthRepositoryProtocol {
         keychain.save(key: AppConstants.Storage.refreshToken, value: tokenResponse.refreshToken)
     }
 
+    public func googleLogin(idToken: String) async throws -> User {
+        let payload = GoogleMobileLoginRequestDTO(idToken: idToken)
+        let response: ExternalAuthResponseDTO = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.googleMobile,
+            method: .post,
+            body: payload,
+            requiresAuth: false
+        )
+
+        if let token = response.token {
+            keychain.save(key: AppConstants.Storage.accessToken, value: token)
+        }
+        if let refresh = response.refreshToken {
+            keychain.save(key: AppConstants.Storage.refreshToken, value: refresh)
+        }
+
+        let email = response.email ?? ""
+        let domainUser = User(
+            id: "",
+            email: email,
+            fullName: email.components(separatedBy: "@").first ?? "Google User",
+            token: response.token
+        )
+
+        userDefaults.save(domainUser, forKey: AppConstants.Storage.savedUser)
+        return domainUser
+    }
+
+    public func facebookLogin(accessToken: String) async throws -> User {
+        let payload = FacebookMobileLoginRequestDTO(accessToken: accessToken)
+        let response: ExternalAuthResponseDTO = try await apiClient.request(
+            endpoint: AppConstants.API.Endpoints.facebookMobile,
+            method: .post,
+            body: payload,
+            requiresAuth: false
+        )
+
+        if let token = response.token {
+            keychain.save(key: AppConstants.Storage.accessToken, value: token)
+        }
+        if let refresh = response.refreshToken {
+            keychain.save(key: AppConstants.Storage.refreshToken, value: refresh)
+        }
+
+        let email = response.email ?? ""
+        let domainUser = User(
+            id: "",
+            email: email,
+            fullName: email.components(separatedBy: "@").first ?? "Facebook User",
+            token: response.token
+        )
+
+        userDefaults.save(domainUser, forKey: AppConstants.Storage.savedUser)
+        return domainUser
+    }
+
     public func logout() async throws {
         if let refresh = keychain.get(key: AppConstants.Storage.refreshToken) {
             let _: EmptyPayload? = try? await apiClient.request(

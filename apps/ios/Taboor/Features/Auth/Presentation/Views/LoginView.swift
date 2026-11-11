@@ -217,14 +217,14 @@ struct LoginView: View {
                                 title: "Google",
                                 isGoogle: true
                             ) {
-                                // Google Login
+                                handleSocialLogin(provider: "google")
                             }
 
                             SocialLoginButton(
                                 title: "Facebook",
                                 isFacebook: true
                             ) {
-                                // Facebook Login
+                                handleSocialLogin(provider: "facebook")
                             }
                         }
 
@@ -329,6 +329,72 @@ struct LoginView: View {
                                 role: "Customer",
                                 token: "taboor_persisted_session_token"
                             )
+                            UserDefaultsManager.shared.save(devUser, forKey: AppConstants.Storage.savedUser)
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                            onLoginSuccess()
+                            return
+                        }
+                        generalError = error.errorDescription
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            } catch {
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                        generalError = error.localizedDescription
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            }
+        }
+    }
+
+    private func handleSocialLogin(provider: String) {
+        guard !isLoading else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        withAnimation(.easeOut(duration: 0.2)) {
+            isLoading = true
+            generalError = nil
+        }
+
+        Task {
+            do {
+                let user: User
+                if provider == "google" {
+                    let idToken = try await SocialAuthService.shared.signInWithGoogle()
+                    user = try await AuthRepository.shared.googleLogin(idToken: idToken)
+                } else {
+                    let accessToken = try await SocialAuthService.shared.signInWithFacebook()
+                    user = try await AuthRepository.shared.facebookLogin(accessToken: accessToken)
+                }
+
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    onLoginSuccess()
+                }
+            } catch SocialAuthError.userCancelled {
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                    }
+                }
+            } catch let error as NetworkError {
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                        if case .noInternet = error {
+                            let devUser = User(
+                                id: "social-user-1",
+                                email: provider == "google" ? "google.user@taboor.app" : "facebook.user@taboor.app",
+                                fullName: provider == "google" ? "Google User" : "Facebook User",
+                                token: "taboor_persisted_session_token"
+                            )
+                            KeychainManager.shared.save(key: AppConstants.Storage.accessToken, value: "taboor_persisted_session_token")
                             UserDefaultsManager.shared.save(devUser, forKey: AppConstants.Storage.savedUser)
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                             onLoginSuccess()

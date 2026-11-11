@@ -23,8 +23,6 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -33,23 +31,33 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>taboor</string>
+				<string>com.googleusercontent.apps.619082841226-c65esvlhc7h2p9arqiq2jl00i6d1qsor</string>
 			</array>
 		</dict>
 	</array>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>FacebookAppID</key>
+	<string>2241479906769476</string>
+	<key>FacebookClientToken</key>
+	<string>6267752549a99f0b8f7ce3375c4c73c1</string>
+	<key>FacebookDisplayName</key>
+	<string>Taboor</string>
+	<key>GIDClientID</key>
+	<string>619082841226-c65esvlhc7h2p9arqiq2jl00i6d1qsor.apps.googleusercontent.com</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>نحتاج إلى موقعك الجغرافي لعرض أقرب العيادات والخدمات إليك وحساب المسافة ووقت الوصول بدقة.</string>
+	<key>NSSiriUsageDescription</key>
+	<string>استخدام سيري للاستعلام الصوتي عن دورك وتأجيل المواعيد صوتياً</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
 	<true/>
-	<key>NSSiriUsageDescription</key>
-	<string>استخدام سيري للاستعلام الصوتي عن دورك وتأجيل المواعيد صوتياً</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>نحتاج إلى موقعك الجغرافي لعرض أقرب العيادات والخدمات إليك وحساب المسافة ووقت الوصول بدقة.</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>إضافة وتثبيت مواعيدك وتذكيرات الطابور في تقويم آبل لتنبيهك قبل الموعد.</string>
-	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>إضافة مواعيد الحجز وتذكيرات الطابور تلقائياً إلى تقويم آبل لتنبيهك قبل الموعد.</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>إضافة مواعيد وتذاكر الطابور إلى تقويم آبل لتنظيم جدولك وتلقي التنبيهات في وقتها.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Tajawal-Regular.ttf</string>

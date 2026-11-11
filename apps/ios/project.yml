@@ -25,6 +25,14 @@ targets:
           - CFBundleURLName: "com.taboor.ios"
             CFBundleURLSchemes:
               - "taboor"
+              - "com.googleusercontent.apps.619082841226-c65esvlhc7h2p9arqiq2jl00i6d1qsor"
+        FacebookAppID: "2241479906769476"
+        FacebookDisplayName: "Taboor"
+        FacebookClientToken: "6267752549a99f0b8f7ce3375c4c73c1"
+        GIDClientID: "619082841226-c65esvlhc7h2p9arqiq2jl00i6d1qsor.apps.googleusercontent.com"
+        LSApplicationQueriesSchemes:
+          - "fbapi"
+          - "fb-messenger-share-api"
         NSSupportsLiveActivities: YES
         NSSupportsLiveActivitiesFrequentUpdates: YES
         NSSiriUsageDescription: "استخدام سيري للاستعلام الصوتي عن دورك وتأجيل المواعيد صوتياً"

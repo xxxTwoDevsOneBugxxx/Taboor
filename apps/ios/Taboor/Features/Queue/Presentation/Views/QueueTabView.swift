@@ -60,6 +60,8 @@ public struct QueueTabView: View {
                 }
                 .background(AppColors.screenBackground.ignoresSafeArea())
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppColors.screenBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
                 await dataService.refreshAll()
@@ -146,6 +148,7 @@ public struct QueueTabView: View {
                 }
             }
         }
+        .background(AppColors.screenBackground.ignoresSafeArea())
     }
 
     // MARK: - 1. Top Header Bar

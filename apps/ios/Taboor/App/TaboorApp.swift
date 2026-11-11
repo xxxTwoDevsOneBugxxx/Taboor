@@ -42,6 +42,13 @@ struct TaboorApp: App {
 
         // Register AppShortcuts with Siri
         TaboorShortcuts.updateAppShortcutParameters()
+
+        // Configure transparent navigation bar & warm cream background to eliminate any safe area flashes
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.configureWithTransparentBackground()
+        UINavigationBar.appearance().standardAppearance = navBarAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().compactAppearance = navBarAppearance
     }
 
     var body: some Scene {
@@ -152,13 +159,12 @@ struct TaboorApp: App {
                             }
                         }
                     )
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.98)),
-                        removal: .opacity.combined(with: .scale(scale: 0.98))
-                    ))
+                    .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.35), value: currentScreen)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppColors.screenBackground.ignoresSafeArea())
+            .ignoresSafeArea()
             .environment(\.layoutDirection, localization.layoutDirection)
             .preferredColorScheme(.light)
             .id(localization.currentLanguage)

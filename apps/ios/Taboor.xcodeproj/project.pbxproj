@@ -7,40 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F10000010000000000000001 /* MockDataLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000010000000000000001 /* MockDataLoader.swift */; };
-		F10000010000000000000002 /* ServiceDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000010000000000000002 /* ServiceDTOs.swift */; };
-		F10000010000000000000003 /* PlacesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000010000000000000003 /* PlacesRepository.swift */; };
-		F10000010000000000000004 /* QueueRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000010000000000000004 /* QueueRepository.swift */; };
-		F10000010000000000000005 /* AlertsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000010000000000000005 /* AlertsRepository.swift */; };
-		D10000010000000000000001 /* places_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = C10000010000000000000001 /* places_seed.json */; };
-		D10000010000000000000002 /* active_tickets_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = C10000010000000000000002 /* active_tickets_seed.json */; };
-		D10000010000000000000003 /* alerts_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = C10000010000000000000003 /* alerts_seed.json */; };
-		D10000010000000000000004 /* history_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = C10000010000000000000004 /* history_seed.json */; };
-		D10000010000000000000005 /* user_profile_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = C10000010000000000000005 /* user_profile_seed.json */; };
-		B10000010000000000000021 /* taboor_glass_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000021 /* taboor_glass_chime.wav */; };
-		B10000010000000000000022 /* taboor_glass_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000022 /* taboor_glass_chime.caf */; };
-		B10000010000000000000023 /* taboor_zen_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000023 /* taboor_zen_chime.wav */; };
-		B10000010000000000000024 /* taboor_zen_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000024 /* taboor_zen_chime.caf */; };
-		B10000010000000000000025 /* taboor_dreamy_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000025 /* taboor_dreamy_chime.wav */; };
-		B10000010000000000000026 /* taboor_dreamy_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000026 /* taboor_dreamy_chime.caf */; };
-		B10000010000000000000027 /* taboor_soft_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000027 /* taboor_soft_chime.wav */; };
-		B10000010000000000000028 /* taboor_soft_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000028 /* taboor_soft_chime.caf */; };
-		B10000010000000000000011 /* taboor_marimba_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000011 /* taboor_marimba_chime.wav */; };
-		B10000010000000000000012 /* taboor_marimba_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000012 /* taboor_marimba_chime.caf */; };
-		B10000010000000000000013 /* taboor_pulse_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000013 /* taboor_pulse_chime.wav */; };
-		B10000010000000000000014 /* taboor_pulse_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000014 /* taboor_pulse_chime.caf */; };
-		B10000010000000000000015 /* taboor_gentle_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000015 /* taboor_gentle_chime.wav */; };
-		B10000010000000000000016 /* taboor_gentle_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000016 /* taboor_gentle_chime.caf */; };
-		B10000010000000000000005 /* TaboorSensoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000005 /* TaboorSensoryManager.swift */; };
-		B10000010000000000000001 /* taboor_turn_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000001 /* taboor_turn_chime.wav */; };
-		B10000010000000000000002 /* taboor_success_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000002 /* taboor_success_chime.wav */; };
-		B10000010000000000000003 /* taboor_turn_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000003 /* taboor_turn_chime.caf */; };
-		B10000010000000000000004 /* taboor_success_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000004 /* taboor_success_chime.caf */; };
 		00748A678B73A6E1FC8CC9FD /* TabsExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = D64493375221EB6E137C3435 /* TabsExample.swift */; };
-		CAL00100D324ED4ADE7AD499 /* AppleCalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAL002AF08AAB370AD25442D /* AppleCalendarManager.swift */; };
 		054CDB00D324ED4ADE7AD499 /* NavigationLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3132E6AF08AAB370AD25442D /* NavigationLauncher.swift */; };
 		0BEF9A5C7E49E441D4D7527F /* FavoritePlacesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A42836881F5633B2AC727D4 /* FavoritePlacesView.swift */; };
 		0EA1529E8781E0B2CDE11817 /* Tajawal-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2B034B226E5BC21266ED744B /* Tajawal-Bold.ttf */; };
+		11B300BCA659D0E3F7A88DFA /* AppleCalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E39A56F88A9C312DC20A060E /* AppleCalendarManager.swift */; };
 		12E078382C8B606317E167A9 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A564222154E4F09308EE1AA /* NotificationService.swift */; };
 		13AE7ABAAD800FF4507FCD82 /* RenderingCompositionExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C85EC6D68975ACAD79C582 /* RenderingCompositionExample.swift */; };
 		13BAD87B2CCD9338C8DFEBA8 /* SystemDemoLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D51C88BCBDC7DDBE91E544 /* SystemDemoLauncher.swift */; };
@@ -48,18 +19,24 @@
 		160EB13FB7DD0F17ECD59367 /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FD1321FE51A18BE1B98FB9 /* NetworkError.swift */; };
 		1BC8CA3E49EFC0E4DFC00581 /* ShimmerModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDDD183F762924EFFE3AB90 /* ShimmerModifier.swift */; };
 		1BCF333DBAA512B4A83E0C80 /* BackgroundExtensionExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC1214027412D8AA590D554D /* BackgroundExtensionExample.swift */; };
+		1CF4E88D9EA9B3D5CB886B2F /* taboor_dreamy_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = E938BC3C03E7A3BE2D472AF9 /* taboor_dreamy_chime.wav */; };
 		1D22BEFB7F228522C0F074BB /* GlassSettingsSheetExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B51487DDD638FA4381335F2 /* GlassSettingsSheetExample.swift */; };
-		A11100012222333344445555 /* TaboorPrecomputedRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11100022222333344445555 /* TaboorPrecomputedRoutes.swift */; };
+		20D959C1F47DD8C609EC064D /* history_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = D275278E8F4973C3A8319B42 /* history_seed.json */; };
+		217813634AF053B686AB9965 /* TaboorSensoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B8018C8DF095ED7271BE7D /* TaboorSensoryManager.swift */; };
 		23443BC395CC6CA947106454 /* UserLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8579D03DFCE4384F487B8D9E /* UserLocationService.swift */; };
 		28B60536D834DC1009A104C3 /* ContainersExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439A41B36CB47F0344406518 /* ContainersExample.swift */; };
+		2CA72BC8912DC7E4620FE06F /* user_profile_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = AF050FC01E1E7176CB9B00CB /* user_profile_seed.json */; };
 		2F0C4FF8C11BAB3576B4062E /* AlertsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C704D8657929CBF14E396E4 /* AlertsTabView.swift */; };
 		319FBB5ADE168EF03C77D620 /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9978BBB958EA9CC4C95CAC /* ForgotPasswordView.swift */; };
+		33F1CE58465711936B6374C1 /* places_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = D223F45A1BC3777FCE445929 /* places_seed.json */; };
 		347353EB9A5F704F9960A5D5 /* GalleryLaunchConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00F9F62B809EDA388C5FA3C /* GalleryLaunchConfiguration.swift */; };
 		3594B767DA1B0FF12B991DDD /* Tajawal-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 06318A75B8B8998F5E342B1E /* Tajawal-ExtraBold.ttf */; };
 		35EF32D6FD9E8D04C6AE5D36 /* TaboorIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F69E7FB7BA0837EEE56F85 /* TaboorIntents.swift */; };
 		37CC2468760CFC04D4105A6F /* BusinessPartnerSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A974020D828B566B4C447E24 /* BusinessPartnerSheetView.swift */; };
 		3BF96369551B0F73AC06E0F9 /* CustomNavigationExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 612C79FBFDEA2F29FC698088 /* CustomNavigationExample.swift */; };
 		3C6B531B427F0E7D61754E39 /* Tajawal-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4A2F3828A493F68BC236D55 /* Tajawal-Regular.ttf */; };
+		3D27769B3BA545F087D2948C /* ServiceDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83214E6494FDAB0A00DB3606 /* ServiceDTOs.swift */; };
+		4029B5F350C1A3BBE7CD06CA /* taboor_glass_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = B67A496D164ECD9BAFE23282 /* taboor_glass_chime.caf */; };
 		41AF569139061531DC3C2757 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9122281936D622E670564F0 /* RegisterView.swift */; };
 		457D9334F4903CEBCBFD28E1 /* ExpandablePlayerExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FC377EBF829439E2CD8183 /* ExpandablePlayerExample.swift */; };
 		471CB2588CAB79D3799D006E /* SearchExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D91706731F3A451D85484B /* SearchExample.swift */; };
@@ -67,18 +44,24 @@
 		4CBCF8507356491EEC00FAFA /* SymbolReplacementExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC90E54D42544F99E520684B /* SymbolReplacementExample.swift */; };
 		4D9B5527A54854AD041F274A /* AccessibilityExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B111C4D18F61B796338E845 /* AccessibilityExample.swift */; };
 		4ECBB7DB55DFE970F98F2042 /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB36453CD2BE51ED551F5B9 /* KeychainManager.swift */; };
+		51630457CEB7CFC02EDC8BB8 /* taboor_marimba_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = A19C9DB0A6CEAC2E95F2CA31 /* taboor_marimba_chime.caf */; };
 		52A3D4BFA992CD84A32511AE /* MorphingExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4357E6AB81CE7F33A4872E4B /* MorphingExample.swift */; };
 		55D9DFDAAB869BD068E379D0 /* TicketHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA41591CF3D5310DAACEEDA5 /* TicketHistoryView.swift */; };
+		5CF810E41A5973BC7AAF6706 /* taboor_zen_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = E444A3D669EFD3D1FD2C1BF3 /* taboor_zen_chime.caf */; };
 		5E484D48552B9E8F04539D32 /* HomeTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C979E89926B1C842119C773 /* HomeTabView.swift */; };
+		5F4E47E0BDE8E472CEA98640 /* taboor_turn_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = 219718158BC76EA096901B8A /* taboor_turn_chime.wav */; };
 		609EAACB876C233B85FAF7D7 /* Tajawal-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 575A33D328F6199DF20FDB31 /* Tajawal-Medium.ttf */; };
 		64C603D3128AC3C48D0F47B3 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44ED6D56235F59F6FED35F14 /* OnboardingView.swift */; };
 		6649C011D1A99B6637590E06 /* LiveQueueTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E0FAFAAE27C7DA804E299CF /* LiveQueueTrackingView.swift */; };
 		66EC34D354B833E8F3EC9A50 /* ExampleScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F773C20CC92095A50C8F1D12 /* ExampleScreen.swift */; };
 		67739D71BB6629D8C076A42E /* RegisterWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596BEB95C30ED90EB6CF8330 /* RegisterWidgets.swift */; };
 		6B7CEA6E05727116EDF558DD /* ShareTicketHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30276DD3AADEEBDDA137C780 /* ShareTicketHelper.swift */; };
+		6BB31970947F1E0F3528A52F /* taboor_pulse_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = E5321810826D3E0561027646 /* taboor_pulse_chime.caf */; };
 		700BDD72BC0730FCA87B389F /* TransitionsExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1776F4C0E404BC331E401B93 /* TransitionsExample.swift */; };
 		71944546524631AFAD1A7C4C /* VariantsExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0600817347D5AA0E99043E3C /* VariantsExample.swift */; };
+		741240591A1DF3938FBEFABE /* taboor_turn_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = 0A2AC2E48DA9F551660096AC /* taboor_turn_chime.caf */; };
 		759FFAD59E702B39B6AF375E /* TaboorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260CFBDB97C23319F26EB797 /* TaboorApp.swift */; };
+		7A35B0C87860A6187A19A654 /* taboor_gentle_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = ECA15E3CF4D6F9C97123EF3B /* taboor_gentle_chime.wav */; };
 		7C7731822A42E3D38B824B3D /* ContrastExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2EBC3CB74AAE8F6AF052C0 /* ContrastExample.swift */; };
 		7CC5F70B1D7FB8CA2C385A5C /* PlaybackAccessory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 993C0500CDA8E6ED3E7B6E26 /* PlaybackAccessory.swift */; };
 		7D998F7F5A0CE08A76314866 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 15E602282FCE6D7B674754A7 /* icon.png */; };
@@ -88,16 +71,23 @@
 		83F92F61E5749B6516CF2F4A /* QueueActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE2AB5FBBDE339F1C865EF /* QueueActivityAttributes.swift */; };
 		84AB577E99C7703CC5275C39 /* QueueDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDD5F645DCC974DF31855B6 /* QueueDataService.swift */; };
 		8566483393BD57C2EBD7F6D2 /* ServiceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16235B578206EF06BBF4F50F /* ServiceModels.swift */; };
+		868A76630FCE1F210C8F6F5E /* AlertsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C998050C2FA0C3B9EE3132E /* AlertsRepository.swift */; };
 		88912285E99EB3B653281F9E /* AppCompositionExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E10BC9530F9F3F6A83FFE9 /* AppCompositionExample.swift */; };
 		8BB0C119B22AC7B33B047F69 /* ProfileTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC08CEB44BEB2C2359AA3C0 /* ProfileTabView.swift */; };
 		8CC8F2F8B7F2A43E0F12C345 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B3837D7BA36E32BAAC87D622 /* InfoPlist.strings */; };
 		8DEE73986FA305F9BF656D28 /* LoginUseCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B235D31D51C55C97F6C57B86 /* LoginUseCase.swift */; };
 		902361FF1D25EEF62794ACC6 /* AllServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFC0C6455E01DD2FAAF803DB /* AllServicesView.swift */; };
 		913F7CDFD97C05314CBB2ED4 /* TaboorWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B8B2BF80C9A9A519F6FDEC /* TaboorWidgetsBundle.swift */; };
+		926A419243931997F8D9CACE /* PlacesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A679C44A37B849C9DB12DBA3 /* PlacesRepository.swift */; };
+		92B0C46C6378F47A8F2A7858 /* taboor_marimba_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = 34B49EB319D0B71ABDE85C25 /* taboor_marimba_chime.wav */; };
 		92BF894CE016A3F0C5E1CD65 /* CoreTextGlassExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18ADA82921526CAA769C6E6D /* CoreTextGlassExample.swift */; };
 		9A27BC1A5B02A239FB9D30B2 /* DemoComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1757AB58B83D55D2946C5C75 /* DemoComponents.swift */; };
 		9B95FF34B8FE9DCE8EBE7B5D /* TaboorFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26B467E25F8423F3D3B356AD /* TaboorFonts.swift */; };
+		9B9EBDE8BDB7FBC16B777C2B /* taboor_success_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = 57D2E00CEF880182C7F00A17 /* taboor_success_chime.wav */; };
+		9F086B6DEC493F10F221CB65 /* taboor_soft_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = 0015B2D618A809C135B3EAA6 /* taboor_soft_chime.caf */; };
+		9F7DFEBAB0C790F3BB001F57 /* active_tickets_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = 796DE1FCE8FE8A23E0415618 /* active_tickets_seed.json */; };
 		A051AA95EF0F7F0DD1C7F682 /* DelayQueueLiveActivityIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B86DF7E31299BD378A0E3FC /* DelayQueueLiveActivityIntent.swift */; };
+		A1F8420C1BFB2F417237D0EE /* taboor_soft_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = 85EB693C1FEB6AF4C9CEC24C /* taboor_soft_chime.wav */; };
 		A276D84A8AB5C4FC31D5D296 /* LiquidGlassGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F4D6F7B914EFC9E0838318 /* LiquidGlassGalleryView.swift */; };
 		A3B4A46C5214FA45678E0B6C /* UnionsExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC1B5F3542BD75284A820BC /* UnionsExample.swift */; };
 		A4010AEA10E8D53B826C04ED /* PresentationsExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AE10EAD3315CB59C2196522 /* PresentationsExample.swift */; };
@@ -105,20 +95,25 @@
 		A5176FE5E004F9F2CE6F5B59 /* ApiResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88AC0BCC084F56290EE1F553 /* ApiResponse.swift */; };
 		A79410B57143D536819D52FB /* QueueTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BCB33AB0684BD7BB8285F5D /* QueueTabView.swift */; };
 		AA383D555661997E5C78B88B /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BAB4174484872D8FBB38D70B /* Inter-Bold.ttf */; };
+		AB25BBD839045662F6A35B06 /* taboor_pulse_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = BEE1D042715B6BA38C764085 /* taboor_pulse_chime.wav */; };
 		ABDEDC52FBB11526EBEF0780 /* MorphingSheetExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = E800EE5244A7C7312D93ABC9 /* MorphingSheetExample.swift */; };
 		ACED1B23D883BDE0BC1C85B6 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B15BE339F3A841A66811251 /* AuthRepository.swift */; };
 		B0381D558EDB0586FF8570AC /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0779AA819B52EE1D9009757B /* LocalizationManager.swift */; };
 		B0545A7B24FEE86BD92B976E /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A6DFEFC0119C9E28A9F8D362 /* Inter-Regular.ttf */; };
 		B18CC95F22F3A78E58C79B7F /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54660DC6D32FF998C78947C2 /* LoginView.swift */; };
 		B362AF1530DD2BC43E0EDA5A /* UserDefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD736662E694A3ECBE00E0E /* UserDefaultsManager.swift */; };
+		B45F527D7CBBAC0061658580 /* SocialAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD7873E1073FE5024828C1CB /* SocialAuthService.swift */; };
 		B6B0293594E8C0E25300E714 /* SplitViewExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 214AF1053B89F664F1CBC531 /* SplitViewExample.swift */; };
+		B9822871A91E0EBB3CDE8610 /* taboor_success_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB258781D2788241084A04 /* taboor_success_chime.caf */; };
 		BF2F36207CB01BAEB32E2F96 /* FloatingActionsExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 591500A5050915657E62D155 /* FloatingActionsExample.swift */; };
 		C0A50932686AF58729E74229 /* ShapesExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4497A2EC34372DE42D36F60 /* ShapesExample.swift */; };
+		C103D130B1954CA5C3E5B384 /* taboor_glass_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = F1FE8AF4B8692445DEA37067 /* taboor_glass_chime.wav */; };
 		C1B5F69D58998EB7857DD183 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4416C252F49561E5F0F0DF0A /* Inter-SemiBold.ttf */; };
 		C22AE1EDE03A8E3639ABD656 /* DynamicIslandHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAE140AEB210AD4DB187B9A /* DynamicIslandHUDView.swift */; };
 		C2BDADBC2E62F4C0EDAC0420 /* ServiceDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82041DF1B9ACA9EE0D3119D /* ServiceDetailsView.swift */; };
 		C335C1539C7F446B94FBB6BB /* TaboorLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DEB53E077BB7A4AED943A8 /* TaboorLogoView.swift */; };
 		C5D386E1FA516056D3CAC842 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 345DE8CA0B605334E8A6F4DB /* AppColors.swift */; };
+		C61D91F37D2E658B59E0634A /* MockDataLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2608488D67CFCEA6E3708B01 /* MockDataLoader.swift */; };
 		C68E7C928915C5C4415D22BF /* TaboorLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = C610FBA458515E64C811C004 /* TaboorLiveActivityWidget.swift */; };
 		C6F057EC3E91476A17E2C566 /* TaboorColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452E2CD408E660D30D743BF5 /* TaboorColors.swift */; };
 		C809E72695939ECA181AC211 /* ServiceWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F535FFD45A223C1E7BF09F /* ServiceWidgets.swift */; };
@@ -130,21 +125,28 @@
 		CDB5D9ADD9309F1F5D188563 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB9A506C13999EA0FAA6A4AE /* QRScannerView.swift */; };
 		CDC65AA6170ABEA8F469B73F /* SmartAlertPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786869690E5FD8EC126E2F38 /* SmartAlertPreferencesView.swift */; };
 		CEC92FDBCE0BE9EF5B36DE7D /* ExampleCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E7430909AF0E2EE7BA8DA7 /* ExampleCatalog.swift */; };
+		CF5AF22FB42AA3C9C4089F03 /* taboor_gentle_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = BE3B140ABAED2787C3519B1B /* taboor_gentle_chime.caf */; };
 		D18F0DA9B6CE7252A6598859 /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D00F58B33AB9AF78D51DBCA /* ApiClient.swift */; };
+		D39A311CC970755F1B1E6854 /* taboor_dreamy_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = 2E2A87FF80A1DC76610BBAEE /* taboor_dreamy_chime.caf */; };
+		D3C480635A0074DDDD81CC73 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 6F7C19AC2461D8DF2071F1FA /* GoogleService-Info.plist */; };
 		D6DB68D08798A27562A8AEBF /* AuthRepositoryProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = D778EB11EAB5B12F9F124DC3 /* AuthRepositoryProtocol.swift */; };
 		D7588DB28010CC39F65D944B /* ExampleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B51A46C565C52073082867 /* ExampleDetailView.swift */; };
 		DD52BC2629AAC4642ACC00A4 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618206EF93F6ABACAAE03034 /* AppConstants.swift */; };
 		DDBA803C6146F600F0E76EC1 /* UIKitIntegrationExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16DB725843E5E4D7DE18596 /* UIKitIntegrationExample.swift */; };
 		E1B66A0369DDE57F2D20A029 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0863746C3C49A567E7BA922 /* SplashScreenView.swift */; };
+		E292EAA0BD668763DA6481B0 /* QueueRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 942333F2E819BA0311A89FAE /* QueueRepository.swift */; };
 		E3C0920C6C62EB88DC24677D /* SpotlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1339EC52F31A32328053346E /* SpotlightService.swift */; };
 		ECF83E842AB5D02780CE35D2 /* ToolbarExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E89AD2B324C1E317E20F91 /* ToolbarExample.swift */; };
+		F07BDC68A542C49D5AA71B03 /* alerts_seed.json in Resources */ = {isa = PBXBuildFile; fileRef = 1BE9BB528E81DB1D9278EC33 /* alerts_seed.json */; };
 		F3B78F5A751D71AAAED7BF4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B14FFCEE353F42626C2AD995 /* Assets.xcassets */; };
 		F71C27F1DE4AF3F9FE1B81AF /* QueueActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CE2AB5FBBDE339F1C865EF /* QueueActivityAttributes.swift */; };
 		F7ADA19142C93EBB4B70A61F /* GestureIntegrationExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9AB40C97A8D64A79C9F2986 /* GestureIntegrationExample.swift */; };
 		F853C6CC27DBFD514E686C78 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C974BEF297564C76642261 /* User.swift */; };
+		F91F608B6627C43123B4FF11 /* TaboorPrecomputedRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3941DEF75E4FCED68F3E06 /* TaboorPrecomputedRoutes.swift */; };
 		F9D07AD78C6227B5FD5B3898 /* AuthWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F1D816A8218E2F53E0283F /* AuthWidgets.swift */; };
 		FBCC01B6AD9C94078921F4A9 /* PhotoStudioExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6573E7E0014EDC35754A094A /* PhotoStudioExample.swift */; };
 		FBD876312DAFB4D6862015F3 /* ButtonStylesExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C0F6B08D2303F23A73AC025 /* ButtonStylesExample.swift */; };
+		FE59B14FBE785E10999C8A3A /* taboor_zen_chime.wav in Resources */ = {isa = PBXBuildFile; fileRef = D1054473BC0A33BCEB43F23C /* taboor_zen_chime.wav */; };
 		FE872469103F9075A6FB628F /* AuthDTOs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C126DFC38649E35E2179ADE4 /* AuthDTOs.swift */; };
 		FF10803CC4C263FCE73EA3F3 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E95573A72DFCBA275FB475 /* MainTabView.swift */; };
 /* End PBXBuildFile section */
@@ -174,39 +176,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		E10000010000000000000001 /* MockDataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MockDataLoader.swift"; sourceTree = "<group>"; };
-		E10000010000000000000002 /* ServiceDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DTOs/ServiceDTOs.swift"; sourceTree = "<group>"; };
-		E10000010000000000000003 /* PlacesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Repositories/PlacesRepository.swift"; sourceTree = "<group>"; };
-		E10000010000000000000004 /* QueueRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Repositories/QueueRepository.swift"; sourceTree = "<group>"; };
-		E10000010000000000000005 /* AlertsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Features/Alerts/Data/Repositories/AlertsRepository.swift"; sourceTree = "<group>"; sourceTree = "<group>"; };
-		C10000010000000000000001 /* places_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Seeds/places_seed.json"; sourceTree = "<group>"; };
-		C10000010000000000000002 /* active_tickets_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Seeds/active_tickets_seed.json"; sourceTree = "<group>"; };
-		C10000010000000000000003 /* alerts_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Seeds/alerts_seed.json"; sourceTree = "<group>"; };
-		C10000010000000000000004 /* history_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Seeds/history_seed.json"; sourceTree = "<group>"; };
-		C10000010000000000000005 /* user_profile_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Seeds/user_profile_seed.json"; sourceTree = "<group>"; };
-		A10000010000000000000021 /* taboor_glass_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_glass_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000022 /* taboor_glass_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_glass_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000023 /* taboor_zen_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_zen_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000024 /* taboor_zen_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_zen_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000025 /* taboor_dreamy_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_dreamy_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000026 /* taboor_dreamy_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_dreamy_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000027 /* taboor_soft_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_soft_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000028 /* taboor_soft_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_soft_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000011 /* taboor_marimba_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_marimba_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000012 /* taboor_marimba_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_marimba_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000013 /* taboor_pulse_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_pulse_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000014 /* taboor_pulse_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_pulse_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000015 /* taboor_gentle_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_gentle_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000016 /* taboor_gentle_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_gentle_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000005 /* TaboorSensoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorSensoryManager.swift; sourceTree = "<group>"; };
-		A10000010000000000000001 /* taboor_turn_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_turn_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000002 /* taboor_success_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_success_chime.wav; sourceTree = "<group>"; };
-		A10000010000000000000003 /* taboor_turn_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_turn_chime.caf; sourceTree = "<group>"; };
-		A10000010000000000000004 /* taboor_success_chime.caf */ = {isa = PBXFileReference; lastKnownFileType = audio; path = taboor_success_chime.caf; sourceTree = "<group>"; };
+		0015B2D618A809C135B3EAA6 /* taboor_soft_chime.caf */ = {isa = PBXFileReference; path = taboor_soft_chime.caf; sourceTree = "<group>"; };
 		0600817347D5AA0E99043E3C /* VariantsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VariantsExample.swift; sourceTree = "<group>"; };
 		06318A75B8B8998F5E342B1E /* Tajawal-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-ExtraBold.ttf"; sourceTree = "<group>"; };
 		0779AA819B52EE1D9009757B /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
 		079D11BBFA7DF88809B180B0 /* GlassBadgesExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassBadgesExample.swift; sourceTree = "<group>"; };
+		0A2AC2E48DA9F551660096AC /* taboor_turn_chime.caf */ = {isa = PBXFileReference; path = taboor_turn_chime.caf; sourceTree = "<group>"; };
 		0A42836881F5633B2AC727D4 /* FavoritePlacesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritePlacesView.swift; sourceTree = "<group>"; };
 		0AE10EAD3315CB59C2196522 /* PresentationsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationsExample.swift; sourceTree = "<group>"; };
 		0B86DF7E31299BD378A0E3FC /* DelayQueueLiveActivityIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DelayQueueLiveActivityIntent.swift; sourceTree = "<group>"; };
@@ -218,18 +193,22 @@
 		1757AB58B83D55D2946C5C75 /* DemoComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoComponents.swift; sourceTree = "<group>"; };
 		1776F4C0E404BC331E401B93 /* TransitionsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionsExample.swift; sourceTree = "<group>"; };
 		18ADA82921526CAA769C6E6D /* CoreTextGlassExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTextGlassExample.swift; sourceTree = "<group>"; };
+		1BE9BB528E81DB1D9278EC33 /* alerts_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = alerts_seed.json; sourceTree = "<group>"; };
 		214AF1053B89F664F1CBC531 /* SplitViewExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitViewExample.swift; sourceTree = "<group>"; };
+		219718158BC76EA096901B8A /* taboor_turn_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_turn_chime.wav; sourceTree = "<group>"; };
+		2608488D67CFCEA6E3708B01 /* MockDataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDataLoader.swift; sourceTree = "<group>"; };
 		260CFBDB97C23319F26EB797 /* TaboorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorApp.swift; sourceTree = "<group>"; };
 		26B467E25F8423F3D3B356AD /* TaboorFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorFonts.swift; sourceTree = "<group>"; };
 		26E89AD2B324C1E317E20F91 /* ToolbarExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarExample.swift; sourceTree = "<group>"; };
 		2B034B226E5BC21266ED744B /* Tajawal-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-Bold.ttf"; sourceTree = "<group>"; };
+		2E2A87FF80A1DC76610BBAEE /* taboor_dreamy_chime.caf */ = {isa = PBXFileReference; path = taboor_dreamy_chime.caf; sourceTree = "<group>"; };
 		2E2EBC3CB74AAE8F6AF052C0 /* ContrastExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrastExample.swift; sourceTree = "<group>"; };
 		2F79E396A0BADF478FB0963A /* Taboor.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Taboor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		30276DD3AADEEBDDA137C780 /* ShareTicketHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareTicketHelper.swift; sourceTree = "<group>"; };
-		CAL002AF08AAB370AD25442D /* AppleCalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleCalendarManager.swift; sourceTree = "<group>"; };
 		3132E6AF08AAB370AD25442D /* NavigationLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLauncher.swift; sourceTree = "<group>"; };
 		32B8B2BF80C9A9A519F6FDEC /* TaboorWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorWidgetsBundle.swift; sourceTree = "<group>"; };
 		345DE8CA0B605334E8A6F4DB /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		34B49EB319D0B71ABDE85C25 /* taboor_marimba_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_marimba_chime.wav; sourceTree = "<group>"; };
 		3B51487DDD638FA4381335F2 /* GlassSettingsSheetExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSettingsSheetExample.swift; sourceTree = "<group>"; };
 		3BCB33AB0684BD7BB8285F5D /* QueueTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueTabView.swift; sourceTree = "<group>"; };
 		3C979E89926B1C842119C773 /* HomeTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabView.swift; sourceTree = "<group>"; };
@@ -246,68 +225,93 @@
 		56E10BC9530F9F3F6A83FFE9 /* AppCompositionExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionExample.swift; sourceTree = "<group>"; };
 		575A33D328F6199DF20FDB31 /* Tajawal-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-Medium.ttf"; sourceTree = "<group>"; };
 		57C85EC6D68975ACAD79C582 /* RenderingCompositionExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderingCompositionExample.swift; sourceTree = "<group>"; };
+		57D2E00CEF880182C7F00A17 /* taboor_success_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_success_chime.wav; sourceTree = "<group>"; };
 		591500A5050915657E62D155 /* FloatingActionsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingActionsExample.swift; sourceTree = "<group>"; };
 		596BEB95C30ED90EB6CF8330 /* RegisterWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterWidgets.swift; sourceTree = "<group>"; };
+		5A3941DEF75E4FCED68F3E06 /* TaboorPrecomputedRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorPrecomputedRoutes.swift; sourceTree = "<group>"; };
 		5C0F6B08D2303F23A73AC025 /* ButtonStylesExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStylesExample.swift; sourceTree = "<group>"; };
 		5E0FAFAAE27C7DA804E299CF /* LiveQueueTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveQueueTrackingView.swift; sourceTree = "<group>"; };
 		612C79FBFDEA2F29FC698088 /* CustomNavigationExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomNavigationExample.swift; sourceTree = "<group>"; };
 		618206EF93F6ABACAAE03034 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		6573E7E0014EDC35754A094A /* PhotoStudioExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoStudioExample.swift; sourceTree = "<group>"; };
+		6C998050C2FA0C3B9EE3132E /* AlertsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsRepository.swift; sourceTree = "<group>"; };
 		6DDDD183F762924EFFE3AB90 /* ShimmerModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShimmerModifier.swift; sourceTree = "<group>"; };
+		6F7C19AC2461D8DF2071F1FA /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		786869690E5FD8EC126E2F38 /* SmartAlertPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartAlertPreferencesView.swift; sourceTree = "<group>"; };
+		796DE1FCE8FE8A23E0415618 /* active_tickets_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = active_tickets_seed.json; sourceTree = "<group>"; };
 		7D00F58B33AB9AF78D51DBCA /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
 		7DC08CEB44BEB2C2359AA3C0 /* ProfileTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTabView.swift; sourceTree = "<group>"; };
 		7E9978BBB958EA9CC4C95CAC /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		7FC1B5F3542BD75284A820BC /* UnionsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionsExample.swift; sourceTree = "<group>"; };
-		A11100022222333344445555 /* TaboorPrecomputedRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorPrecomputedRoutes.swift; sourceTree = "<group>"; };
+		83214E6494FDAB0A00DB3606 /* ServiceDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceDTOs.swift; sourceTree = "<group>"; };
 		8579D03DFCE4384F487B8D9E /* UserLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLocationService.swift; sourceTree = "<group>"; };
+		85EB693C1FEB6AF4C9CEC24C /* taboor_soft_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_soft_chime.wav; sourceTree = "<group>"; };
 		88AC0BCC084F56290EE1F553 /* ApiResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiResponse.swift; sourceTree = "<group>"; };
 		89D51C88BCBDC7DDBE91E544 /* SystemDemoLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemDemoLauncher.swift; sourceTree = "<group>"; };
 		8A564222154E4F09308EE1AA /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		8B15BE339F3A841A66811251 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
 		8C704D8657929CBF14E396E4 /* AlertsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsTabView.swift; sourceTree = "<group>"; };
 		8FD736662E694A3ECBE00E0E /* UserDefaultsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsManager.swift; sourceTree = "<group>"; };
+		942333F2E819BA0311A89FAE /* QueueRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueRepository.swift; sourceTree = "<group>"; };
 		95F69E7FB7BA0837EEE56F85 /* TaboorIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorIntents.swift; sourceTree = "<group>"; };
 		993C0500CDA8E6ED3E7B6E26 /* PlaybackAccessory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackAccessory.swift; sourceTree = "<group>"; };
+		9AFB258781D2788241084A04 /* taboor_success_chime.caf */ = {isa = PBXFileReference; path = taboor_success_chime.caf; sourceTree = "<group>"; };
 		A0313A1EFCE3C91232BE652D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A0863746C3C49A567E7BA922 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
+		A19C9DB0A6CEAC2E95F2CA31 /* taboor_marimba_chime.caf */ = {isa = PBXFileReference; path = taboor_marimba_chime.caf; sourceTree = "<group>"; };
 		A2F4D6F7B914EFC9E0838318 /* LiquidGlassGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassGalleryView.swift; sourceTree = "<group>"; };
 		A447CDAA479679BEC6A27875 /* DynamicAdaptationExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicAdaptationExample.swift; sourceTree = "<group>"; };
 		A60FF775AC6F2373183840AF /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A679C44A37B849C9DB12DBA3 /* PlacesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesRepository.swift; sourceTree = "<group>"; };
 		A6DFEFC0119C9E28A9F8D362 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
 		A71C43705EABE1E2CDC53F23 /* ParallaxClustersExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallaxClustersExample.swift; sourceTree = "<group>"; };
 		A974020D828B566B4C447E24 /* BusinessPartnerSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusinessPartnerSheetView.swift; sourceTree = "<group>"; };
 		A9AB40C97A8D64A79C9F2986 /* GestureIntegrationExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureIntegrationExample.swift; sourceTree = "<group>"; };
+		AF050FC01E1E7176CB9B00CB /* user_profile_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = user_profile_seed.json; sourceTree = "<group>"; };
 		B14FFCEE353F42626C2AD995 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B235D31D51C55C97F6C57B86 /* LoginUseCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginUseCase.swift; sourceTree = "<group>"; };
 		B3DEB53E077BB7A4AED943A8 /* TaboorLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorLogoView.swift; sourceTree = "<group>"; };
 		B4A2F3828A493F68BC236D55 /* Tajawal-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Tajawal-Regular.ttf"; sourceTree = "<group>"; };
 		B55CB5CD7B022B8C3A849787 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
+		B67A496D164ECD9BAFE23282 /* taboor_glass_chime.caf */ = {isa = PBXFileReference; path = taboor_glass_chime.caf; sourceTree = "<group>"; };
 		B77654FD24F0E32290A92E20 /* TextAndIconsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextAndIconsExample.swift; sourceTree = "<group>"; };
 		BA41591CF3D5310DAACEEDA5 /* TicketHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketHistoryView.swift; sourceTree = "<group>"; };
 		BAB4174484872D8FBB38D70B /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		BC1214027412D8AA590D554D /* BackgroundExtensionExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundExtensionExample.swift; sourceTree = "<group>"; };
+		BD7873E1073FE5024828C1CB /* SocialAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialAuthService.swift; sourceTree = "<group>"; };
 		BE3405BD7FCFAE701DDCBC7C /* ScrollEdgeDockExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollEdgeDockExample.swift; sourceTree = "<group>"; };
+		BE3B140ABAED2787C3519B1B /* taboor_gentle_chime.caf */ = {isa = PBXFileReference; path = taboor_gentle_chime.caf; sourceTree = "<group>"; };
+		BEE1D042715B6BA38C764085 /* taboor_pulse_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_pulse_chime.wav; sourceTree = "<group>"; };
 		BFAE140AEB210AD4DB187B9A /* DynamicIslandHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandHUDView.swift; sourceTree = "<group>"; };
 		C00F9F62B809EDA388C5FA3C /* GalleryLaunchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryLaunchConfiguration.swift; sourceTree = "<group>"; };
 		C126DFC38649E35E2179ADE4 /* AuthDTOs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthDTOs.swift; sourceTree = "<group>"; };
 		C610FBA458515E64C811C004 /* TaboorLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorLiveActivityWidget.swift; sourceTree = "<group>"; };
 		CB9A506C13999EA0FAA6A4AE /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		D1054473BC0A33BCEB43F23C /* taboor_zen_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_zen_chime.wav; sourceTree = "<group>"; };
 		D16DB725843E5E4D7DE18596 /* UIKitIntegrationExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitIntegrationExample.swift; sourceTree = "<group>"; };
 		D1CE2AB5FBBDE339F1C865EF /* QueueActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueActivityAttributes.swift; sourceTree = "<group>"; };
 		D1F535FFD45A223C1E7BF09F /* ServiceWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceWidgets.swift; sourceTree = "<group>"; };
+		D223F45A1BC3777FCE445929 /* places_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = places_seed.json; sourceTree = "<group>"; };
+		D275278E8F4973C3A8319B42 /* history_seed.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = history_seed.json; sourceTree = "<group>"; };
 		D49D1950D5995F6327CC53BE /* TintedInteractiveExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TintedInteractiveExample.swift; sourceTree = "<group>"; };
 		D64493375221EB6E137C3435 /* TabsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabsExample.swift; sourceTree = "<group>"; };
 		D778EB11EAB5B12F9F124DC3 /* AuthRepositoryProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryProtocol.swift; sourceTree = "<group>"; };
 		D8E7430909AF0E2EE7BA8DA7 /* ExampleCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleCatalog.swift; sourceTree = "<group>"; };
 		D9122281936D622E670564F0 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		D9B8018C8DF095ED7271BE7D /* TaboorSensoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaboorSensoryManager.swift; sourceTree = "<group>"; };
 		D9FD1321FE51A18BE1B98FB9 /* NetworkError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkError.swift; sourceTree = "<group>"; };
 		DC90E54D42544F99E520684B /* SymbolReplacementExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolReplacementExample.swift; sourceTree = "<group>"; };
 		E2E95573A72DFCBA275FB475 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		E39A56F88A9C312DC20A060E /* AppleCalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleCalendarManager.swift; sourceTree = "<group>"; };
+		E444A3D669EFD3D1FD2C1BF3 /* taboor_zen_chime.caf */ = {isa = PBXFileReference; path = taboor_zen_chime.caf; sourceTree = "<group>"; };
 		E4FC377EBF829439E2CD8183 /* ExpandablePlayerExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandablePlayerExample.swift; sourceTree = "<group>"; };
+		E5321810826D3E0561027646 /* taboor_pulse_chime.caf */ = {isa = PBXFileReference; path = taboor_pulse_chime.caf; sourceTree = "<group>"; };
 		E800EE5244A7C7312D93ABC9 /* MorphingSheetExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorphingSheetExample.swift; sourceTree = "<group>"; };
+		E938BC3C03E7A3BE2D472AF9 /* taboor_dreamy_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_dreamy_chime.wav; sourceTree = "<group>"; };
+		ECA15E3CF4D6F9C97123EF3B /* taboor_gentle_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_gentle_chime.wav; sourceTree = "<group>"; };
 		EEB36453CD2BE51ED551F5B9 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		EEDD5F645DCC974DF31855B6 /* QueueDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueDataService.swift; sourceTree = "<group>"; };
+		F1FE8AF4B8692445DEA37067 /* taboor_glass_chime.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = taboor_glass_chime.wav; sourceTree = "<group>"; };
 		F274B1FFF9CA2D6B4201A76D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		F2B51A46C565C52073082867 /* ExampleDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleDetailView.swift; sourceTree = "<group>"; };
 		F4497A2EC34372DE42D36F60 /* ShapesExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapesExample.swift; sourceTree = "<group>"; };
@@ -323,8 +327,8 @@
 		0143EAD0B53B62C0C3A3E355 /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
-				A10000010000000000000005 /* TaboorSensoryManager.swift */,
 				8A564222154E4F09308EE1AA /* NotificationService.swift */,
+				D9B8018C8DF095ED7271BE7D /* TaboorSensoryManager.swift */,
 			);
 			path = Notifications;
 			sourceTree = "<group>";
@@ -345,6 +349,26 @@
 				D778EB11EAB5B12F9F124DC3 /* AuthRepositoryProtocol.swift */,
 			);
 			path = Repositories;
+			sourceTree = "<group>";
+		};
+		0B3B887027019143689EECA6 /* Seeds */ = {
+			isa = PBXGroup;
+			children = (
+				796DE1FCE8FE8A23E0415618 /* active_tickets_seed.json */,
+				1BE9BB528E81DB1D9278EC33 /* alerts_seed.json */,
+				D275278E8F4973C3A8319B42 /* history_seed.json */,
+				D223F45A1BC3777FCE445929 /* places_seed.json */,
+				AF050FC01E1E7176CB9B00CB /* user_profile_seed.json */,
+			);
+			path = Seeds;
+			sourceTree = "<group>";
+		};
+		0B8352E9EDD315080D1546EA /* DTOs */ = {
+			isa = PBXGroup;
+			children = (
+				83214E6494FDAB0A00DB3606 /* ServiceDTOs.swift */,
+			);
+			path = DTOs;
 			sourceTree = "<group>";
 		};
 		0BBB1FD17E8852F0F81AC753 /* Presentation */ = {
@@ -397,11 +421,20 @@
 			path = Images;
 			sourceTree = "<group>";
 		};
+		1F9189ACEE38992158DCD14E /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BD7873E1073FE5024828C1CB /* SocialAuthService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
 		227BB0FE0811E928F10C858A /* Data */ = {
 			isa = PBXGroup;
 			children = (
 				2870AD77FC100576D6BF8950 /* DTOs */,
 				52A62AE2794CD41C501523B6 /* Repositories */,
+				1F9189ACEE38992158DCD14E /* Services */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -447,7 +480,7 @@
 		28B89F8ED2E9CAB258BB6F0F /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				CAL00345F130E7566702CC8E /* Calendar */,
+				C395805AAA7659C4273622F8 /* Calendar */,
 				50C0A435CFE64E519D074665 /* Constants */,
 				49455B055D2C2397AEBBFFF8 /* Intents */,
 				DB95C3851F3FA6DE2FA18894 /* LiveActivity */,
@@ -462,14 +495,6 @@
 				9A1DD4EC6AA5F57E75C8F04F /* Theme */,
 			);
 			path = Core;
-			sourceTree = "<group>";
-		};
-		CAL00345F130E7566702CC8E /* Calendar */ = {
-			isa = PBXGroup;
-			children = (
-				CAL002AF08AAB370AD25442D /* AppleCalendarManager.swift */,
-			);
-			path = Calendar;
 			sourceTree = "<group>";
 		};
 		298F0A7789388AE984F649EE /* Views */ = {
@@ -521,33 +546,29 @@
 		4C23CC76DE0E938F11D88B59 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				C10000010000000000000001 /* places_seed.json */,
-				C10000010000000000000002 /* active_tickets_seed.json */,
-				C10000010000000000000003 /* alerts_seed.json */,
-				C10000010000000000000004 /* history_seed.json */,
-				C10000010000000000000005 /* user_profile_seed.json */,
-				A10000010000000000000021 /* taboor_glass_chime.wav */,
-				A10000010000000000000022 /* taboor_glass_chime.caf */,
-				A10000010000000000000023 /* taboor_zen_chime.wav */,
-				A10000010000000000000024 /* taboor_zen_chime.caf */,
-				A10000010000000000000025 /* taboor_dreamy_chime.wav */,
-				A10000010000000000000026 /* taboor_dreamy_chime.caf */,
-				A10000010000000000000027 /* taboor_soft_chime.wav */,
-				A10000010000000000000028 /* taboor_soft_chime.caf */,
-				A10000010000000000000011 /* taboor_marimba_chime.wav */,
-				A10000010000000000000012 /* taboor_marimba_chime.caf */,
-				A10000010000000000000013 /* taboor_pulse_chime.wav */,
-				A10000010000000000000014 /* taboor_pulse_chime.caf */,
-				A10000010000000000000015 /* taboor_gentle_chime.wav */,
-				A10000010000000000000016 /* taboor_gentle_chime.caf */,
-				A10000010000000000000001 /* taboor_turn_chime.wav */,
-				A10000010000000000000002 /* taboor_success_chime.wav */,
-				A10000010000000000000003 /* taboor_turn_chime.caf */,
-				A10000010000000000000004 /* taboor_success_chime.caf */,
 				B14FFCEE353F42626C2AD995 /* Assets.xcassets */,
+				2E2A87FF80A1DC76610BBAEE /* taboor_dreamy_chime.caf */,
+				E938BC3C03E7A3BE2D472AF9 /* taboor_dreamy_chime.wav */,
+				BE3B140ABAED2787C3519B1B /* taboor_gentle_chime.caf */,
+				ECA15E3CF4D6F9C97123EF3B /* taboor_gentle_chime.wav */,
+				B67A496D164ECD9BAFE23282 /* taboor_glass_chime.caf */,
+				F1FE8AF4B8692445DEA37067 /* taboor_glass_chime.wav */,
+				A19C9DB0A6CEAC2E95F2CA31 /* taboor_marimba_chime.caf */,
+				34B49EB319D0B71ABDE85C25 /* taboor_marimba_chime.wav */,
+				E5321810826D3E0561027646 /* taboor_pulse_chime.caf */,
+				BEE1D042715B6BA38C764085 /* taboor_pulse_chime.wav */,
+				0015B2D618A809C135B3EAA6 /* taboor_soft_chime.caf */,
+				85EB693C1FEB6AF4C9CEC24C /* taboor_soft_chime.wav */,
+				9AFB258781D2788241084A04 /* taboor_success_chime.caf */,
+				57D2E00CEF880182C7F00A17 /* taboor_success_chime.wav */,
+				0A2AC2E48DA9F551660096AC /* taboor_turn_chime.caf */,
+				219718158BC76EA096901B8A /* taboor_turn_chime.wav */,
+				E444A3D669EFD3D1FD2C1BF3 /* taboor_zen_chime.caf */,
+				D1054473BC0A33BCEB43F23C /* taboor_zen_chime.wav */,
 				CBF13733B344E278A186D7B2 /* Fonts */,
 				1B704DEE55E2534C5F3B62E0 /* Images */,
 				B3837D7BA36E32BAAC87D622 /* InfoPlist.strings */,
+				0B3B887027019143689EECA6 /* Seeds */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -594,12 +615,29 @@
 			path = Repositories;
 			sourceTree = "<group>";
 		};
+		5CE69D0789DBB038AD369801 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				A679C44A37B849C9DB12DBA3 /* PlacesRepository.swift */,
+				942333F2E819BA0311A89FAE /* QueueRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
 		5FBD600F11E9BAB9891E5F3B /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				56C974BEF297564C76642261 /* User.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		6C737714C4C3945709170557 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				F2F0604FA1820D345D8964C4 /* Repositories */,
+			);
+			path = Data;
 			sourceTree = "<group>";
 		};
 		7084355B5BDDB08ECB08CB85 /* Examples */ = {
@@ -655,8 +693,8 @@
 			isa = PBXGroup;
 			children = (
 				7D00F58B33AB9AF78D51DBCA /* ApiClient.swift */,
-				E10000010000000000000001 /* MockDataLoader.swift */,
 				88AC0BCC084F56290EE1F553 /* ApiResponse.swift */,
+				2608488D67CFCEA6E3708B01 /* MockDataLoader.swift */,
 				D9FD1321FE51A18BE1B98FB9 /* NetworkError.swift */,
 			);
 			path = Network;
@@ -665,7 +703,7 @@
 		755C77788D02094D2D851C3D /* Location */ = {
 			isa = PBXGroup;
 			children = (
-				A11100022222333344445555 /* TaboorPrecomputedRoutes.swift */,
+				5A3941DEF75E4FCED68F3E06 /* TaboorPrecomputedRoutes.swift */,
 				8579D03DFCE4384F487B8D9E /* UserLocationService.swift */,
 			);
 			path = Location;
@@ -828,9 +866,9 @@
 		AE64E00AEB6B7B47870B3394 /* Taboor */ = {
 			isa = PBXGroup;
 			children = (
+				6F7C19AC2461D8DF2071F1FA /* GoogleService-Info.plist */,
 				0BCAF1D4257AA4622826E9EB /* Info.plist */,
 				CD1847A0EA82972DDF98C056 /* App */,
-				E10000010000000000000005 /* AlertsRepository.swift */,
 				28B89F8ED2E9CAB258BB6F0F /* Core */,
 				9B53C0E2FF8A22C1E3621F97 /* Features */,
 				4C23CC76DE0E938F11D88B59 /* Resources */,
@@ -841,6 +879,7 @@
 		AEBAA155D1D8114BDDB4D8B9 /* Alerts */ = {
 			isa = PBXGroup;
 			children = (
+				6C737714C4C3945709170557 /* Data */,
 				880A35C77482C926F22ACFE0 /* Presentation */,
 			);
 			path = Alerts;
@@ -889,9 +928,8 @@
 			isa = PBXGroup;
 			children = (
 				EEDD5F645DCC974DF31855B6 /* QueueDataService.swift */,
-				E10000010000000000000002 /* ServiceDTOs.swift */,
-				E10000010000000000000003 /* PlacesRepository.swift */,
-				E10000010000000000000004 /* QueueRepository.swift */,
+				0B8352E9EDD315080D1546EA /* DTOs */,
+				5CE69D0789DBB038AD369801 /* Repositories */,
 			);
 			path = Data;
 			sourceTree = "<group>";
@@ -902,6 +940,14 @@
 				298F0A7789388AE984F649EE /* Views */,
 			);
 			path = Presentation;
+			sourceTree = "<group>";
+		};
+		C395805AAA7659C4273622F8 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				E39A56F88A9C312DC20A060E /* AppleCalendarManager.swift */,
+			);
+			path = Calendar;
 			sourceTree = "<group>";
 		};
 		C92800A2F03E339DACC93617 /* Presentation */ = {
@@ -986,6 +1032,14 @@
 			path = Main;
 			sourceTree = "<group>";
 		};
+		F2F0604FA1820D345D8964C4 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				6C998050C2FA0C3B9EE3132E /* AlertsRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
 		F95A685E52CCDFD47264EF77 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
@@ -996,21 +1050,21 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		"TEMP_179BC0EF-6EF1-4297-BA7C-C1B1128BD208" /* Views */ = {
+		"TEMP_168A39B4-7948-4448-9EB5-F26E4785E99A" /* Views */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		"TEMP_5928EC0A-9E31-46D0-8875-B45809A6CDC1" /* Showcase */ = {
+		"TEMP_6417B92F-48F6-438F-8EE3-E9A854A4D51B" /* Showcase */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Showcase;
 			sourceTree = "<group>";
 		};
-		"TEMP_9ED07045-57CE-4900-B2B6-D022A688AF53" /* Presentation */ = {
+		"TEMP_C650A21F-CED7-4D1C-BE2C-2275D0061866" /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -1102,30 +1156,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D10000010000000000000001 /* places_seed.json in Resources */,
-				D10000010000000000000002 /* active_tickets_seed.json in Resources */,
-				D10000010000000000000003 /* alerts_seed.json in Resources */,
-				D10000010000000000000004 /* history_seed.json in Resources */,
-				D10000010000000000000005 /* user_profile_seed.json in Resources */,
-				B10000010000000000000021 /* taboor_glass_chime.wav in Resources */,
-				B10000010000000000000022 /* taboor_glass_chime.caf in Resources */,
-				B10000010000000000000023 /* taboor_zen_chime.wav in Resources */,
-				B10000010000000000000024 /* taboor_zen_chime.caf in Resources */,
-				B10000010000000000000025 /* taboor_dreamy_chime.wav in Resources */,
-				B10000010000000000000026 /* taboor_dreamy_chime.caf in Resources */,
-				B10000010000000000000027 /* taboor_soft_chime.wav in Resources */,
-				B10000010000000000000028 /* taboor_soft_chime.caf in Resources */,
-				B10000010000000000000011 /* taboor_marimba_chime.wav in Resources */,
-				B10000010000000000000012 /* taboor_marimba_chime.caf in Resources */,
-				B10000010000000000000013 /* taboor_pulse_chime.wav in Resources */,
-				B10000010000000000000014 /* taboor_pulse_chime.caf in Resources */,
-				B10000010000000000000015 /* taboor_gentle_chime.wav in Resources */,
-				B10000010000000000000016 /* taboor_gentle_chime.caf in Resources */,
-				B10000010000000000000001 /* taboor_turn_chime.wav in Resources */,
-				B10000010000000000000002 /* taboor_success_chime.wav in Resources */,
-				B10000010000000000000003 /* taboor_turn_chime.caf in Resources */,
-				B10000010000000000000004 /* taboor_success_chime.caf in Resources */,
 				F3B78F5A751D71AAAED7BF4D /* Assets.xcassets in Resources */,
+				D3C480635A0074DDDD81CC73 /* GoogleService-Info.plist in Resources */,
 				8CC8F2F8B7F2A43E0F12C345 /* InfoPlist.strings in Resources */,
 				AA383D555661997E5C78B88B /* Inter-Bold.ttf in Resources */,
 				7FBB22C616A2A1B686F14424 /* Inter-Medium.ttf in Resources */,
@@ -1135,8 +1167,31 @@
 				3594B767DA1B0FF12B991DDD /* Tajawal-ExtraBold.ttf in Resources */,
 				609EAACB876C233B85FAF7D7 /* Tajawal-Medium.ttf in Resources */,
 				3C6B531B427F0E7D61754E39 /* Tajawal-Regular.ttf in Resources */,
+				9F7DFEBAB0C790F3BB001F57 /* active_tickets_seed.json in Resources */,
+				F07BDC68A542C49D5AA71B03 /* alerts_seed.json in Resources */,
 				CA9F2C0A73302B2A63EB7C89 /* foreground.png in Resources */,
+				20D959C1F47DD8C609EC064D /* history_seed.json in Resources */,
 				7D998F7F5A0CE08A76314866 /* icon.png in Resources */,
+				33F1CE58465711936B6374C1 /* places_seed.json in Resources */,
+				D39A311CC970755F1B1E6854 /* taboor_dreamy_chime.caf in Resources */,
+				1CF4E88D9EA9B3D5CB886B2F /* taboor_dreamy_chime.wav in Resources */,
+				CF5AF22FB42AA3C9C4089F03 /* taboor_gentle_chime.caf in Resources */,
+				7A35B0C87860A6187A19A654 /* taboor_gentle_chime.wav in Resources */,
+				4029B5F350C1A3BBE7CD06CA /* taboor_glass_chime.caf in Resources */,
+				C103D130B1954CA5C3E5B384 /* taboor_glass_chime.wav in Resources */,
+				51630457CEB7CFC02EDC8BB8 /* taboor_marimba_chime.caf in Resources */,
+				92B0C46C6378F47A8F2A7858 /* taboor_marimba_chime.wav in Resources */,
+				6BB31970947F1E0F3528A52F /* taboor_pulse_chime.caf in Resources */,
+				AB25BBD839045662F6A35B06 /* taboor_pulse_chime.wav in Resources */,
+				9F086B6DEC493F10F221CB65 /* taboor_soft_chime.caf in Resources */,
+				A1F8420C1BFB2F417237D0EE /* taboor_soft_chime.wav in Resources */,
+				B9822871A91E0EBB3CDE8610 /* taboor_success_chime.caf in Resources */,
+				9B9EBDE8BDB7FBC16B777C2B /* taboor_success_chime.wav in Resources */,
+				741240591A1DF3938FBEFABE /* taboor_turn_chime.caf in Resources */,
+				5F4E47E0BDE8E472CEA98640 /* taboor_turn_chime.wav in Resources */,
+				5CF810E41A5973BC7AAF6706 /* taboor_zen_chime.caf in Resources */,
+				FE59B14FBE785E10999C8A3A /* taboor_zen_chime.wav in Resources */,
+				2CA72BC8912DC7E4620FE06F /* user_profile_seed.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1158,20 +1213,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000010000000000000005 /* TaboorSensoryManager.swift in Sources */,
 				4D9B5527A54854AD041F274A /* AccessibilityExample.swift in Sources */,
+				868A76630FCE1F210C8F6F5E /* AlertsRepository.swift in Sources */,
 				2F0C4FF8C11BAB3576B4062E /* AlertsTabView.swift in Sources */,
-				F10000010000000000000001 /* MockDataLoader.swift in Sources */,
-				F10000010000000000000002 /* ServiceDTOs.swift in Sources */,
-				F10000010000000000000003 /* PlacesRepository.swift in Sources */,
-				F10000010000000000000004 /* QueueRepository.swift in Sources */,
-				F10000010000000000000005 /* AlertsRepository.swift in Sources */,
 				902361FF1D25EEF62794ACC6 /* AllServicesView.swift in Sources */,
 				D18F0DA9B6CE7252A6598859 /* ApiClient.swift in Sources */,
 				A5176FE5E004F9F2CE6F5B59 /* ApiResponse.swift in Sources */,
 				C5D386E1FA516056D3CAC842 /* AppColors.swift in Sources */,
 				88912285E99EB3B653281F9E /* AppCompositionExample.swift in Sources */,
 				DD52BC2629AAC4642ACC00A4 /* AppConstants.swift in Sources */,
+				11B300BCA659D0E3F7A88DFA /* AppleCalendarManager.swift in Sources */,
 				FE872469103F9075A6FB628F /* AuthDTOs.swift in Sources */,
 				ACED1B23D883BDE0BC1C85B6 /* AuthRepository.swift in Sources */,
 				D6DB68D08798A27562A8AEBF /* AuthRepositoryProtocol.swift in Sources */,
@@ -1206,15 +1257,16 @@
 				B18CC95F22F3A78E58C79B7F /* LoginView.swift in Sources */,
 				CB41A1CB5F3C244C3E5068A5 /* LoginViewModel.swift in Sources */,
 				FF10803CC4C263FCE73EA3F3 /* MainTabView.swift in Sources */,
+				C61D91F37D2E658B59E0634A /* MockDataLoader.swift in Sources */,
 				52A3D4BFA992CD84A32511AE /* MorphingExample.swift in Sources */,
 				ABDEDC52FBB11526EBEF0780 /* MorphingSheetExample.swift in Sources */,
-				CAL00100D324ED4ADE7AD499 /* AppleCalendarManager.swift in Sources */,
 				054CDB00D324ED4ADE7AD499 /* NavigationLauncher.swift in Sources */,
 				160EB13FB7DD0F17ECD59367 /* NetworkError.swift in Sources */,
 				12E078382C8B606317E167A9 /* NotificationService.swift in Sources */,
 				64C603D3128AC3C48D0F47B3 /* OnboardingView.swift in Sources */,
 				8056652B83BE5AB537D98885 /* ParallaxClustersExample.swift in Sources */,
 				FBCC01B6AD9C94078921F4A9 /* PhotoStudioExample.swift in Sources */,
+				926A419243931997F8D9CACE /* PlacesRepository.swift in Sources */,
 				7CC5F70B1D7FB8CA2C385A5C /* PlaybackAccessory.swift in Sources */,
 				A4010AEA10E8D53B826C04ED /* PresentationsExample.swift in Sources */,
 				8BB0C119B22AC7B33B047F69 /* ProfileTabView.swift in Sources */,
@@ -1222,12 +1274,14 @@
 				83F92F61E5749B6516CF2F4A /* QueueActivityAttributes.swift in Sources */,
 				84AB577E99C7703CC5275C39 /* QueueDataService.swift in Sources */,
 				15917182B7F816DB3335EAFB /* QueueLiveActivityManager.swift in Sources */,
+				E292EAA0BD668763DA6481B0 /* QueueRepository.swift in Sources */,
 				A79410B57143D536819D52FB /* QueueTabView.swift in Sources */,
 				41AF569139061531DC3C2757 /* RegisterView.swift in Sources */,
 				67739D71BB6629D8C076A42E /* RegisterWidgets.swift in Sources */,
 				13AE7ABAAD800FF4507FCD82 /* RenderingCompositionExample.swift in Sources */,
 				A45EC619A7A3598510AB0A5D /* ScrollEdgeDockExample.swift in Sources */,
 				471CB2588CAB79D3799D006E /* SearchExample.swift in Sources */,
+				3D27769B3BA545F087D2948C /* ServiceDTOs.swift in Sources */,
 				C2BDADBC2E62F4C0EDAC0420 /* ServiceDetailsView.swift in Sources */,
 				8566483393BD57C2EBD7F6D2 /* ServiceModels.swift in Sources */,
 				C809E72695939ECA181AC211 /* ServiceWidgets.swift in Sources */,
@@ -1235,6 +1289,7 @@
 				6B7CEA6E05727116EDF558DD /* ShareTicketHelper.swift in Sources */,
 				1BC8CA3E49EFC0E4DFC00581 /* ShimmerModifier.swift in Sources */,
 				CDC65AA6170ABEA8F469B73F /* SmartAlertPreferencesView.swift in Sources */,
+				B45F527D7CBBAC0061658580 /* SocialAuthService.swift in Sources */,
 				E1B66A0369DDE57F2D20A029 /* SplashScreenView.swift in Sources */,
 				B6B0293594E8C0E25300E714 /* SplitViewExample.swift in Sources */,
 				E3C0920C6C62EB88DC24677D /* SpotlightService.swift in Sources */,
@@ -1245,6 +1300,8 @@
 				9B95FF34B8FE9DCE8EBE7B5D /* TaboorFonts.swift in Sources */,
 				35EF32D6FD9E8D04C6AE5D36 /* TaboorIntents.swift in Sources */,
 				C335C1539C7F446B94FBB6BB /* TaboorLogoView.swift in Sources */,
+				F91F608B6627C43123B4FF11 /* TaboorPrecomputedRoutes.swift in Sources */,
+				217813634AF053B686AB9965 /* TaboorSensoryManager.swift in Sources */,
 				00748A678B73A6E1FC8CC9FD /* TabsExample.swift in Sources */,
 				C9179971DD5B7C7E99676301 /* TextAndIconsExample.swift in Sources */,
 				55D9DFDAAB869BD068E379D0 /* TicketHistoryView.swift in Sources */,
@@ -1255,7 +1312,6 @@
 				A3B4A46C5214FA45678E0B6C /* UnionsExample.swift in Sources */,
 				F853C6CC27DBFD514E686C78 /* User.swift in Sources */,
 				B362AF1530DD2BC43E0EDA5A /* UserDefaultsManager.swift in Sources */,
-				A11100012222333344445555 /* TaboorPrecomputedRoutes.swift in Sources */,
 				23443BC395CC6CA947106454 /* UserLocationService.swift in Sources */,
 				71944546524631AFAD1A7C4C /* VariantsExample.swift in Sources */,
 			);

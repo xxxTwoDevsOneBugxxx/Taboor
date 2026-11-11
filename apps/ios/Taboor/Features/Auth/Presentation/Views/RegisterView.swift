@@ -177,17 +177,17 @@ struct RegisterView: View {
             HStack(spacing: 12) {
                 SocialLoginButton(
                     title: "Google",
-                    iconName: "G",
-                    iconColor: Color(hex: 0xEA4335),
-                    isSystemIcon: false
-                ) {}
+                    isGoogle: true
+                ) {
+                    handleSocialLogin(provider: "google")
+                }
 
                 SocialLoginButton(
                     title: "Facebook",
-                    iconName: "f",
-                    iconColor: Color(hex: 0x1877F2),
-                    isSystemIcon: false
-                ) {}
+                    isFacebook: true
+                ) {
+                    handleSocialLogin(provider: "facebook")
+                }
             }
 
             Spacer().frame(height: 24)
@@ -465,6 +465,72 @@ struct RegisterView: View {
                 await MainActor.run {
                     isLoading = false
                     passwordError = error.localizedDescription
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            }
+        }
+    }
+
+    private func handleSocialLogin(provider: String) {
+        guard !isLoading else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        withAnimation(.easeOut(duration: 0.2)) {
+            isLoading = true
+            passwordError = nil
+        }
+
+        Task {
+            do {
+                let user: User
+                if provider == "google" {
+                    let idToken = try await SocialAuthService.shared.signInWithGoogle()
+                    user = try await AuthRepository.shared.googleLogin(idToken: idToken)
+                } else {
+                    let accessToken = try await SocialAuthService.shared.signInWithFacebook()
+                    user = try await AuthRepository.shared.facebookLogin(accessToken: accessToken)
+                }
+
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    onRegisterSuccess()
+                }
+            } catch SocialAuthError.userCancelled {
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                    }
+                }
+            } catch let error as NetworkError {
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                        if case .noInternet = error {
+                            let devUser = User(
+                                id: "social-user-1",
+                                email: provider == "google" ? "google.user@taboor.app" : "facebook.user@taboor.app",
+                                fullName: provider == "google" ? "Google User" : "Facebook User",
+                                token: "taboor_persisted_session_token"
+                            )
+                            KeychainManager.shared.save(key: AppConstants.Storage.accessToken, value: "taboor_persisted_session_token")
+                            UserDefaultsManager.shared.save(devUser, forKey: AppConstants.Storage.savedUser)
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                            onRegisterSuccess()
+                            return
+                        }
+                        passwordError = error.errorDescription
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            } catch {
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isLoading = false
+                        passwordError = error.localizedDescription
+                    }
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }
             }

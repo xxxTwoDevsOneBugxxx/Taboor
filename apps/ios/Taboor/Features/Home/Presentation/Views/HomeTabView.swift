@@ -103,6 +103,8 @@ public struct HomeTabView: View {
                 }
                 .background(AppColors.screenBackground.ignoresSafeArea())
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppColors.screenBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
                 await dataService.refreshAll()
@@ -168,6 +170,7 @@ public struct HomeTabView: View {
                 }
             }
         }
+        .background(AppColors.screenBackground.ignoresSafeArea())
     }
 
     // MARK: - 1. Brand & Location Header (Matching HTML Native Redesign)

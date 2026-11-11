@@ -167,6 +167,8 @@ struct MainTabView: View {
                     .zIndex(100)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppColors.screenBackground.ignoresSafeArea())
         .ignoresSafeArea()
         .environment(\.layoutDirection, localization.layoutDirection)
         .id(localization.currentLanguage)

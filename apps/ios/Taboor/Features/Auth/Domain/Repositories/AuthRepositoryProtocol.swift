@@ -11,6 +11,8 @@ public protocol AuthRepositoryProtocol {
     func verifyResetCode(email: String, code: String) async throws
     func resetPassword(email: String, code: String, newPassword: String, confirmPassword: String) async throws
     func refreshToken() async throws
+    func googleLogin(idToken: String) async throws -> User
+    func facebookLogin(accessToken: String) async throws -> User
     func logout() async throws
     func getSavedUser() -> User?
     var isAuthenticated: Bool { get }

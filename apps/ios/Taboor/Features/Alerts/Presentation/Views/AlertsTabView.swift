@@ -57,6 +57,8 @@ public struct AlertsTabView: View {
                 }
                 .background(AppColors.screenBackground.ignoresSafeArea())
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppColors.screenBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable {
                 await dataService.refreshAll()
@@ -74,6 +76,7 @@ public struct AlertsTabView: View {
                      : "Are you sure you want to clear all alerts? This cannot be undone.")
             }
         }
+        .background(AppColors.screenBackground.ignoresSafeArea())
     }
 
     // MARK: - 1. Top Header Bar

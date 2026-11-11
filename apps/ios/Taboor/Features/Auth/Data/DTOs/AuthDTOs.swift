@@ -78,6 +78,22 @@ public struct RefreshTokenRequestDTO: Encodable {
     }
 }
 
+public struct GoogleMobileLoginRequestDTO: Encodable {
+    public let idToken: String
+
+    public init(idToken: String) {
+        self.idToken = idToken
+    }
+}
+
+public struct FacebookMobileLoginRequestDTO: Encodable {
+    public let accessToken: String
+
+    public init(accessToken: String) {
+        self.accessToken = accessToken
+    }
+}
+
 // MARK: - Responses
 
 public struct UserDTO: Codable {
@@ -87,6 +103,14 @@ public struct UserDTO: Codable {
     public let phoneNumber: String?
     public let preferredLanguage: String?
     public let role: String?
+}
+
+public struct ExternalAuthResponseDTO: Decodable {
+    public let email: String?
+    public let isNewUser: Bool?
+    public let hasPassword: Bool?
+    public let token: String?
+    public let refreshToken: String?
 }
 
 public struct LoginResponseDTO: Decodable {

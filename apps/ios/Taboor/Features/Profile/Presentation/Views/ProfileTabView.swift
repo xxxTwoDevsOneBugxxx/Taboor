@@ -352,6 +352,8 @@ public struct ProfileTabView: View {
             }
             .background(AppColors.screenBackground.ignoresSafeArea())
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppColors.screenBackground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(isPresented: $navigateToEditProfile) {
             EditProfileView(user: user, onDismiss: {
@@ -442,6 +444,7 @@ public struct ProfileTabView: View {
                 BusinessPartnerSheetView()
             }
         }
+        .background(AppColors.screenBackground.ignoresSafeArea())
     }
 
     // MARK: - 1. Top Header Bar
