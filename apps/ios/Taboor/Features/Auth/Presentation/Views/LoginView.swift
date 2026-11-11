@@ -19,6 +19,7 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var isSecure: Bool = true
     @State private var isLoading: Bool = false
+    @State private var socialLoadingProvider: String? = nil
 
     @State private var emailError: String? = nil
     @State private var passwordError: String? = nil
@@ -199,8 +200,9 @@ struct LoginView: View {
                         AuthPrimaryButton(
                             title: localization.loginButton,
                             isLoading: isLoading,
-                            isEnabled: true
+                            isEnabled: !isLoading
                         ) {
+                            guard socialLoadingProvider == nil else { return }
                             performLogin()
                         }
 
@@ -215,14 +217,16 @@ struct LoginView: View {
                         HStack(spacing: 12) {
                             SocialLoginButton(
                                 title: "Google",
-                                isGoogle: true
+                                isGoogle: true,
+                                isLoading: socialLoadingProvider == "google"
                             ) {
                                 handleSocialLogin(provider: "google")
                             }
 
                             SocialLoginButton(
                                 title: "Facebook",
-                                isFacebook: true
+                                isFacebook: true,
+                                isLoading: socialLoadingProvider == "facebook"
                             ) {
                                 handleSocialLogin(provider: "facebook")
                             }
@@ -351,13 +355,11 @@ struct LoginView: View {
     }
 
     private func handleSocialLogin(provider: String) {
-        guard !isLoading else { return }
+        guard socialLoadingProvider == nil, !isLoading else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-        withAnimation(.easeOut(duration: 0.2)) {
-            isLoading = true
-            generalError = nil
-        }
+        socialLoadingProvider = provider
+        generalError = nil
 
         Task {
             do {
@@ -371,45 +373,37 @@ struct LoginView: View {
                 }
 
                 await MainActor.run {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isLoading = false
-                    }
+                    socialLoadingProvider = nil
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     onLoginSuccess()
                 }
             } catch SocialAuthError.userCancelled {
                 await MainActor.run {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isLoading = false
-                    }
+                    socialLoadingProvider = nil
                 }
             } catch let error as NetworkError {
                 await MainActor.run {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isLoading = false
-                        if case .noInternet = error {
-                            let devUser = User(
-                                id: "social-user-1",
-                                email: provider == "google" ? "google.user@taboor.app" : "facebook.user@taboor.app",
-                                fullName: provider == "google" ? "Google User" : "Facebook User",
-                                token: "taboor_persisted_session_token"
-                            )
-                            KeychainManager.shared.save(key: AppConstants.Storage.accessToken, value: "taboor_persisted_session_token")
-                            UserDefaultsManager.shared.save(devUser, forKey: AppConstants.Storage.savedUser)
-                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                            onLoginSuccess()
-                            return
-                        }
-                        generalError = error.errorDescription
+                    socialLoadingProvider = nil
+                    if case .noInternet = error {
+                        let devUser = User(
+                            id: "social-user-1",
+                            email: provider == "google" ? "google.user@taboor.app" : "facebook.user@taboor.app",
+                            fullName: provider == "google" ? "Google User" : "Facebook User",
+                            token: "taboor_persisted_session_token"
+                        )
+                        KeychainManager.shared.save(key: AppConstants.Storage.accessToken, value: "taboor_persisted_session_token")
+                        UserDefaultsManager.shared.save(devUser, forKey: AppConstants.Storage.savedUser)
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        onLoginSuccess()
+                        return
                     }
+                    generalError = error.errorDescription
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }
             } catch {
                 await MainActor.run {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isLoading = false
-                        generalError = error.localizedDescription
-                    }
+                    socialLoadingProvider = nil
+                    generalError = error.localizedDescription
                     UINotificationFeedbackGenerator().notificationOccurred(.error)
                 }
             }

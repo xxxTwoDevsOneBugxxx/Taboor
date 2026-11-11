@@ -121,12 +121,12 @@ struct OnboardingView: View {
 
                 // Dots Indicator (28x8 active, 8x8 inactive with individual tab accents)
                 dotsIndicator
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 28)
 
                 // Bottom Action Button
                 bottomActionButton
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 64)
             }
         }
         // Auto-advance timer (only runs until user interacts manually)

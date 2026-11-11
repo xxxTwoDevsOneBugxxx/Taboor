@@ -1050,25 +1050,25 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		"TEMP_168A39B4-7948-4448-9EB5-F26E4785E99A" /* Views */ = {
+		"TEMP_862030C1-9626-4429-9B67-05800CAE29E5" /* Views */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		"TEMP_6417B92F-48F6-438F-8EE3-E9A854A4D51B" /* Showcase */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Showcase;
-			sourceTree = "<group>";
-		};
-		"TEMP_C650A21F-CED7-4D1C-BE2C-2275D0061866" /* Presentation */ = {
+		"TEMP_AB0D485B-B6DC-4AF3-8DB2-9E576792CF31" /* Presentation */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Presentation;
+			sourceTree = "<group>";
+		};
+		"TEMP_BA2979C0-5A70-4F83-83A6-9C472D097475" /* Showcase */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Showcase;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

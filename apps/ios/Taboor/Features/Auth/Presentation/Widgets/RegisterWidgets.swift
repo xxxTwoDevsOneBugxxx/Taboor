@@ -229,7 +229,7 @@ struct PhoneInputField: View {
     var errorMessage: String? = nil
 
     @FocusState private var isFocused: Bool
-    private let localization = LocalizationManager.shared
+    @ObservedObject private var localization = LocalizationManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -255,22 +255,32 @@ struct PhoneInputField: View {
                     .fill(AppColors.gray200)
                     .frame(width: 1, height: 26)
 
-                // Phone Digits Input (Native 0ms Touch Responder & Native Placeholder)
-                TextField(
-                    "",
-                    text: $phoneNumber,
-                    prompt: Text(hint)
-                        .font(.inter(14, .regular))
-                        .foregroundColor(AppColors.gray400)
-                )
-                .keyboardType(.phonePad)
-                .font(.inter(15, .medium))
-                .foregroundColor(AppColors.deepTeal)
-                .focused($isFocused)
-                .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
+                // Phone Digits Input (Native 0ms Touch Responder & Custom Aligned Placeholder)
+                ZStack(alignment: .leading) {
+                    if phoneNumber.isEmpty {
+                        Text(hint)
+                            .font(.inter(14, .regular))
+                            .foregroundColor(AppColors.gray400)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .allowsHitTesting(false)
+                    }
+
+                    TextField("", text: $phoneNumber)
+                        .keyboardType(.phonePad)
+                        .font(.inter(15, .medium))
+                        .foregroundColor(AppColors.deepTeal)
+                        .multilineTextAlignment(.leading)
+                        .focused($isFocused)
+                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isFocused = true
+                        }
+                }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 4)
+            .frame(minHeight: 52)
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -285,6 +295,10 @@ struct PhoneInputField: View {
                             ),
                             lineWidth: 1
                         )
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isFocused = true
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -312,5 +326,6 @@ struct PhoneInputField: View {
                     .padding(.horizontal, 4)
             }
         }
+        .environment(\.layoutDirection, localization.layoutDirection)
     }
 }

@@ -101,6 +101,16 @@ public final class QueueDataService: ObservableObject {
         }
     }
 
+    /// Resets all user-specific active tickets and queue state on logout
+    public func resetOnLogout() {
+        self.activeTickets = []
+        self.selectedTicketIndex = 0
+        self.alerts = []
+        self.history = []
+        self.showLiveTracking = false
+        self.requestedTab = nil
+    }
+
     public func updateAlertPreferences(
         customersAhead: Int,
         minutesBefore: Int,

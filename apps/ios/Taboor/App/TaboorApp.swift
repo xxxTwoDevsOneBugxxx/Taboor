@@ -19,17 +19,8 @@ enum AuthDestination: Hashable {
 struct TaboorApp: App {
     @State private var currentScreen: AppScreen = .splash
     @State private var authPath = NavigationPath()
-    @AppStorage("app_appearance_mode") private var appearanceMode: String = "system"
     @ObservedObject private var localization = LocalizationManager.shared
     @Environment(\.scenePhase) private var scenePhase
-
-    private var colorSchemeOverride: ColorScheme? {
-        switch appearanceMode {
-        case "light": return .light
-        case "dark": return .dark
-        default: return nil
-        }
-    }
 
     init() {
         // Register Tajawal and Inter TTF fonts into CoreText
@@ -61,9 +52,8 @@ struct TaboorApp: App {
                             // 1. Auto-login if valid session/token exists
                             if AuthRepository.shared.isAuthenticated {
                                 currentScreen = .home
-                            } else if UserDefaultsManager.shared.hasCompletedOnboarding {
-                                currentScreen = .login
                             } else {
+                                // When not authenticated (or after logout and app reopen), always go to onboarding
                                 currentScreen = .onboarding
                             }
                         }
@@ -149,10 +139,12 @@ struct TaboorApp: App {
                 case .home:
                     MainTabView(
                         onLogout: {
+                            QueueLiveActivityManager.shared.endLiveActivity()
+                            QueueDataService.shared.resetOnLogout()
+                            UserDefaultsManager.shared.hasCompletedOnboarding = false
                             Task {
                                 try? await AuthRepository.shared.logout()
                             }
-                            UserDefaultsManager.shared.hasCompletedOnboarding = false
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                 currentScreen = .onboarding
                                 authPath = NavigationPath()

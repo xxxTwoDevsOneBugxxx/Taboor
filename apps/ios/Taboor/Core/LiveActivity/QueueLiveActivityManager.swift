@@ -21,6 +21,7 @@ public final class QueueLiveActivityManager: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
+                guard AuthRepository.shared.isAuthenticated else { return }
                 if let ticket = QueueDataService.shared.activeTicket, ticket.isActive, self.currentActivity == nil {
                     print("[LiveActivity] willResignActive -> Starting Live Activity")
                     self.startLiveActivity(for: ticket)
@@ -45,6 +46,13 @@ public final class QueueLiveActivityManager: ObservableObject {
 
     /// Handles scene phase changes to show Dynamic Island ONLY when outside the app
     public func handleScenePhaseChange(_ phase: ScenePhase, activeTicket: UserTicket?) {
+        guard AuthRepository.shared.isAuthenticated else {
+            if currentActivity != nil || isActivityActive {
+                endLiveActivity()
+            }
+            return
+        }
+
         switch phase {
         case .inactive, .background:
             // When user starts swiping home or switching apps
@@ -65,6 +73,10 @@ public final class QueueLiveActivityManager: ObservableObject {
 
     /// Starts a Live Activity for an active user ticket
     public func startLiveActivity(for ticket: UserTicket) {
+        guard AuthRepository.shared.isAuthenticated else {
+            print("[LiveActivity] User is not authenticated. Skipping Live Activity.")
+            return
+        }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             print("[LiveActivity] Activities are not enabled in settings.")
             return

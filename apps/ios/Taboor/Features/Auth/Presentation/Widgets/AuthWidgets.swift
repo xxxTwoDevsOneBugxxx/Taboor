@@ -188,7 +188,7 @@ struct AuthTextField: View {
     var onTextChange: ((String) -> Void)? = nil
 
     @FocusState private var isFocused: Bool
-    private let localization = LocalizationManager.shared
+    @ObservedObject private var localization = LocalizationManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -210,41 +210,44 @@ struct AuthTextField: View {
                         .frame(width: 24)
                 }
 
-                // Input Field (Native 0ms Touch Responder & Native Placeholder)
-                Group {
-                    if isSecure {
-                        SecureField(
-                            "",
-                            text: $text,
-                            prompt: Text(hint)
-                                .font(.app(14, .regular, isArabic: localization.isArabic))
-                                .foregroundColor(AppColors.gray400)
-                        )
-                        .textContentType(textContentType)
-                        .submitLabel(submitLabel)
-                        .onSubmit { onSubmit?() }
-                    } else {
-                        TextField(
-                            "",
-                            text: $text,
-                            prompt: Text(hint)
-                                .font(.app(14, .regular, isArabic: localization.isArabic))
-                                .foregroundColor(AppColors.gray400)
-                        )
-                        .keyboardType(keyboardType)
-                        .textContentType(textContentType)
-                        .submitLabel(submitLabel)
-                        .onSubmit { onSubmit?() }
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
+                // Input Field (Native 0ms Touch Responder & Custom Aligned Placeholder)
+                ZStack(alignment: .leading) {
+                    if text.isEmpty {
+                        Text(hint)
+                            .font(.app(14, .regular, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.gray400)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .allowsHitTesting(false)
                     }
-                }
-                .font(.app(15, .medium, isArabic: localization.isArabic))
-                .foregroundColor(AppColors.deepTeal)
-                .focused($isFocused)
-                .frame(maxWidth: .infinity, minHeight: 24, alignment: .leading)
-                .onChange(of: text) { _, newValue in
-                    onTextChange?(newValue)
+
+                    Group {
+                        if isSecure {
+                            SecureField("", text: $text)
+                                .textContentType(textContentType)
+                                .submitLabel(submitLabel)
+                                .onSubmit { onSubmit?() }
+                        } else {
+                            TextField("", text: $text)
+                                .keyboardType(keyboardType)
+                                .textContentType(textContentType)
+                                .submitLabel(submitLabel)
+                                .onSubmit { onSubmit?() }
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
+                        }
+                    }
+                    .font(.app(15, .medium, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.deepTeal)
+                    .multilineTextAlignment(.leading)
+                    .focused($isFocused)
+                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isFocused = true
+                    }
+                    .onChange(of: text) { _, newValue in
+                        onTextChange?(newValue)
+                    }
                 }
 
                 // Clear Button (iOS standard quick clear)
@@ -274,7 +277,8 @@ struct AuthTextField: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 4)
+            .frame(minHeight: 52)
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -290,6 +294,10 @@ struct AuthTextField: View {
                             ),
                             lineWidth: 1
                         )
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    isFocused = true
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -328,6 +336,7 @@ struct AuthTextField: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+        .environment(\.layoutDirection, localization.layoutDirection)
     }
 }
 
@@ -400,29 +409,39 @@ struct SocialLoginButton: View {
     var iconName: String? = nil
     var iconColor: Color = AppColors.teal
     var isSystemIcon: Bool = true
+    var isLoading: Bool = false
     let action: () -> Void
 
     private let localization = LocalizationManager.shared
 
     var body: some View {
         Button(action: {
+            guard !isLoading else { return }
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             action()
         }) {
-            HStack(spacing: 8) {
-                if isGoogle || iconName == "G" {
-                    GoogleLogoIcon(size: 20)
-                } else if isFacebook || iconName == "f" {
-                    FacebookLogoIcon(size: 20)
-                } else if let iconName = iconName {
-                    Image(systemName: iconName)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(iconColor)
-                }
+            ZStack {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: isFacebook ? Color(hex: 0x1877F2) : AppColors.teal))
+                        .scaleEffect(0.9)
+                } else {
+                    HStack(spacing: 8) {
+                        if isGoogle || iconName == "G" {
+                            GoogleLogoIcon(size: 20)
+                        } else if isFacebook || iconName == "f" {
+                            FacebookLogoIcon(size: 20)
+                        } else if let iconName = iconName {
+                            Image(systemName: iconName)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(iconColor)
+                        }
 
-                Text(title)
-                    .font(.app(15, .bold, isArabic: localization.isArabic))
-                    .foregroundColor(AppColors.deepTeal)
+                        Text(title)
+                            .font(.app(15, .bold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.deepTeal)
+                    }
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 56)
@@ -433,6 +452,7 @@ struct SocialLoginButton: View {
                     .stroke(AppColors.gray200, lineWidth: 1.5)
             )
         }
+        .disabled(isLoading)
         .buttonStyle(ScaleButtonStyle())
     }
 }

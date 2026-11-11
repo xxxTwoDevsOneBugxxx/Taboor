@@ -235,6 +235,12 @@ public final class AuthRepository: AuthRepositoryProtocol {
         }
         keychain.clearAllAuthTokens()
         userDefaults.clearSession()
+        UserDefaultsManager.shared.hasCompletedOnboarding = false
+
+        await MainActor.run {
+            QueueLiveActivityManager.shared.endLiveActivity()
+            QueueDataService.shared.resetOnLogout()
+        }
     }
 
     public func getSavedUser() -> User? {

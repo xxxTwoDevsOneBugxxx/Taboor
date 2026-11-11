@@ -104,6 +104,7 @@ struct ForgotPasswordView: View {
                 .ignoresSafeArea()
             }
         }
+        .environment(\.layoutDirection, localization.layoutDirection)
     }
 
     // MARK: - Top Navigation Bar
