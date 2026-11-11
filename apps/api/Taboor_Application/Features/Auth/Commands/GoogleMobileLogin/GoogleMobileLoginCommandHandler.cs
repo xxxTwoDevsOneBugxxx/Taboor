@@ -32,12 +32,28 @@ public class GoogleMobileLoginCommandHandler(
 
         try
         {
+            var allowedAudiences = new List<string>();
             var googleClientId = configuration["Authentication:Google:ClientId"];
-            var settings = new GoogleJsonWebSignature.ValidationSettings();
+            var iosClientId = configuration["Authentication:Google:IosClientId"] ?? "619082841226-c65esvlhc7h2p9arqiq2jl00i6d1qsor.apps.googleusercontent.com";
+            var androidClientId = configuration["Authentication:Google:AndroidClientId"] ?? "619082841226-m5lfnuj0l17auih60cfj97iq96r6aik3.apps.googleusercontent.com";
 
             if (!string.IsNullOrEmpty(googleClientId) && googleClientId != "YOUR_GOOGLE_CLIENT_ID")
             {
-                settings.Audience = [googleClientId];
+                allowedAudiences.Add(googleClientId);
+            }
+            if (!string.IsNullOrEmpty(iosClientId))
+            {
+                allowedAudiences.Add(iosClientId);
+            }
+            if (!string.IsNullOrEmpty(androidClientId))
+            {
+                allowedAudiences.Add(androidClientId);
+            }
+
+            var settings = new GoogleJsonWebSignature.ValidationSettings();
+            if (allowedAudiences.Count > 0)
+            {
+                settings.Audience = allowedAudiences;
             }
 
             payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);

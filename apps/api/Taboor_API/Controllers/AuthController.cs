@@ -465,6 +465,90 @@ namespace Taboor_API.Controllers
             }, result.Message ?? "Facebook login successful"));
         }
 
+        /// <summary>
+        /// Web OAuth callback bridge for Facebook Login on mobile.
+        /// Receives the OAuth redirect with the token fragment/query and redirects to the app custom URL scheme.
+        /// </summary>
+        [HttpGet("facebook-callback")]
+        [AllowAnonymous]
+        public IActionResult FacebookCallback()
+        {
+            var html = @"<!DOCTYPE html>
+<html lang=""ar"" dir=""rtl"">
+<head>
+    <meta charset=""utf-8"" />
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+    <title>جاري تسجيل الدخول...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .card {
+            background: white;
+            padding: 32px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            max-width: 380px;
+            width: 100%;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #0284c7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h2 { font-size: 20px; margin: 0 0 8px 0; }
+        p { font-size: 14px; color: #64748b; margin: 0 0 20px 0; }
+        .btn {
+            display: inline-block;
+            background: #0284c7;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+    <script>
+        (function() {
+            var hash = window.location.hash || '';
+            var search = window.location.search || '';
+            var target = 'taboor://oauth-callback' + (hash || search);
+            window.location.href = target;
+            window.addEventListener('DOMContentLoaded', function() {
+                var btn = document.getElementById('manual-btn');
+                if (btn) btn.href = target;
+            });
+        })();
+    </script>
+</head>
+<body>
+    <div class=""card"">
+        <div class=""spinner""></div>
+        <h2>جاري العودة لتطبيق طابور</h2>
+        <p>يرجى الانتظار، سيتم تحويلك تلقائياً...</p>
+        <a id=""manual-btn"" class=""btn"" href=""taboor://oauth-callback"">اضغط هنا إذا لم يتم التحويل</a>
+    </div>
+</body>
+</html>";
+            return Content(html, "text/html");
+        }
+
         #endregion
     }
 }

@@ -37,43 +37,81 @@ public class FacebookMobileLoginCommandHandler(
 
     public async Task<ExternalAuthResponseDto> Handle(FacebookMobileLoginCommand request, CancellationToken cancellationToken)
     {
-        ClaimsPrincipal principal;
+        var appId = configuration["Authentication:Facebook:AppId"];
+        string? fbId = null;
+        string? fbEmail = null;
+        string? fbName = null;
 
-        try
+        // 1. Try JWT validation if token has JWT structure
+        if (request.AccessToken.Contains('.'))
         {
-            var appId = configuration["Authentication:Facebook:AppId"];
-            var discoveryDocument = await _facebookConfigManager.GetConfigurationAsync(cancellationToken);
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var validationParameters = new TokenValidationParameters
+            try
             {
-                ValidateIssuer = true,
-                ValidIssuer = "https://www.facebook.com",
-                ValidateAudience = true,
-                ValidAudience = appId,
-                ValidateLifetime = true,
-                IssuerSigningKeys = discoveryDocument.SigningKeys,
-                NameClaimType = "name",
-                RoleClaimType = "role"
-            };
+                var discoveryDocument = await _facebookConfigManager.GetConfigurationAsync(cancellationToken);
+                var tokenHandler = new JwtSecurityTokenHandler();
 
-            principal = tokenHandler.ValidateToken(request.AccessToken, validationParameters, out _);
-        }
-        catch (SecurityTokenException ex)
-        {
-            throw AppException.Unauthorized($"Invalid Facebook token: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            throw AppException.Unauthorized($"Facebook authentication failed: {ex.Message}");
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = "https://www.facebook.com",
+                    ValidateAudience = true,
+                    ValidAudience = appId,
+                    ValidateLifetime = true,
+                    IssuerSigningKeys = discoveryDocument.SigningKeys,
+                    NameClaimType = "name",
+                    RoleClaimType = "role"
+                };
+
+                var principal = tokenHandler.ValidateToken(request.AccessToken, validationParameters, out _);
+                fbId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? principal.FindFirst("sub")?.Value;
+                fbEmail = principal.FindFirst("email")?.Value ?? principal.FindFirst(ClaimTypes.Email)?.Value;
+                fbName = principal.FindFirst("name")?.Value ?? principal.FindFirst(ClaimTypes.Name)?.Value;
+            }
+            catch
+            {
+                // Fallback to Graph API
+            }
         }
 
-        var fbId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                   ?? principal.FindFirst("sub")?.Value;
-        var fbEmail = principal.FindFirst("email")?.Value 
-                      ?? principal.FindFirst(ClaimTypes.Email)?.Value;
-        var fbName = principal.FindFirst("name")?.Value 
-                     ?? principal.FindFirst(ClaimTypes.Name)?.Value;
+        // 2. Fallback to Facebook Graph API for standard OAuth access tokens
+        if (string.IsNullOrEmpty(fbId))
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                var graphUrl = $"https://graph.facebook.com/me?fields=id,name,email&access_token={Uri.EscapeDataString(request.AccessToken)}";
+                var response = await httpClient.GetAsync(graphUrl, cancellationToken);
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                    using var doc = System.Text.Json.JsonDocument.Parse(content);
+                    if (doc.RootElement.TryGetProperty("id", out var idProp))
+                    {
+                        fbId = idProp.GetString();
+                    }
+                    if (doc.RootElement.TryGetProperty("name", out var nameProp))
+                    {
+                        fbName = nameProp.GetString();
+                    }
+                    if (doc.RootElement.TryGetProperty("email", out var emailProp))
+                    {
+                        fbEmail = emailProp.GetString();
+                    }
+                }
+                else
+                {
+                    throw AppException.Unauthorized("Facebook access token is invalid or expired.");
+                }
+            }
+            catch (AppException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw AppException.Unauthorized($"Facebook authentication failed: {ex.Message}");
+            }
+        }
 
         if (string.IsNullOrEmpty(fbId))
         {
