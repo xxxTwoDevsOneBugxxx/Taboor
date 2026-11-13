@@ -7,6 +7,7 @@ public struct HomeTabView: View {
     @Binding var selectedTab: TaboorTab
     public let onNavigateToQueue: () -> Void
     public let onNavigateToProfile: () -> Void
+    public let onNavigateToAlerts: () -> Void
 
     @StateObject private var dataService = QueueDataService.shared
     @ObservedObject private var localization = LocalizationManager.shared
@@ -28,46 +29,51 @@ public struct HomeTabView: View {
     private var homeUserCoord: CLLocationCoordinate2D {
         locationService.effectiveCoordinate
     }
-    private let homeClinicCoord = CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
-    private var homeRouteCoords: [CLLocationCoordinate2D] {
-        let start = homeUserCoord
-        let end = homeClinicCoord
-        let dLat = end.latitude - start.latitude
-        let dLng = end.longitude - start.longitude
-        return [
-            start,
-            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.25 + 0.0008, longitude: start.longitude + dLng * 0.20 - 0.0005),
-            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.50 - 0.0006, longitude: start.longitude + dLng * 0.55 + 0.0007),
-            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.75 + 0.0004, longitude: start.longitude + dLng * 0.80 + 0.0002),
-            end
-        ]
+    private var homeDestinationCoord: CLLocationCoordinate2D {
+        dataService.activeTicket?.destinationCoordinate ?? CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
     }
-    @State private var homeMapCamera: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 30.0520, longitude: 31.3400),
-            span: MKCoordinateSpan(latitudeDelta: 0.024, longitudeDelta: 0.024)
-        )
-    )
+    @State private var homeRouteInfo: CalculatedRouteInfo? = nil
+    private var homeRouteCoords: [CLLocationCoordinate2D] {
+        if let info = homeRouteInfo, !info.coordinates.isEmpty {
+            return info.coordinates
+        }
+        return [homeUserCoord, homeDestinationCoord]
+    }
+    @State private var homeMapCamera: MapCameraPosition = .automatic
 
     public init(
         selectedTab: Binding<TaboorTab> = .constant(.home),
         onNavigateToQueue: @escaping () -> Void,
-        onNavigateToProfile: @escaping () -> Void = {}
+        onNavigateToProfile: @escaping () -> Void = {},
+        onNavigateToAlerts: @escaping () -> Void = {}
     ) {
         self._selectedTab = selectedTab
         self.onNavigateToQueue = onNavigateToQueue
         self.onNavigateToProfile = onNavigateToProfile
+        self.onNavigateToAlerts = onNavigateToAlerts
     }
 
     private var fastQueues: [ServicePlace] {
-        dataService.places
-            .sorted { $0.totalWaiting < $1.totalWaiting }
+        let userCoord = locationService.effectiveCoordinate
+        let localPlaces = dataService.places.filter { $0.isAvailableInLocalArea(around: userCoord) }
+        let candidatePlaces = localPlaces.isEmpty ? dataService.places : localPlaces
+
+        return candidatePlaces
+            .sorted { p1, p2 in
+                let d1 = p1.primaryBranch.map { locationService.distance(to: $0.coordinate) } ?? 999_999
+                let d2 = p2.primaryBranch.map { locationService.distance(to: $0.coordinate) } ?? 999_999
+                return d1 < d2
+            }
             .prefix(4)
             .map { $0 }
     }
 
     private var topRated: [ServicePlace] {
-        dataService.places
+        let userCoord = locationService.effectiveCoordinate
+        let localPlaces = dataService.places.filter { $0.isAvailableInLocalArea(around: userCoord) }
+        let candidatePlaces = localPlaces.isEmpty ? dataService.places : localPlaces
+
+        return candidatePlaces
             .sorted { $0.starRating > $1.starRating }
             .prefix(3)
             .map { $0 }
@@ -160,13 +166,36 @@ public struct HomeTabView: View {
             .onAppear {
                 user = AuthRepository.shared.getSavedUser()
                 locationService.requestPermission()
-                if locationService.isAuthorized && locationService.userCoordinate != nil {
+                if locationService.isManualOverride {
+                    selectedLocation = locationService.effectiveAddress
+                } else if locationService.isAuthorized && locationService.userCoordinate != nil {
                     selectedLocation = locationService.currentAddress
                 }
             }
-            .onChange(of: locationService.currentAddress) { _, newAddr in
+            .onChange(of: locationService.effectiveAddress) { _, newAddr in
                 if !newAddr.isEmpty {
                     selectedLocation = newAddr
+                }
+            }
+            .task(id: "\(locationService.effectiveCoordinate.latitude),\(locationService.effectiveCoordinate.longitude),\(dataService.activeTicket?.destinationCoordinate.latitude ?? 0),\(dataService.activeTicket?.destinationCoordinate.longitude ?? 0)") {
+                if let ticket = dataService.activeTicket {
+                    let start = locationService.effectiveCoordinate
+                    let dest = ticket.destinationCoordinate
+                    let info = await RouteDirectionsService.shared.fetchRoute(from: start, to: dest)
+                    await MainActor.run {
+                        self.homeRouteInfo = info
+                        if let coords = info?.coordinates, !coords.isEmpty {
+                            var mapRect = MKMapRect.null
+                            for coord in coords {
+                                let point = MKMapPoint(coord)
+                                mapRect = mapRect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+                            }
+                            let padded = mapRect.insetBy(dx: -max(mapRect.size.width * 0.35, 1200), dy: -max(mapRect.size.height * 0.45, 1800))
+                            withAnimation(.easeInOut(duration: 0.6)) {
+                                self.homeMapCamera = .rect(padded)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -241,10 +270,13 @@ public struct HomeTabView: View {
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
 
-                // Profile / Notifications
+                // Notifications / Alerts
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    onNavigateToProfile()
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
+                        selectedTab = .alerts
+                    }
+                    onNavigateToAlerts()
                 }) {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "bell.fill")
@@ -259,10 +291,12 @@ public struct HomeTabView: View {
                             )
                             .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1.5)
 
-                        Circle()
-                            .fill(AppColors.amber)
-                            .frame(width: 8, height: 8)
-                            .offset(x: -6, y: 6)
+                        if dataService.unreadAlertsCount > 0 {
+                            Circle()
+                                .fill(AppColors.amber)
+                                .frame(width: 8, height: 8)
+                                .offset(x: -6, y: 6)
+                        }
                     }
                 }
                 .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
@@ -471,7 +505,7 @@ public struct HomeTabView: View {
                 }
 
                 // Clinic Destination Pin
-                Annotation(ticket.localizedServiceName(isArabic: localization.isArabic), coordinate: homeClinicCoord) {
+                Annotation(ticket.localizedServiceName(isArabic: localization.isArabic), coordinate: homeDestinationCoord) {
                     VStack(spacing: 0) {
                         ZStack {
                             Circle()
@@ -513,7 +547,9 @@ public struct HomeTabView: View {
                             .frame(width: 7, height: 7)
                             .symbolEffect(.pulse)
 
-                        Text(localization.isArabic ? "دورك خلال \(ticket.estMinutes) دقائق" : "Your turn in ~\(ticket.estMinutes)m")
+                        let durationText = homeRouteInfo?.formattedDuration(isArabic: localization.isArabic) ?? "~\(ticket.estMinutes) " + (localization.isArabic ? "د" : "m")
+                        let distanceText = homeRouteInfo?.formattedDistance(isArabic: localization.isArabic) ?? ""
+                        Text(distanceText.isEmpty ? "\(durationText)" : "\(distanceText) • \(durationText)")
                             .font(.app(11.5, .bold, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.textPrimary)
                     }
@@ -813,7 +849,10 @@ public struct HomeTabView: View {
                                     .fixedSize(horizontal: false, vertical: true)
                                     .minimumScaleFactor(0.85)
 
-                                let count = dataService.places.filter { $0.category == category }.count
+                                let localPlacesForCat = dataService.places.filter { $0.category == category && $0.isAvailableInLocalArea(around: locationService.effectiveCoordinate) }
+                                let count = localPlacesForCat.isEmpty
+                                    ? dataService.places.filter { $0.category == category }.count
+                                    : localPlacesForCat.count
                                 Text(localization.isArabic ? "\(count) أماكن" : "\(count) places")
                                     .font(.app(11, .regular, isArabic: localization.isArabic))
                                     .foregroundColor(AppColors.textSecondary)
@@ -904,7 +943,7 @@ public struct HomeTabView: View {
 
                                 // Branch & Distance (Wraps cleanly onto next line if long)
                                 if let branch = place.primaryBranch {
-                                    Text("\(branch.localizedLabel(isArabic: localization.isArabic)) • \(branch.distanceKm) كم")
+                                    Text("\(branch.localizedLabel(isArabic: localization.isArabic)) • \(branch.realDistanceFormatted(isArabic: localization.isArabic))")
                                         .font(.app(12, .medium, isArabic: localization.isArabic))
                                         .foregroundColor(AppColors.textSecondary)
                                         .lineLimit(2)
@@ -1020,7 +1059,7 @@ public struct HomeTabView: View {
                         }
 
                         if let branch = place.primaryBranch {
-                            Text("\(branch.localizedLabel(isArabic: localization.isArabic)) • \(branch.distanceKm) كم")
+                            Text("\(branch.localizedLabel(isArabic: localization.isArabic)) • \(branch.realDistanceFormatted(isArabic: localization.isArabic))")
                                 .font(.app(12, .medium, isArabic: localization.isArabic))
                                 .foregroundColor(AppColors.textSecondary)
                                 .lineLimit(1)
@@ -1117,13 +1156,78 @@ public struct LocationPickerSheetView: View {
     }
 
     private let districts: [DistrictLocation] = [
-        DistrictLocation(nameAr: "المعادي، شارع النصر", nameEn: "Maadi, El-Nasr St", cityAr: "القاهرة", cityEn: "Cairo", latitude: 29.9602, longitude: 31.2569),
-        DistrictLocation(nameAr: "مدينة نصر، عباس العقاد", nameEn: "Nasr City, Abbas El-Akkad", cityAr: "القاهرة", cityEn: "Cairo", latitude: 30.0561, longitude: 31.3414),
-        DistrictLocation(nameAr: "التجمع الخامس، شارع التسعين", nameEn: "New Cairo, 90th St", cityAr: "القاهرة الجديدة", cityEn: "New Cairo", latitude: 30.0197, longitude: 31.4289),
-        DistrictLocation(nameAr: "مصر الجديدة، الكوربة", nameEn: "Heliopolis, Korba", cityAr: "القاهرة", cityEn: "Cairo", latitude: 30.0898, longitude: 31.3285),
-        DistrictLocation(nameAr: "الشيخ زايد، وصلة دهشور", nameEn: "Sheikh Zayed, Dahshur Link", cityAr: "الجيزة", cityEn: "Giza", latitude: 30.0468, longitude: 30.9850),
-        DistrictLocation(nameAr: "الدقي، شارع مصدق", nameEn: "Dokki, Mossadak St", cityAr: "الجيزة", cityEn: "Giza", latitude: 30.0384, longitude: 31.2114),
-        DistrictLocation(nameAr: "سموحة، فيكتور عمانويل", nameEn: "Smouha, Victor Emmanuel", cityAr: "الإسكندرية", cityEn: "Alexandria", latitude: 31.2156, longitude: 29.9553)
+        // 1. Port Said & Port Fouad (بورسعيد وبورفؤاد)
+        DistrictLocation(nameAr: "بورسعيد، شارع طرح البحر (حي الشرق)", nameEn: "Port Said, Tarh El-Bahr (Sharq)", cityAr: "بورسعيد", cityEn: "Port Said", latitude: 31.2635, longitude: 32.3060),
+        DistrictLocation(nameAr: "بورسعيد، شارع الجمهورية و٢٣ يوليو", nameEn: "Port Said, El-Gomhouria & 23rd July", cityAr: "بورسعيد", cityEn: "Port Said", latitude: 31.2580, longitude: 32.2880),
+        DistrictLocation(nameAr: "بورفؤاد، الميدان الرئيسي", nameEn: "Port Fouad, Main Square", cityAr: "بورفؤاد", cityEn: "Port Fouad", latitude: 31.2485, longitude: 32.3210),
+
+        // 2. Damietta & Ras El Bar (دمياط ورأس البر)
+        DistrictLocation(nameAr: "دمياط الجديدة، شارع الصعيدي والحي الأول", nameEn: "New Damietta, El Saidi St & 1st District", cityAr: "دمياط", cityEn: "Damietta", latitude: 31.4365, longitude: 31.6650),
+        DistrictLocation(nameAr: "دمياط، كورنيش النيل وميدان الساعة", nameEn: "Damietta, Nile Corniche & Saa Sq", cityAr: "دمياط", cityEn: "Damietta", latitude: 31.4175, longitude: 31.8144),
+        DistrictLocation(nameAr: "رأس البر، شارع النيل ومنطقة اللسان", nameEn: "Ras El Bar, Nile St & El Lessan", cityAr: "دمياط", cityEn: "Damietta", latitude: 31.5150, longitude: 31.8280),
+
+        // 3. Alexandria (الإسكندرية)
+        DistrictLocation(nameAr: "الإسكندرية، سموحة وميدان فيكتور عمانويل", nameEn: "Alexandria, Smouha - Victor Emmanuel", cityAr: "الإسكندرية", cityEn: "Alexandria", latitude: 31.2156, longitude: 29.9553),
+        DistrictLocation(nameAr: "الإسكندرية، سيدي جابر وطريق الجيش", nameEn: "Alexandria, Sidi Gaber - El Geish Way", cityAr: "الإسكندرية", cityEn: "Alexandria", latitude: 31.2210, longitude: 29.9440),
+        DistrictLocation(nameAr: "الإسكندرية، ميامي وشارع جمال عبد الناصر", nameEn: "Alexandria, Miami - Gamal Abdel Nasser", cityAr: "الإسكندرية", cityEn: "Alexandria", latitude: 31.2680, longitude: 30.0050),
+        DistrictLocation(nameAr: "الإسكندرية، محطة الرمل ووسط البلد", nameEn: "Alexandria, Mahatet El Raml - Downtown", cityAr: "الإسكندرية", cityEn: "Alexandria", latitude: 31.2005, longitude: 29.9010),
+
+        // 4. Ismailia (الإسماعيلية)
+        DistrictLocation(nameAr: "الإسماعيلية، شارع السلطان حسين (حي الإفرنج)", nameEn: "Ismailia, Sultan Hussein St (Al Afrang)", cityAr: "الإسماعيلية", cityEn: "Ismailia", latitude: 30.5965, longitude: 32.2715),
+        DistrictLocation(nameAr: "الإسماعيلية، نمرة ٦ وطريق البلاجات", nameEn: "Ismailia, Nimra 6 - Balagat Rd", cityAr: "الإسماعيلية", cityEn: "Ismailia", latitude: 30.5890, longitude: 32.2910),
+
+        // 5. Suez (السويس)
+        DistrictLocation(nameAr: "السويس، بورتوفيق والكورنيش الجديد", nameEn: "Suez, Port Tawfiq - New Corniche", cityAr: "السويس", cityEn: "Suez", latitude: 29.9485, longitude: 32.5620),
+        DistrictLocation(nameAr: "السويس، حي الأربعين وشارع الجيش", nameEn: "Suez, El Arbaeen - El Geish St", cityAr: "السويس", cityEn: "Suez", latitude: 29.9720, longitude: 32.5450),
+
+        // 6. Mansoura (المنصورة / الدقهلية)
+        DistrictLocation(nameAr: "المنصورة، المشاية السفلية وكورنيش النيل", nameEn: "Mansoura, Mashaya Sefleya - Nile Corniche", cityAr: "المنصورة", cityEn: "Mansoura", latitude: 31.0450, longitude: 31.3720),
+        DistrictLocation(nameAr: "المنصورة، شارع الجيش وميدان المحطة", nameEn: "Mansoura, El Geish St & Station Sq", cityAr: "المنصورة", cityEn: "Mansoura", latitude: 31.0380, longitude: 31.3850),
+
+        // 7. Tanta & Gharbia (طنطا / الغربية)
+        DistrictLocation(nameAr: "طنطا، شارع الجيش ومنطقة الاستاد", nameEn: "Tanta, El Geish St - Stadium Area", cityAr: "طنطا", cityEn: "Tanta", latitude: 30.7950, longitude: 31.0020),
+        DistrictLocation(nameAr: "طنطا، شارع النحاس مع البحر", nameEn: "Tanta, El Nahas with El Bahr St", cityAr: "طنطا", cityEn: "Tanta", latitude: 30.7870, longitude: 30.9960),
+
+        // 8. Zagazig & Sharqia (الزقازيق والعاشر من رمضان)
+        DistrictLocation(nameAr: "الزقازيق، حي القومية وشارع طلبة عويضة", nameEn: "Zagazig, Al Qawmeya - Tolba Oweida St", cityAr: "الزقازيق", cityEn: "Zagazig", latitude: 30.5920, longitude: 31.5050),
+        DistrictLocation(nameAr: "العاشر من رمضان، الميدان الرئيسي وصيدناوي", nameEn: "10th of Ramadan, Central Commercial Area", cityAr: "العاشر من رمضان", cityEn: "10th of Ramadan", latitude: 30.3010, longitude: 31.7450),
+
+        // 9. Upper Egypt (صعيد مصر)
+        DistrictLocation(nameAr: "أسيوط، شارع النميس وميدان المحطة", nameEn: "Assiut, El Namees St & Station Sq", cityAr: "أسيوط", cityEn: "Assiut", latitude: 27.1850, longitude: 31.1890),
+        DistrictLocation(nameAr: "أسيوط، كورنيش النيل وشارع الجمهورية", nameEn: "Assiut, Nile Corniche & Gomhouria", cityAr: "أسيوط", cityEn: "Assiut", latitude: 27.1920, longitude: 31.1960),
+        DistrictLocation(nameAr: "المنيا، كورنيش النيل وميدان بالاس", nameEn: "Minya, Corniche & Palace Sq", cityAr: "المنيا", cityEn: "Minya", latitude: 28.1090, longitude: 30.7500),
+        DistrictLocation(nameAr: "سوهاج، شارع ١٥ والكورنيش", nameEn: "Sohag, 15th St & Corniche", cityAr: "سوهاج", cityEn: "Sohag", latitude: 26.5560, longitude: 31.6950),
+        DistrictLocation(nameAr: "قنا، ميدان الساعة وكورنيش النيل", nameEn: "Qena, Saa Sq & Corniche", cityAr: "قنا", cityEn: "Qena", latitude: 26.1640, longitude: 32.7260),
+        DistrictLocation(nameAr: "الأقصر، شارع التليفزيون والكورنيش", nameEn: "Luxor, TV St & Corniche", cityAr: "الأقصر", cityEn: "Luxor", latitude: 25.6870, longitude: 32.6390),
+        DistrictLocation(nameAr: "أسوان، كورنيش النيل وأطلس", nameEn: "Aswan, Nile Corniche & Atlas", cityAr: "أسوان", cityEn: "Aswan", latitude: 24.0889, longitude: 32.8998),
+        DistrictLocation(nameAr: "الفيوم، ميدان المسلة وشارع البحر", nameEn: "Fayoum, Mesalla Sq & Bahr St", cityAr: "الفيوم", cityEn: "Fayoum", latitude: 29.3080, longitude: 30.8420),
+        DistrictLocation(nameAr: "بني سويف، كورنيش النيل وعارف", nameEn: "Beni Suef, Corniche & Aref St", cityAr: "بني سويف", cityEn: "Beni Suef", latitude: 29.0740, longitude: 31.0970),
+
+        // 10. Red Sea, Sinai & Coastal (البحر الأحمر وسيناء والساحل)
+        DistrictLocation(nameAr: "الغردقة، الممشى السياحي ومارينا", nameEn: "Hurghada, Touristic Promenade & Marina", cityAr: "الغردقة", cityEn: "Hurghada", latitude: 27.1890, longitude: 33.8260),
+        DistrictLocation(nameAr: "الغردقة، حي الكوثر وشارع الشيراتون", nameEn: "Hurghada, El Kawthar & Sheraton Rd", cityAr: "الغردقة", cityEn: "Hurghada", latitude: 27.2020, longitude: 33.8320),
+        DistrictLocation(nameAr: "شرم الشيخ، خليج نعمة والممشى", nameEn: "Sharm El Sheikh, Naama Bay & Promenade", cityAr: "شرم الشيخ", cityEn: "Sharm El Sheikh", latitude: 27.9158, longitude: 34.3299),
+        DistrictLocation(nameAr: "العين السخنة، بورتو ومارينا وادي الدوم", nameEn: "Ain Sokhna, Porto & Dome Marina", cityAr: "العين السخنة", cityEn: "Ain Sokhna", latitude: 29.6020, longitude: 32.3250),
+        DistrictLocation(nameAr: "العلمين الجديدة، الأبراج الشاطئية والداون تاون", nameEn: "New Alamein, Towers & Downtown", cityAr: "العلمين", cityEn: "New Alamein", latitude: 30.8350, longitude: 28.9550),
+        DistrictLocation(nameAr: "مرسى مطروح، الكورنيش وشارع الإسكندرية", nameEn: "Marsa Matrouh, Corniche & Alex St", cityAr: "مرسى مطروح", cityEn: "Marsa Matrouh", latitude: 31.3540, longitude: 27.2370),
+
+        // 11. Delta & Lower Egypt (وسط وغرب الدلتا)
+        DistrictLocation(nameAr: "كفر الشيخ، كورنيش كفر الشيخ والنبوي", nameEn: "Kafr El Sheikh, Corniche & Nabawy St", cityAr: "كفر الشيخ", cityEn: "Kafr El Sheikh", latitude: 31.1120, longitude: 30.9410),
+        DistrictLocation(nameAr: "دمنهور، ميدان الساعة وعبد السلام الشاذلي", nameEn: "Damanhour, Saa Sq & Shazly St", cityAr: "دمنهور", cityEn: "Damanhour", latitude: 31.0420, longitude: 30.4710),
+        DistrictLocation(nameAr: "بنها، كورنيش النيل ومنطقة الفلل", nameEn: "Banha, Nile Corniche & Villas", cityAr: "بنها", cityEn: "Banha", latitude: 30.4660, longitude: 31.1850),
+        DistrictLocation(nameAr: "شبين الكوم، صبري أبو علم والجلاء", nameEn: "Shebin El Koum, Sabry Abu Alam St", cityAr: "شبين الكوم", cityEn: "Shebin El Koum", latitude: 30.5520, longitude: 31.0110),
+        DistrictLocation(nameAr: "المحلة الكبرى، شكري القوتلي وميدان البندر", nameEn: "El Mahalla, Shoukry Kowatly St", cityAr: "المحلة الكبرى", cityEn: "El Mahalla", latitude: 30.9700, longitude: 31.1650),
+
+        // 11. Greater Cairo & Giza (القاهرة الكبرى والجيزة)
+        DistrictLocation(nameAr: "المعادي، شارع النصر واللاسلكي", nameEn: "Maadi, El-Nasr St & Laselky", cityAr: "القاهرة", cityEn: "Cairo", latitude: 29.9602, longitude: 31.2569),
+        DistrictLocation(nameAr: "مدينة نصر، عباس العقاد ومكرم عبيد", nameEn: "Nasr City, Abbas El-Akkad & Makram", cityAr: "القاهرة", cityEn: "Cairo", latitude: 30.0561, longitude: 31.3414),
+        DistrictLocation(nameAr: "التجمع الخامس، شارع التسعين الشمالي والجنوبي", nameEn: "New Cairo, North & South 90th St", cityAr: "القاهرة الجديدة", cityEn: "New Cairo", latitude: 30.0197, longitude: 31.4289),
+        DistrictLocation(nameAr: "مصر الجديدة، الكوربة والميرغني", nameEn: "Heliopolis, Korba & Merghany", cityAr: "القاهرة", cityEn: "Cairo", latitude: 30.0898, longitude: 31.3285),
+        DistrictLocation(nameAr: "وسط البلد، ميدان طلعت حرب وقصر النيل", nameEn: "Downtown, Talaat Harb & Qasr El Nil", cityAr: "القاهرة", cityEn: "Cairo", latitude: 30.0480, longitude: 31.2395),
+        DistrictLocation(nameAr: "الزمالك، شارع ٢٦ يوليو والبرازيل", nameEn: "Zamalek, 26th July & Brazil St", cityAr: "القاهرة", cityEn: "Cairo", latitude: 30.0610, longitude: 31.2210),
+        DistrictLocation(nameAr: "الشيخ زايد، وصلة دهشور وأركان بلازا", nameEn: "Sheikh Zayed, Dahshur Link & Arkan", cityAr: "الجيزة", cityEn: "Giza", latitude: 30.0468, longitude: 30.9850),
+        DistrictLocation(nameAr: "٦ أكتوبر، المحور المركزي وميدان الحصري", nameEn: "6th of October, Central Axis & Hosary", cityAr: "الجيزة", cityEn: "Giza", latitude: 29.9725, longitude: 30.9542),
+        DistrictLocation(nameAr: "الدقي والمهندسين، شارع مصدق وجامعة الدول", nameEn: "Dokki & Mohandessin, Mossadak & Gameat Dowal", cityAr: "الجيزة", cityEn: "Giza", latitude: 30.0384, longitude: 31.2114)
     ]
 
     @State private var cameraPosition: MapCameraPosition = .region(
@@ -1251,8 +1355,7 @@ public struct LocationPickerSheetView: View {
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             isGpsPulsing = true
-                            UserLocationService.shared.requestPermission()
-                            UserLocationService.shared.startTracking()
+                            UserLocationService.shared.resetToGps()
                             let coord = UserLocationService.shared.effectiveCoordinate
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                 activeLatitude = coord.latitude
@@ -1316,6 +1419,10 @@ public struct LocationPickerSheetView: View {
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                             selectedLocation = activeDistrictName
+                            UserLocationService.shared.setCustomLocation(
+                                coordinate: CLLocationCoordinate2D(latitude: activeLatitude, longitude: activeLongitude),
+                                areaName: activeDistrictName
+                            )
                             dismiss()
                         }) {
                             HStack(spacing: 8) {
@@ -1363,6 +1470,15 @@ public struct LocationPickerSheetView: View {
             .onAppear {
                 isGpsPulsing = true
                 activeDistrictName = selectedLocation
+                let currentCoord = UserLocationService.shared.effectiveCoordinate
+                activeLatitude = currentCoord.latitude
+                activeLongitude = currentCoord.longitude
+                cameraPosition = .region(
+                    MKCoordinateRegion(
+                        center: currentCoord,
+                        span: MKCoordinateSpan(latitudeDelta: 0.025, longitudeDelta: 0.025)
+                    )
+                )
             }
         }
         .presentationDetents([.large])

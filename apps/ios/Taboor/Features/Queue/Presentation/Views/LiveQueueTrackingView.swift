@@ -33,33 +33,27 @@ public struct LiveQueueTrackingView: View {
     private var userCoord: CLLocationCoordinate2D {
         UserLocationService.shared.effectiveCoordinate
     }
-    private let clinicCoord = CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
-    private var navCoord: CLLocationCoordinate2D {
-        let u = userCoord
-        let c = clinicCoord
-        return CLLocationCoordinate2D(latitude: (u.latitude + c.latitude) / 2.0, longitude: (u.longitude + c.longitude) / 2.0)
+    private var destinationCoord: CLLocationCoordinate2D {
+        dataService.activeTicket?.destinationCoordinate ?? CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
     }
+    @State private var calculatedRoute: CalculatedRouteInfo? = nil
+    @State private var isCalculatingRoute: Bool = false
 
     private var routeCoordinates: [CLLocationCoordinate2D] {
-        let start = userCoord
-        let end = clinicCoord
-        let dLat = end.latitude - start.latitude
-        let dLng = end.longitude - start.longitude
-        return [
-            start,
-            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.25 + 0.0008, longitude: start.longitude + dLng * 0.20 - 0.0005),
-            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.50 - 0.0006, longitude: start.longitude + dLng * 0.55 + 0.0007),
-            CLLocationCoordinate2D(latitude: start.latitude + dLat * 0.75 + 0.0004, longitude: start.longitude + dLng * 0.80 + 0.0002),
-            end
-        ]
+        if let calculated = calculatedRoute, !calculated.coordinates.isEmpty {
+            return calculated.coordinates
+        }
+        return [userCoord, destinationCoord]
     }
 
-    @State private var cameraPosition: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 30.0488, longitude: 31.3400),
-            span: MKCoordinateSpan(latitudeDelta: 0.028, longitudeDelta: 0.028)
-        )
-    )
+    private var navCoord: CLLocationCoordinate2D {
+        if routeCoordinates.count > 2 {
+            return routeCoordinates[routeCoordinates.count / 3]
+        }
+        return userCoord
+    }
+
+    @State private var cameraPosition: MapCameraPosition = .automatic
 
     public init() {}
 
@@ -121,6 +115,30 @@ public struct LiveQueueTrackingView: View {
                         dataService.isTabBarHidden = false
                     }
                 }
+                .task(id: "\(userCoord.latitude),\(userCoord.longitude),\(destinationCoord.latitude),\(destinationCoord.longitude)") {
+                    isCalculatingRoute = true
+                    if let route = await RouteDirectionsService.shared.fetchRoute(from: userCoord, to: destinationCoord) {
+                        await MainActor.run {
+                            self.calculatedRoute = route
+                            self.isCalculatingRoute = false
+                            if !route.coordinates.isEmpty {
+                                var mapRect = MKMapRect.null
+                                for coord in route.coordinates {
+                                    let point = MKMapPoint(coord)
+                                    mapRect = mapRect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+                                }
+                                let padded = mapRect.insetBy(dx: -max(mapRect.size.width * 0.35, 1200), dy: -max(mapRect.size.height * 0.55, 2000))
+                                withAnimation(.easeInOut(duration: 0.6)) {
+                                    cameraPosition = .rect(padded)
+                                }
+                            }
+                        }
+                    } else {
+                        await MainActor.run {
+                            self.isCalculatingRoute = false
+                        }
+                    }
+                }
             } else {
                 VStack(spacing: 16) {
                     Text(localization.isArabic ? "لا يوجد دور نشط حالياً" : "No active ticket")
@@ -143,12 +161,12 @@ public struct LiveQueueTrackingView: View {
         ) {
             Button(localization.isArabic ? "خرائط آبل (Apple Maps)" : "Apple Maps") {
                 let name = dataService.activeTicket?.localizedServiceName(isArabic: localization.isArabic) ?? (localization.isArabic ? "العيادة" : "Clinic")
-                NavigationLauncher.shared.open(app: .appleMaps, latitude: clinicCoord.latitude, longitude: clinicCoord.longitude, destinationName: name)
+                NavigationLauncher.shared.open(app: .appleMaps, latitude: destinationCoord.latitude, longitude: destinationCoord.longitude, destinationName: name)
             }
 
             Button(localization.isArabic ? "خرائط جوجل (Google Maps)" : "Google Maps") {
                 let name = dataService.activeTicket?.localizedServiceName(isArabic: localization.isArabic) ?? (localization.isArabic ? "العيادة" : "Clinic")
-                NavigationLauncher.shared.open(app: .googleMaps, latitude: clinicCoord.latitude, longitude: clinicCoord.longitude, destinationName: name)
+                NavigationLauncher.shared.open(app: .googleMaps, latitude: destinationCoord.latitude, longitude: destinationCoord.longitude, destinationName: name)
             }
 
             Button(localization.isArabic ? "إلغاء" : "Cancel", role: .cancel) {}
@@ -217,7 +235,7 @@ public struct LiveQueueTrackingView: View {
                 }
 
                 // 3. Destination Clinic Pin
-                Annotation(ticket.localizedServiceName(isArabic: localization.isArabic), coordinate: clinicCoord) {
+                Annotation(ticket.localizedServiceName(isArabic: localization.isArabic), coordinate: destinationCoord) {
                     VStack(spacing: 0) {
                         ZStack {
                             Circle()
@@ -247,13 +265,25 @@ public struct LiveQueueTrackingView: View {
             // Floating Recenter Button
             Button(action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
-                    cameraPosition = .region(
-                        MKCoordinateRegion(
-                            center: CLLocationCoordinate2D(latitude: 30.0488, longitude: 31.3400),
-                            span: MKCoordinateSpan(latitudeDelta: 0.028, longitudeDelta: 0.028)
+                if let coords = calculatedRoute?.coordinates, !coords.isEmpty {
+                    var mapRect = MKMapRect.null
+                    for coord in coords {
+                        let point = MKMapPoint(coord)
+                        mapRect = mapRect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+                    }
+                    let padded = mapRect.insetBy(dx: -max(mapRect.size.width * 0.35, 1200), dy: -max(mapRect.size.height * 0.45, 1800))
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                        cameraPosition = .rect(padded)
+                    }
+                } else {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
+                        cameraPosition = .region(
+                            MKCoordinateRegion(
+                                center: userCoord,
+                                span: MKCoordinateSpan(latitudeDelta: 0.028, longitudeDelta: 0.028)
+                            )
                         )
-                    )
+                    }
                 }
             }) {
                 ZStack {
@@ -342,22 +372,28 @@ public struct LiveQueueTrackingView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(localization.isArabic ? "بعد 350 متر" : "In 350m")
-                        .font(.app(11.5, .extraBold, isArabic: localization.isArabic))
-                        .foregroundColor(AppColors.teal)
+                    if let stepMeters = calculatedRoute?.stepDistanceMeters {
+                        let stepText = stepMeters < 1000 ? "\(Int(stepMeters)) م" : String(format: "%.1f كم", stepMeters / 1000.0)
+                        Text(localization.isArabic ? "بعد \(stepText)" : "In \(stepText)")
+                            .font(.app(11.5, .extraBold, isArabic: localization.isArabic))
+                            .foregroundColor(AppColors.teal)
 
-                    Text("•")
-                        .font(.system(size: 10))
-                        .foregroundColor(AppColors.textTertiary)
+                        Text("•")
+                            .font(.system(size: 10))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
 
-                    let distText = UserLocationService.shared.formattedDistance(to: clinicCoord, isArabic: localization.isArabic)
-                    let minsText = "~\(UserLocationService.shared.estimatedDriveMinutes(to: clinicCoord)) " + (localization.isArabic ? "دقائق" : "mins")
+                    let distText = calculatedRoute?.formattedDistance(isArabic: localization.isArabic) ?? UserLocationService.shared.formattedDistance(to: destinationCoord, isArabic: localization.isArabic)
+                    let fallbackDriveMins = UserLocationService.shared.estimatedDriveMinutes(to: destinationCoord)
+                    let fallbackDuration = UserLocationService.shared.formattedDriveTime(minutes: fallbackDriveMins, isArabic: localization.isArabic)
+                    let minsText = calculatedRoute?.formattedDuration(isArabic: localization.isArabic) ?? "~\(fallbackDuration)"
                     Text(localization.isArabic ? "المتبقي \(distText) (\(minsText))" : "\(distText) remaining (\(minsText))")
                         .font(.app(11, .medium, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.textSecondary)
                 }
 
-                Text(localization.isArabic ? "انعطف يميناً إلى شارع النصر" : "Turn right onto El-Nasr St")
+                let instruction = calculatedRoute?.primaryInstruction ?? (localization.isArabic ? "اتبع الطريق المباشر إلى \(ticket.localizedServiceName(isArabic: localization.isArabic))" : "Follow route to destination")
+                Text(instruction)
                     .font(.app(13.5, .bold, isArabic: localization.isArabic))
                     .foregroundColor(AppColors.textPrimary)
                     .lineLimit(1)

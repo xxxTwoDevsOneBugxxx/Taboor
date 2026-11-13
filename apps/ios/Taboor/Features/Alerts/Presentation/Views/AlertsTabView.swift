@@ -130,46 +130,47 @@ public struct AlertsTabView: View {
 
             Spacer()
 
-            // Header Action Pill: Mark All Read
-            if dataService.unreadAlertsCount > 0 {
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                        dataService.markAllAlertsRead()
-                    }
-                }) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "checkmark.circle")
-                            .font(.system(size: 12, weight: .bold))
+            HStack(spacing: 8) {
+                // Header Action Pill: Mark All Read
+                if dataService.unreadAlertsCount > 0 {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            dataService.markAllAlertsRead()
+                        }
+                    }) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 12, weight: .bold))
 
-                        Text(localization.isArabic ? "تحديد كمقروء" : "Mark Read")
-                            .font(.app(11.5, .bold, isArabic: localization.isArabic))
-                    }
-                    .foregroundColor(AppColors.teal)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 6)
-                    .background(Color.white)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(AppColors.teal.opacity(0.25), lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
-                }
-                .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
-            } else if !dataService.alerts.isEmpty {
-                // Clear button
-                Button(action: {
-                    showClearConfirm = true
-                }) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                        .padding(8)
+                            Text(localization.isArabic ? "تحديد كمقروء" : "Mark Read")
+                                .font(.app(11.5, .bold, isArabic: localization.isArabic))
+                        }
+                        .foregroundColor(AppColors.teal)
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 6)
                         .background(Color.white)
-                        .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(AppColors.cardBorder, lineWidth: 1))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().strokeBorder(AppColors.teal.opacity(0.25), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
+                    }
+                    .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
                 }
-                .buttonStyle(ScaleButtonStyle(scale: 0.94, pressedOpacity: 0.85))
+
+                // Native Glass Delete / Clear All Button
+                if !dataService.alerts.isEmpty {
+                    Button(action: {
+                        showClearConfirm = true
+                    }) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(AppColors.accentRed)
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                }
             }
         }
     }

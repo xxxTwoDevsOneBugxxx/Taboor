@@ -20,7 +20,7 @@ public struct ServiceDetailsView: View {
     @State private var showNavigationAppDialog: Bool = false
     @State private var cameraPosition: MapCameraPosition
     @State private var routeCoordinates: [CLLocationCoordinate2D]
-    @State private var calculatedRoute: MKRoute? = nil
+    @State private var calculatedRouteInfo: CalculatedRouteInfo? = nil
     @State private var isCalculatingRoute: Bool = false
 
     // Booking Mode & Slot Selection
@@ -78,32 +78,37 @@ public struct ServiceDetailsView: View {
     }
 
     private var estimatedDriveMinutes: Int {
-        if let calculatedRoute {
-            return max(1, Int(calculatedRoute.expectedTravelTime / 60))
+        if let calculatedRouteInfo {
+            return max(1, Int(ceil(calculatedRouteInfo.travelTimeSeconds / 60.0)))
         }
-        return TaboorPrecomputedRoutes.estimatedMinutes(for: currentBranch)
+        return currentBranch.realEstimatedDriveMinutes
     }
 
     private var displayDistanceString: String {
-        if let calculatedRoute {
-            let km = calculatedRoute.distance / 1000.0
-            return localization.isArabic
-                ? String(format: "%.1f كم", km)
-                : String(format: "%.1f km", km)
+        if let calculatedRouteInfo {
+            return calculatedRouteInfo.formattedDistance(isArabic: localization.isArabic)
         }
-        let km = TaboorPrecomputedRoutes.distanceKm(for: currentBranch)
-        return localization.isArabic ? "\(km) كم" : "\(km) km"
+        return currentBranch.realDistanceFormatted(isArabic: localization.isArabic)
     }
 
     public init(place: ServicePlace, onQueueJoined: @escaping () -> Void) {
         self.place = place
         self.onQueueJoined = onQueueJoined
 
-        let firstBranch = place.branches.first
-        if let branch = firstBranch {
-            _routeCoordinates = State(initialValue: TaboorPrecomputedRoutes.route(for: branch))
-            let rect = TaboorPrecomputedRoutes.boundingMapRect(for: branch)
-            _cameraPosition = State(initialValue: .rect(rect))
+        let userCoord = UserLocationService.shared.effectiveCoordinate
+        let initialBranch = place.nearestBranch(to: userCoord) ?? place.branches.first
+        let initialIndex = place.branches.firstIndex(where: { $0.id == initialBranch?.id }) ?? 0
+
+        _selectedBranchIndex = State(initialValue: initialIndex)
+        if let branch = initialBranch {
+            _routeCoordinates = State(initialValue: [userCoord, branch.coordinate])
+            let midLat = (userCoord.latitude + branch.lat) / 2
+            let midLng = (userCoord.longitude + branch.lng) / 2
+            let span = max(abs(userCoord.latitude - branch.lat), abs(userCoord.longitude - branch.lng)) * 1.5 + 0.04
+            _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: midLat, longitude: midLng),
+                span: MKCoordinateSpan(latitudeDelta: max(0.04, span), longitudeDelta: max(0.04, span))
+            )))
         } else {
             _routeCoordinates = State(initialValue: [])
             _cameraPosition = State(initialValue: .automatic)
@@ -191,29 +196,38 @@ public struct ServiceDetailsView: View {
         }
         .id(localization.currentLanguage)
         .onAppear {
-            syncRouteAndCamera(for: currentBranch)
+            Task {
+                await fetchRouteForCurrentBranch()
+            }
         }
         .onChange(of: place.id) { _, _ in
-            selectedBranchIndex = 0
-            syncRouteAndCamera(for: currentBranch)
+            let userCoord = userLocationService.effectiveCoordinate
+            let nearest = place.nearestBranch(to: userCoord) ?? place.branches.first
+            selectedBranchIndex = place.branches.firstIndex(where: { $0.id == nearest?.id }) ?? 0
+            Task {
+                await fetchRouteForCurrentBranch()
+            }
         }
         .alert(
             localization.isArabic ? "اختر تطبيق الملاحة والخرائط" : "Choose Navigation App",
             isPresented: $showNavigationAppDialog
         ) {
             Button(localization.isArabic ? "خرائط آبل (Apple Maps)" : "Apple Maps") {
-                NavigationLauncher.shared.open(app: .appleMaps, latitude: currentBranch.lat, longitude: currentBranch.lng, destinationName: place.localizedName(isArabic: localization.isArabic))
+                let name = place.localizedName(isArabic: localization.isArabic)
+                NavigationLauncher.shared.open(app: .appleMaps, latitude: currentBranch.lat, longitude: currentBranch.lng, destinationName: name)
             }
 
             Button(localization.isArabic ? "خرائط جوجل (Google Maps)" : "Google Maps") {
-                NavigationLauncher.shared.open(app: .googleMaps, latitude: currentBranch.lat, longitude: currentBranch.lng, destinationName: place.localizedName(isArabic: localization.isArabic))
+                let name = place.localizedName(isArabic: localization.isArabic)
+                NavigationLauncher.shared.open(app: .googleMaps, latitude: currentBranch.lat, longitude: currentBranch.lng, destinationName: name)
             }
 
             Button(localization.isArabic ? "إلغاء" : "Cancel", role: .cancel) {}
         } message: {
-            Text(localization.isArabic
+            let msg = localization.isArabic
                  ? "اختر التطبيق لبدء التوجيه الصوتي المباشر بالـ GPS."
-                 : "Select an app for turn-by-turn voice GPS navigation.")
+                 : "Select an app for turn-by-turn voice GPS navigation."
+            Text(msg)
         }
         .alert(
             localization.isArabic ? "لديك تذكرة نشطة بالفعل" : "Active Ticket Exists",
@@ -247,6 +261,9 @@ public struct ServiceDetailsView: View {
         }
         .sheet(isPresented: $showSuccessModal) {
             ticketSuccessSheet
+        }
+        .task(id: "\(currentBranch.id),\(userLocation.latitude),\(userLocation.longitude)") {
+            await fetchRouteForCurrentBranch()
         }
     }
 
@@ -358,10 +375,7 @@ public struct ServiceDetailsView: View {
                     // Recenter Button
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        let rect = TaboorPrecomputedRoutes.boundingMapRect(for: currentBranch)
-                        withAnimation(.easeInOut(duration: 0.45)) {
-                            cameraPosition = .rect(rect)
-                        }
+                        recenterCamera()
                     }) {
                         Image(systemName: "location.fill")
                             .font(.system(size: 12, weight: .bold))
@@ -408,80 +422,53 @@ public struct ServiceDetailsView: View {
         .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.05), radius: 10, y: 3)
     }
 
-    // MARK: - Real Driving Route & Camera Positioning
+    // MARK: - Real Driving Route & Camera Positioning via RouteDirectionsService
     @MainActor
-    private func calculateRoute(for branch: ServiceBranch, animated: Bool) async {
+    private func fetchRouteForCurrentBranch() async {
         isCalculatingRoute = true
-        let startCoord = userLocation
-        let destCoord = CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng)
-
-        let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: startCoord))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: destCoord))
-        request.transportType = .automobile
-
-        let directions = MKDirections(request: request)
-        do {
-            let response = try await directions.calculate()
-            if let route = response.routes.first {
-                var coords = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: route.polyline.pointCount)
-                route.polyline.getCoordinates(&coords, range: NSRange(location: 0, length: route.polyline.pointCount))
-                self.routeCoordinates = coords
-                self.calculatedRoute = route
-                self.isCalculatingRoute = false
-                self.updateCameraForRoute(route: route, animated: animated)
-                return
-            }
-        } catch {
-            print("[ServiceDetailsView] Apple Directions notice: \(error.localizedDescription)")
-        }
-
-        self.isCalculatingRoute = false
-        self.calculatedRoute = nil
-        self.routeCoordinates = TaboorPrecomputedRoutes.route(for: branch)
-        self.updateCameraFallback(for: branch, animated: animated)
-    }
-
-    @MainActor
-    private func updateCameraForRoute(route: MKRoute, animated: Bool) {
-        let mapRect = route.polyline.boundingMapRect
-        // Inset with negative values to add generous margins around route endpoints
-        // Vertical padding is larger (0.65) to give breathing room for floating top & bottom glass controls
-        let dxPadding = max(mapRect.size.width * 0.35, 1800)
-        let dyPadding = max(mapRect.size.height * 0.65, 2600)
-        let paddedRect = mapRect.insetBy(dx: -dxPadding, dy: -dyPadding)
-
-        if animated {
-            withAnimation(.easeInOut(duration: 0.55)) {
-                cameraPosition = .rect(paddedRect)
-            }
-        } else {
-            cameraPosition = .rect(paddedRect)
-        }
-    }
-
-    @MainActor
-    private func updateCameraFallback(for branch: ServiceBranch, animated: Bool) {
         let start = userLocation
-        let dest = CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng)
+        let dest = currentBranch.coordinate
 
-        let midLat = (start.latitude + dest.latitude) / 2
-        let midLng = (start.longitude + dest.longitude) / 2
+        if let route = await RouteDirectionsService.shared.fetchRoute(from: start, to: dest) {
+            self.routeCoordinates = route.coordinates
+            self.calculatedRouteInfo = route
+            self.isCalculatingRoute = false
 
-        let latDelta = max(abs(dest.latitude - start.latitude) * 1.8, 0.02)
-        let lngDelta = max(abs(dest.longitude - start.longitude) * 1.8, 0.02)
-
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: midLat, longitude: midLng),
-            span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lngDelta)
-        )
-
-        if animated {
-            withAnimation(.easeInOut(duration: 0.5)) {
-                cameraPosition = .region(region)
+            if !route.coordinates.isEmpty {
+                var mapRect = MKMapRect.null
+                for coord in route.coordinates {
+                    let point = MKMapPoint(coord)
+                    mapRect = mapRect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+                }
+                let padded = mapRect.insetBy(dx: -max(mapRect.size.width * 0.35, 1500), dy: -max(mapRect.size.height * 0.55, 2200))
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    self.cameraPosition = .rect(padded)
+                }
             }
         } else {
-            cameraPosition = .region(region)
+            self.routeCoordinates = [start, dest]
+            self.calculatedRouteInfo = nil
+            self.isCalculatingRoute = false
+            recenterCamera()
+        }
+    }
+
+    @MainActor
+    private func recenterCamera() {
+        let start = userLocation
+        let dest = currentBranch.coordinate
+        var mapRect = MKMapRect.null
+        let p1 = MKMapPoint(start)
+        let p2 = MKMapPoint(dest)
+        mapRect = mapRect.union(MKMapRect(x: p1.x, y: p1.y, width: 0, height: 0))
+        mapRect = mapRect.union(MKMapRect(x: p2.x, y: p2.y, width: 0, height: 0))
+        for coord in routeCoordinates {
+            let p = MKMapPoint(coord)
+            mapRect = mapRect.union(MKMapRect(x: p.x, y: p.y, width: 0, height: 0))
+        }
+        let padded = mapRect.insetBy(dx: -max(mapRect.size.width * 0.35, 1500), dy: -max(mapRect.size.height * 0.55, 2200))
+        withAnimation(.easeInOut(duration: 0.5)) {
+            cameraPosition = .rect(padded)
         }
     }
 
@@ -609,25 +596,14 @@ public struct ServiceDetailsView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func syncRouteAndCamera(for branch: ServiceBranch) {
-        let coords = TaboorPrecomputedRoutes.route(for: branch)
-        let rect = TaboorPrecomputedRoutes.boundingMapRect(for: branch)
-        self.routeCoordinates = coords
-        self.cameraPosition = .rect(rect)
-    }
-
     private func selectBranch(at index: Int) {
         guard index < place.branches.count else { return }
-        let branch = place.branches[index]
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
             selectedBranchIndex = index
         }
-        let coords = TaboorPrecomputedRoutes.route(for: branch)
-        let rect = TaboorPrecomputedRoutes.boundingMapRect(for: branch)
-        withAnimation(.easeInOut(duration: 0.6)) {
-            self.routeCoordinates = coords
-            self.cameraPosition = .rect(rect)
+        Task {
+            await fetchRouteForCurrentBranch()
         }
     }
 
@@ -698,7 +674,7 @@ public struct ServiceDetailsView: View {
                                         .foregroundColor(branch.waiting <= 2 ? AppColors.accentGreen : AppColors.amber)
                                 }
 
-                                Text(localization.isArabic ? "\(branch.distanceKm) كم" : "\(branch.distanceKm) km")
+                                Text(branch.realDistanceFormatted(isArabic: localization.isArabic))
                                     .font(.app(11, .regular, isArabic: localization.isArabic))
                                     .foregroundColor(AppColors.textTertiary)
                             }

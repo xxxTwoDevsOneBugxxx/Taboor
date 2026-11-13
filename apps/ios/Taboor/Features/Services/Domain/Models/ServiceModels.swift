@@ -125,6 +125,12 @@ public struct ServiceBranch: Identifiable, Hashable, Codable {
         CLLocationCoordinate2D(latitude: lat, longitude: lng)
     }
 
+    public func distance(from userCoordinate: CLLocationCoordinate2D) -> CLLocationDistance {
+        let bLoc = CLLocation(latitude: lat, longitude: lng)
+        let uLoc = CLLocation(latitude: userCoordinate.latitude, longitude: userCoordinate.longitude)
+        return uLoc.distance(from: bLoc)
+    }
+
     public func realDistanceFormatted(isArabic: Bool) -> String {
         UserLocationService.shared.formattedDistance(to: coordinate, isArabic: isArabic)
     }
@@ -189,7 +195,33 @@ public struct ServicePlace: Identifiable, Hashable {
     }
 
     public var primaryBranch: ServiceBranch? {
-        branches.first
+        nearestBranch(to: UserLocationService.shared.effectiveCoordinate)
+    }
+
+    public func nearestBranch(to coordinate: CLLocationCoordinate2D) -> ServiceBranch? {
+        branches.min(by: { b1, b2 in
+            let loc1 = CLLocation(latitude: b1.lat, longitude: b1.lng)
+            let loc2 = CLLocation(latitude: b2.lat, longitude: b2.lng)
+            let userLoc = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            return userLoc.distance(from: loc1) < userLoc.distance(from: loc2)
+        }) ?? branches.first
+    }
+
+    /// Determines whether this service place has any branch in the user's active city/metropolitan area (default 45 km)
+    public func isAvailableInLocalArea(
+        around coordinate: CLLocationCoordinate2D = UserLocationService.shared.effectiveCoordinate,
+        radius: CLLocationDistance = 45_000
+    ) -> Bool {
+        guard let nearest = nearestBranch(to: coordinate) else { return false }
+        return nearest.distance(from: coordinate) <= radius
+    }
+
+    /// Returns branches that belong strictly to the active metropolitan area (within 45 km)
+    public func localBranches(
+        around coordinate: CLLocationCoordinate2D = UserLocationService.shared.effectiveCoordinate,
+        radius: CLLocationDistance = 45_000
+    ) -> [ServiceBranch] {
+        branches.filter { $0.distance(from: coordinate) <= radius }
     }
 
     public func localizedName(isArabic: Bool) -> String {
@@ -317,6 +349,13 @@ public struct UserTicket: Identifiable, Equatable, Codable {
         self.placeId = placeId
         self.latitude = latitude
         self.longitude = longitude
+    }
+
+    public var destinationCoordinate: CLLocationCoordinate2D {
+        if let lat = latitude, let lng = longitude, lat != 0, lng != 0 {
+            return CLLocationCoordinate2D(latitude: lat, longitude: lng)
+        }
+        return CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
     }
 
     public func localizedServiceName(isArabic: Bool) -> String {

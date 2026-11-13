@@ -70,7 +70,7 @@ public struct ServiceCardView: View {
                                     .font(.system(size: 10))
                                     .foregroundColor(AppColors.textTertiary)
 
-                                Text(localization.isArabic ? "\(branch.distanceKm) كم" : "\(branch.distanceKm) km")
+                                Text(branch.realDistanceFormatted(isArabic: localization.isArabic))
                                     .font(.app(12, .bold, isArabic: localization.isArabic))
                                     .foregroundColor(AppColors.teal)
                             }
@@ -203,17 +203,12 @@ public struct SheetCloseButton: View {
             action()
         }) {
             Image(systemName: "xmark")
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(isDarkBackground ? .white : AppColors.textSecondary)
-                .frame(width: 30, height: 30)
-                .background(
-                    isDarkBackground
-                        ? Color.white.opacity(0.20)
-                        : Color(UIColor.secondarySystemFill)
-                )
-                .clipShape(Circle())
+                .frame(width: 22, height: 22)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
         .accessibilityLabel("Close")
     }
 }

@@ -9,6 +9,7 @@ public struct AllServicesView: View {
 
     @StateObject private var dataService = QueueDataService.shared
     @ObservedObject private var localization = LocalizationManager.shared
+    @ObservedObject private var locationService = UserLocationService.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
@@ -16,17 +17,25 @@ public struct AllServicesView: View {
     @State private var selectedFilter: ServiceSortFilter = .all
     @State private var searchQuery = ""
     @State private var isMapMode = false
+    @State private var isNationwideMode = false
     @State private var selectedPlaceOnMap: ServicePlace? = nil
+    @State private var selectedBranchOnMap: ServiceBranch? = nil
     @State private var isCardDismissed = false
     @State private var isRefreshing = false
 
-    // Cairo default region
+    // Dynamic User Location region
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 30.0444, longitude: 31.2357),
+            center: UserLocationService.shared.effectiveCoordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.12, longitudeDelta: 0.12)
         )
     )
+
+    public struct MapBranchItem: Identifiable {
+        public var id: String { "\(place.id)_\(branch.id)" }
+        public let place: ServicePlace
+        public let branch: ServiceBranch
+    }
 
     public init(
         initialCategory: ServiceCategory? = nil,
@@ -41,8 +50,18 @@ public struct AllServicesView: View {
         dataService.filterPlaces(
             query: searchQuery,
             category: selectedCategory,
-            filter: selectedFilter
+            filter: selectedFilter,
+            scopeToCurrentCity: !isNationwideMode
         )
+    }
+
+    private var mapBranchItems: [MapBranchItem] {
+        let userCoord = locationService.effectiveCoordinate
+        return filteredPlaces.flatMap { place in
+            let local = place.localBranches(around: userCoord)
+            let chosen = (isNationwideMode || local.isEmpty) ? place.branches : local
+            return chosen.map { MapBranchItem(place: place, branch: $0) }
+        }
     }
 
     private var currentSelectedPlace: ServicePlace? {
@@ -50,6 +69,13 @@ public struct AllServicesView: View {
             return selectedPlaceOnMap
         }
         return selectedPlaceOnMap ?? filteredPlaces.first
+    }
+
+    private var currentSelectedBranch: ServiceBranch? {
+        if let branch = selectedBranchOnMap {
+            return branch
+        }
+        return currentSelectedPlace?.primaryBranch
     }
 
     public var body: some View {
@@ -89,6 +115,15 @@ public struct AllServicesView: View {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         isMapMode.toggle()
+                        if isMapMode {
+                            let userCoord = UserLocationService.shared.effectiveCoordinate
+                            cameraPosition = .region(
+                                MKCoordinateRegion(
+                                    center: userCoord,
+                                    span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08)
+                                )
+                            )
+                        }
                     }
                 }) {
                     Image(systemName: isMapMode ? "list.bullet" : "map")
@@ -136,6 +171,26 @@ public struct AllServicesView: View {
         }
         .background(AppColors.screenBackground.ignoresSafeArea())
         .environment(\.layoutDirection, localization.layoutDirection)
+        .onAppear {
+            let userCoord = locationService.effectiveCoordinate
+            cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: userCoord,
+                    span: MKCoordinateSpan(latitudeDelta: 0.12, longitudeDelta: 0.12)
+                )
+            )
+        }
+        .onChange(of: locationService.effectiveCoordinate.latitude) { _, _ in
+            let userCoord = locationService.effectiveCoordinate
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                cameraPosition = .region(
+                    MKCoordinateRegion(
+                        center: userCoord,
+                        span: MKCoordinateSpan(latitudeDelta: 0.12, longitudeDelta: 0.12)
+                    )
+                )
+            }
+        }
     }
 
     // MARK: - 1. Native List Content View
@@ -252,48 +307,52 @@ public struct AllServicesView: View {
     // MARK: - 2. Native Apple Map Content View
     private var mapContentView: some View {
         ZStack(alignment: .top) {
-            // Interactive Apple Map with Category Markers
+            // Interactive Apple Map with Category Markers for All Nationwide Branches
             Map(position: $cameraPosition) {
-                ForEach(filteredPlaces) { place in
-                    if let branch = place.primaryBranch {
-                        Annotation(
-                            place.localizedName(isArabic: localization.isArabic),
-                            coordinate: CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng)
-                        ) {
-                            Button(action: {
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    isCardDismissed = false
-                                    selectedPlaceOnMap = place
-                                    cameraPosition = .region(
-                                        MKCoordinateRegion(
-                                            center: CLLocationCoordinate2D(latitude: branch.lat, longitude: branch.lng),
-                                            span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
-                                        )
+                ForEach(mapBranchItems) { item in
+                    let isSelected = (currentSelectedPlace?.id == item.place.id && currentSelectedBranch?.id == item.branch.id)
+                    Annotation(
+                        item.place.localizedName(isArabic: localization.isArabic),
+                        coordinate: CLLocationCoordinate2D(latitude: item.branch.lat, longitude: item.branch.lng)
+                    ) {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                isCardDismissed = false
+                                selectedPlaceOnMap = item.place
+                                selectedBranchOnMap = item.branch
+                                cameraPosition = .region(
+                                    MKCoordinateRegion(
+                                        center: CLLocationCoordinate2D(latitude: item.branch.lat, longitude: item.branch.lng),
+                                        span: MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
                                     )
-                                }
-                            }) {
-                                VStack(spacing: 2) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(currentSelectedPlace?.id == place.id ? AppColors.teal : place.color)
-                                            .frame(
-                                                width: currentSelectedPlace?.id == place.id ? 42 : 34,
-                                                height: currentSelectedPlace?.id == place.id ? 42 : 34
-                                            )
-                                            .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
+                                )
+                            }
+                        }) {
+                            VStack(spacing: 2) {
+                                ZStack {
+                                    Circle()
+                                        .fill(isSelected ? AppColors.teal : item.place.color)
+                                        .frame(
+                                            width: isSelected ? 42 : 32,
+                                            height: isSelected ? 42 : 32
+                                        )
+                                        .shadow(color: .black.opacity(0.28), radius: 4, x: 0, y: 2)
+                                        .overlay(
+                                            Circle()
+                                                .strokeBorder(Color.white, lineWidth: isSelected ? 2.5 : 1.2)
+                                        )
 
-                                        Image(systemName: place.iconName)
-                                            .font(.system(size: currentSelectedPlace?.id == place.id ? 17 : 14, weight: .bold))
-                                            .foregroundColor(.white)
-                                    }
-
-                                    Image(systemName: "triangle.fill")
-                                        .font(.system(size: 7))
-                                        .foregroundColor(currentSelectedPlace?.id == place.id ? AppColors.teal : place.color)
-                                        .rotationEffect(.degrees(180))
-                                        .offset(y: -3)
+                                    Image(systemName: item.place.iconName)
+                                        .font(.system(size: isSelected ? 17 : 13, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
+
+                                Image(systemName: "triangle.fill")
+                                    .font(.system(size: 7))
+                                    .foregroundColor(isSelected ? AppColors.teal : item.place.color)
+                                    .rotationEffect(.degrees(180))
+                                    .offset(y: -3)
                             }
                         }
                     }
@@ -363,7 +422,9 @@ public struct AllServicesView: View {
 
     // MARK: - Native Apple Map Place Card (Compact, Non-Overlapping & Dismissible)
     private func mapPlaceCard(_ place: ServicePlace) -> some View {
-        VStack(spacing: 12) {
+        let branch = currentSelectedBranch ?? place.primaryBranch
+
+        return VStack(spacing: 12) {
             // Header Row: Place Info + Rating + Close Button
             HStack(alignment: .center, spacing: 12) {
                 // Category Icon
@@ -387,11 +448,20 @@ public struct AllServicesView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    if let branch = place.primaryBranch {
+                    if let branch = branch {
                         HStack(spacing: 4) {
                             Text(branch.localizedLabel(isArabic: localization.isArabic))
                                 .font(.app(12, .medium, isArabic: localization.isArabic))
                                 .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
+
+                            Text("•")
+                                .font(.system(size: 10))
+                                .foregroundColor(AppColors.textTertiary)
+
+                            Text(branch.realDistanceFormatted(isArabic: localization.isArabic))
+                                .font(.app(11.5, .bold, isArabic: localization.isArabic))
+                                .foregroundColor(AppColors.teal)
 
                             Text("•")
                                 .font(.system(size: 10))
@@ -416,6 +486,7 @@ public struct AllServicesView: View {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         selectedPlaceOnMap = nil
+                        selectedBranchOnMap = nil
                         isCardDismissed = true
                     }
                 }) {
@@ -430,18 +501,19 @@ public struct AllServicesView: View {
             // Bottom Row: Queue Pill + Action Button
             HStack(spacing: 10) {
                 // Live Queue Status Pill
+                let waitingCount = branch?.waiting ?? place.totalWaiting
                 HStack(spacing: 5) {
                     Circle()
-                        .fill(place.totalWaiting <= 2 ? AppColors.accentGreen : AppColors.amber)
+                        .fill(waitingCount <= 2 ? AppColors.accentGreen : AppColors.amber)
                         .frame(width: 7, height: 7)
 
                     Text(localization.isArabic
-                         ? "\(place.totalWaiting) في الانتظار"
-                         : "\(place.totalWaiting) waiting")
+                         ? "\(waitingCount) في الانتظار"
+                         : "\(waitingCount) waiting")
                         .font(.app(12, .bold, isArabic: localization.isArabic))
-                        .foregroundColor(place.totalWaiting <= 2 ? AppColors.accentGreen : AppColors.amber)
+                        .foregroundColor(waitingCount <= 2 ? AppColors.accentGreen : AppColors.amber)
 
-                    if let branch = place.primaryBranch {
+                    if let branch = branch {
                         Text("•")
                             .font(.system(size: 10))
                             .foregroundColor(Color(UIColor.tertiaryLabel))
@@ -456,7 +528,7 @@ public struct AllServicesView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(
-                    (place.totalWaiting <= 2 ? AppColors.accentGreen : AppColors.amber)
+                    (waitingCount <= 2 ? AppColors.accentGreen : AppColors.amber)
                         .opacity(0.12)
                 )
                 .clipShape(Capsule())
@@ -466,7 +538,13 @@ public struct AllServicesView: View {
                 // Book / View Details CTA
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    onSelectPlace(place)
+                    var targetPlace = place
+                    if let branch = branch,
+                       let idx = targetPlace.branches.firstIndex(where: { $0.id == branch.id }) {
+                        let chosen = targetPlace.branches.remove(at: idx)
+                        targetPlace.branches.insert(chosen, at: 0)
+                    }
+                    onSelectPlace(targetPlace)
                 }) {
                     HStack(spacing: 5) {
                         Text(localization.isArabic ? "حجز دور" : "Book")
@@ -624,12 +702,43 @@ public struct AllServicesView: View {
 
     // MARK: - Results Summary Bar
     private var resultsBar: some View {
-        HStack(alignment: .center) {
-            Text(localization.isArabic
-                 ? "\(filteredPlaces.count) أماكن متاحة"
-                 : "\(filteredPlaces.count) places available")
-                .font(.app(13, .bold, isArabic: localization.isArabic))
-                .foregroundColor(AppColors.textPrimary)
+        HStack(alignment: .center, spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: isNationwideMode ? "globe.europe.africa.fill" : "location.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.teal)
+
+                Text(localization.isArabic
+                     ? "\(filteredPlaces.count) أماكن في \(isNationwideMode ? "جميع المحافظات" : locationService.effectiveAddress)"
+                     : "\(filteredPlaces.count) places in \(isNationwideMode ? "Nationwide" : locationService.effectiveAddress)")
+                    .font(.app(12.5, .bold, isArabic: localization.isArabic))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            // Scope Toggle (Local vs All Egypt)
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isNationwideMode.toggle()
+                }
+            }) {
+                HStack(spacing: 3) {
+                    Image(systemName: isNationwideMode ? "mappin.and.ellipse" : "globe")
+                        .font(.system(size: 10, weight: .bold))
+                    Text(localization.isArabic
+                         ? (isNationwideMode ? "مدينتي فقط" : "كل المحافظات")
+                         : (isNationwideMode ? "My City" : "All Egypt"))
+                        .font(.app(10.5, .bold, isArabic: localization.isArabic))
+                }
+                .foregroundColor(AppColors.indigo)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3.5)
+                .background(AppColors.indigo.opacity(0.08))
+                .clipShape(Capsule())
+            }
 
             if selectedFilter != .all {
                 HStack(spacing: 4) {
@@ -645,8 +754,6 @@ public struct AllServicesView: View {
                 .clipShape(Capsule())
             }
 
-            Spacer()
-
             if selectedCategory != nil || selectedFilter != .all || !searchQuery.isEmpty {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -656,7 +763,7 @@ public struct AllServicesView: View {
                         selectedFilter = .all
                     }
                 }) {
-                    Text(localization.isArabic ? "مسح الفلاتر" : "Clear filters")
+                    Text(localization.isArabic ? "مسح" : "Clear")
                         .font(.app(11.5, .bold, isArabic: localization.isArabic))
                         .foregroundColor(AppColors.teal)
                 }

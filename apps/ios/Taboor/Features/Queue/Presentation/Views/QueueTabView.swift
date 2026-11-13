@@ -514,9 +514,10 @@ public struct QueueTabView: View {
                     .overlay(AppColors.cardBorder.opacity(0.6))
                     .padding(.top, 2)
 
-                let clinicTarget = CLLocationCoordinate2D(latitude: 30.0585, longitude: 31.3465)
+                let clinicTarget = ticket.destinationCoordinate
                 let distText = UserLocationService.shared.formattedDistance(to: clinicTarget, isArabic: localization.isArabic)
                 let driveMins = UserLocationService.shared.estimatedDriveMinutes(to: clinicTarget)
+                let driveTimeText = UserLocationService.shared.formattedDriveTime(minutes: driveMins, isArabic: localization.isArabic)
 
                 HStack {
                     HStack(spacing: 5) {
@@ -524,7 +525,7 @@ public struct QueueTabView: View {
                             .font(.system(size: 11))
                             .foregroundColor(AppColors.textTertiary)
 
-                        Text(localization.isArabic ? "\(distText) • حوالي \(driveMins) د بالسيارة" : "\(distText) • ~\(driveMins)m drive")
+                        Text(localization.isArabic ? "\(distText) • حوالي \(driveTimeText) بالسيارة" : "\(distText) • ~\(driveTimeText) drive")
                             .font(.app(12, .medium, isArabic: localization.isArabic))
                             .foregroundColor(AppColors.textSecondary)
                     }
@@ -542,13 +543,13 @@ public struct QueueTabView: View {
                         Divider()
 
                         Button(action: {
-                            NavigationLauncher.shared.open(app: .appleMaps, latitude: 30.0585, longitude: 31.3465, destinationName: ticket.localizedServiceName(isArabic: localization.isArabic))
+                            NavigationLauncher.shared.open(app: .appleMaps, latitude: clinicTarget.latitude, longitude: clinicTarget.longitude, destinationName: ticket.localizedServiceName(isArabic: localization.isArabic))
                         }) {
                             Label(localization.isArabic ? "Apple Maps" : "Apple Maps", systemImage: "arrow.triangle.turn.up.right.diamond")
                         }
 
                         Button(action: {
-                            NavigationLauncher.shared.open(app: .googleMaps, latitude: 30.0585, longitude: 31.3465, destinationName: ticket.localizedServiceName(isArabic: localization.isArabic))
+                            NavigationLauncher.shared.open(app: .googleMaps, latitude: clinicTarget.latitude, longitude: clinicTarget.longitude, destinationName: ticket.localizedServiceName(isArabic: localization.isArabic))
                         }) {
                             Label(localization.isArabic ? "Google Maps" : "Google Maps", systemImage: "location.fill")
                         }

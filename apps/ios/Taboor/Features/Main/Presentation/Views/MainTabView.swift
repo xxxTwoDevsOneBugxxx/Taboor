@@ -51,7 +51,6 @@ public struct FloatingBottomDockView: View {
         HStack(spacing: 0) {
             ForEach(TaboorTab.allCases, id: \.self) { tab in
                 Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
                         selectedTab = tab
                     }
@@ -134,10 +133,19 @@ struct MainTabView: View {
                         HomeTabView(
                             selectedTab: $selectedTab,
                             onNavigateToQueue: {
-                                selectedTab = .queue
+                                withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 0.32)) {
+                                    selectedTab = .queue
+                                }
                             },
                             onNavigateToProfile: {
-                                selectedTab = .profile
+                                withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 0.32)) {
+                                    selectedTab = .profile
+                                }
+                            },
+                            onNavigateToAlerts: {
+                                withAnimation(.timingCurve(0.65, 0, 0.35, 1, duration: 0.32)) {
+                                    selectedTab = .alerts
+                                }
                             }
                         )
                     }

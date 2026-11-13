@@ -153,10 +153,11 @@ struct LoginView: View {
 
                         Spacer().frame(height: 12)
 
-                        // Forgot Password Link (Aligned with text direction)
+                        // Forgot Password Link (Trailing: Left in Arabic RTL, Right in English LTR)
                         HStack {
+                            Spacer()
+
                             Button(action: {
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 onForgotPassword()
                             }) {
                                 Text(localization.forgotPassword)
@@ -165,8 +166,6 @@ struct LoginView: View {
                                     .padding(.vertical, 4)
                             }
                             .buttonStyle(ScaleButtonStyle(scale: 0.96, pressedOpacity: 0.8))
-
-                            Spacer()
                         }
 
                         Spacer().frame(height: 18)

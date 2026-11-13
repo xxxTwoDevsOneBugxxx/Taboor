@@ -190,13 +190,18 @@ public final class QueueDataService: ObservableObject {
             self.liveActivityLockScreen = def.bool(forKey: "taboor_pref_live_activity")
         }
 
+        let userCoord = UserLocationService.shared.effectiveCoordinate
+        let place1 = self.places.first(where: { $0.id == "place_1" })
+        let branch1 = place1?.nearestBranch(to: userCoord) ?? place1?.branches.first
+        let coord1 = branch1?.coordinate ?? CLLocationCoordinate2D(latitude: 31.2635, longitude: 32.3060)
+
         let initialTicket = UserTicket(
             id: "ticket_1",
             ticketNumber: "A-12",
             serviceName: "Dar Al Fouad Hospital",
             serviceNameAr: "مستشفى دار الفؤاد - العيادات الخارجية",
-            branchLabel: "Internal Medicine Clinic",
-            branchLabelAr: "عيادة الباطنة والقلب • د. أحمد شاكر",
+            branchLabel: branch1?.label ?? "Port Said Waterfront Hospital & Clinics",
+            branchLabelAr: branch1?.labelAr ?? "فرع بورسعيد - شارع طرح البحر (حي الشرق)",
             counterLabel: "Counter 3",
             counterLabelAr: "شباك رقم 3",
             waitingAhead: 2,
@@ -206,17 +211,21 @@ public final class QueueDataService: ObservableObject {
             isActive: true,
             bookingType: .liveQueue,
             placeId: "place_1",
-            latitude: 30.0585,
-            longitude: 31.3465
+            latitude: coord1.latitude,
+            longitude: coord1.longitude
         )
+
+        let place5 = self.places.first(where: { $0.id == "place_7" || $0.id == "place_5" })
+        let branch5 = place5?.nearestBranch(to: userCoord) ?? place5?.branches.first
+        let coord5 = branch5?.coordinate ?? CLLocationCoordinate2D(latitude: 31.2610, longitude: 32.3080)
 
         let scheduledTicket = UserTicket(
             id: "ticket_2",
             ticketNumber: "M-24",
             serviceName: "Mirror Barber & Grooming",
             serviceNameAr: "صالون ميرور للحلاقة والتجميل",
-            branchLabel: "Zamalek Main Branch",
-            branchLabelAr: "فرع الزمالك الرئيسي",
+            branchLabel: branch5?.label ?? "Port Said Marina Branch",
+            branchLabelAr: branch5?.labelAr ?? "فرع بورسعيد - الممشى السياحي",
             counterLabel: "Chair 2",
             counterLabelAr: "كرسي رقم 2",
             waitingAhead: 0,
@@ -227,9 +236,9 @@ public final class QueueDataService: ObservableObject {
             bookingType: .scheduled,
             scheduledDate: "غداً",
             scheduledTime: "04:30 م",
-            placeId: "place_2",
-            latitude: 30.0592,
-            longitude: 31.2215
+            placeId: place5?.id ?? "place_7",
+            latitude: coord5.latitude,
+            longitude: coord5.longitude
         )
 
         self.activeTickets = [initialTicket, scheduledTicket]
@@ -244,6 +253,7 @@ public final class QueueDataService: ObservableObject {
         // Asynchronously load data from Repositories (JSON seeds or API)
         Task { [weak self] in
             await self?.refreshAll()
+            self?.syncActiveTicketsWithUserLocation()
         }
     }
 
@@ -380,6 +390,29 @@ public final class QueueDataService: ObservableObject {
         }
     }
 
+    /// Automatically syncs active tickets with the nearest branch to the user's updated location
+    public func syncActiveTicketsWithUserLocation(_ userCoord: CLLocationCoordinate2D = UserLocationService.shared.effectiveCoordinate) {
+        var didChange = false
+        for idx in activeTickets.indices {
+            let ticket = activeTickets[idx]
+            if let placeId = ticket.placeId,
+               let place = places.first(where: { $0.id == placeId }),
+               let nearest = place.nearestBranch(to: userCoord) {
+                if ticket.latitude != nearest.lat || ticket.longitude != nearest.lng {
+                    activeTickets[idx].latitude = nearest.lat
+                    activeTickets[idx].longitude = nearest.lng
+                    activeTickets[idx].branchLabel = nearest.label
+                    activeTickets[idx].branchLabelAr = nearest.labelAr
+                    didChange = true
+                }
+            }
+        }
+        if didChange, let active = self.activeTicket {
+            SpotlightService.shared.indexActiveTicket(active)
+            QueueLiveActivityManager.shared.updateLiveActivity(with: active)
+        }
+    }
+
     // MARK: - Alerts Operations
 
     public func markAlertRead(id: String) {
@@ -407,20 +440,35 @@ public final class QueueDataService: ObservableObject {
     public func filterPlaces(
         query: String,
         category: ServiceCategory? = nil,
-        filter: ServiceSortFilter = .all
+        filter: ServiceSortFilter = .all,
+        scopeToCurrentCity: Bool = true
     ) -> [ServicePlace] {
+        let userCoord = UserLocationService.shared.effectiveCoordinate
         var results = places.filter { place in
             let matchesCat = (category == nil || place.category == category)
             let matchesQ = place.matches(query: query)
-            return matchesCat && matchesQ
+            let matchesArea = !scopeToCurrentCity || place.isAvailableInLocalArea(around: userCoord)
+            return matchesCat && matchesQ && matchesArea
+        }
+
+        // If user typed a search query specifically and got 0 results locally,
+        // search nationwide so users can discover services across Egypt if explicitly searched
+        if results.isEmpty && !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && scopeToCurrentCity {
+            results = places.filter { place in
+                let matchesCat = (category == nil || place.category == category)
+                let matchesQ = place.matches(query: query)
+                return matchesCat && matchesQ
+            }
         }
 
         switch filter {
         case .all:
             break
         case .nearest:
-            results.sort {
-                (Double($0.primaryBranch?.distanceKm ?? "99") ?? 99) < (Double($1.primaryBranch?.distanceKm ?? "99") ?? 99)
+            results.sort { p1, p2 in
+                let d1 = p1.primaryBranch.map { UserLocationService.shared.distance(to: $0.coordinate) } ?? 999_999
+                let d2 = p2.primaryBranch.map { UserLocationService.shared.distance(to: $0.coordinate) } ?? 999_999
+                return d1 < d2
             }
         case .fastest:
             results.sort { $0.totalWaiting < $1.totalWaiting }
@@ -454,7 +502,15 @@ public final class QueueDataService: ObservableObject {
     // MARK: - Seeded Data
 
     private static func seedPlaces() -> [ServicePlace] {
-        [
+        if let url = Bundle.main.url(forResource: "places_seed", withExtension: "json") ??
+                     Bundle.main.url(forResource: "places_seed", withExtension: "json", subdirectory: "Seeds"),
+           let data = try? Data(contentsOf: url),
+           let response = try? JSONDecoder().decode(ApiResponse<[PlaceDTO]>.self, from: data),
+           let dtos = response.data, !dtos.isEmpty {
+            return dtos.map { $0.toDomain() }
+        }
+
+        return [
             ServicePlace(
                 id: "place_1",
                 name: "Dar Al Fouad Hospital",
@@ -505,6 +561,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "شارع النصر، المعادي الجديدة، القاهرة",
                         lat: 29.9760,
                         lng: 31.2810
+                    ),
+                    ServiceBranch(
+                        id: "branch_1_4",
+                        label: "Port Said Waterfront Hospital & Clinics",
+                        labelAr: "فرع بورسعيد - شارع طرح البحر (حي الشرق)",
+                        distanceKm: "1.2",
+                        waiting: 2,
+                        isOpen: true,
+                        address: "Tarh El Bahr St, Al Sharq, Port Said",
+                        addressAr: "شارع طرح البحر، حي الشرق، بورسعيد",
+                        lat: 31.2635,
+                        lng: 32.3060
                     )
                 ]
             ),
@@ -558,6 +626,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "مبنى B2، كابيتال بيزنس بارك، الشيخ زايد",
                         lat: 30.0163,
                         lng: 30.9837
+                    ),
+                    ServiceBranch(
+                        id: "branch_2_4",
+                        label: "Port Said - El Gomhouria St",
+                        labelAr: "فرع بورسعيد - شارع الجمهورية",
+                        distanceKm: "1.8",
+                        waiting: 1,
+                        isOpen: true,
+                        address: "El Gomhouria St, Port Said",
+                        addressAr: "شارع الجمهورية، أمام حديقة المنتزه، بورسعيد",
+                        lat: 31.2585,
+                        lng: 32.2905
                     )
                 ]
             ),
@@ -611,6 +691,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "٤٥ شارع جامعة الدول العربية، المهندسين",
                         lat: 30.0540,
                         lng: 31.2015
+                    ),
+                    ServiceBranch(
+                        id: "branch_3_4",
+                        label: "Port Said - 23rd of July St",
+                        labelAr: "فرع بورسعيد - شارع ٢٣ يوليو",
+                        distanceKm: "2.1",
+                        waiting: 3,
+                        isOpen: true,
+                        address: "23rd of July St, Port Said",
+                        addressAr: "شارع ٢٣ يوليو، حي المناخ، بورسعيد",
+                        lat: 31.2590,
+                        lng: 32.2940
                     )
                 ]
             ),
@@ -705,6 +797,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "داون تاون مول، القطاع أ، التجمع الخامس",
                         lat: 30.0120,
                         lng: 31.4350
+                    ),
+                    ServiceBranch(
+                        id: "branch_5_4",
+                        label: "Port Said Marina Branch",
+                        labelAr: "فرع بورسعيد - الممشى السياحي",
+                        distanceKm: "1.5",
+                        waiting: 2,
+                        isOpen: true,
+                        address: "Tourist Walkway, Al Sharq, Port Said",
+                        addressAr: "الممشى السياحي، حي الشرق، بورسعيد",
+                        lat: 31.2610,
+                        lng: 32.3080
                     )
                 ]
             ),
@@ -893,6 +997,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "طريق الأوتوستراد، بجوار توتال، المعادي",
                         lat: 29.9700,
                         lng: 31.2950
+                    ),
+                    ServiceBranch(
+                        id: "branch_9_4",
+                        label: "Port Said Ring Road Branch",
+                        labelAr: "فرع بورسعيد - طريق الميناء الدائري",
+                        distanceKm: "3.4",
+                        waiting: 2,
+                        isOpen: true,
+                        address: "Port Said Ring Road, Industrial Zone",
+                        addressAr: "طريق بورسعيد الدائري، مدخل المدينة الصناعي",
+                        lat: 31.2380,
+                        lng: 32.2650
                     )
                 ]
             ),
@@ -1040,6 +1156,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "٧٨ شارع مكرم عبيد، مدينة نصر",
                         lat: 30.0620,
                         lng: 31.3510
+                    ),
+                    ServiceBranch(
+                        id: "branch_12_4",
+                        label: "Port Said Smart Services Hub",
+                        labelAr: "فرع بورسعيد - مجمع المصالح الحكومية النموذجي",
+                        distanceKm: "1.9",
+                        waiting: 3,
+                        isOpen: true,
+                        address: "Port Said Government Complex, 23rd July St",
+                        addressAr: "مجمع المصالح الحكومية، شارع ٢٣ يوليو، بورسعيد",
+                        lat: 31.2575,
+                        lng: 32.2890
                     )
                 ]
             ),
@@ -1093,6 +1221,18 @@ public final class QueueDataService: ObservableObject {
                         addressAr: "١٩ شارع سوريا، المهندسين",
                         lat: 30.0555,
                         lng: 31.2060
+                    ),
+                    ServiceBranch(
+                        id: "branch_13_4",
+                        label: "Port Said Historical Post Office",
+                        labelAr: "فرع بورسعيد الرئيسي - شارع فلسطين وديليسبس",
+                        distanceKm: "1.1",
+                        waiting: 2,
+                        isOpen: true,
+                        address: "Palestine St, Port Said",
+                        addressAr: "شارع فلسطين، بجوار الممشى السياحي، بورسعيد",
+                        lat: 31.2612,
+                        lng: 32.3082
                     )
                 ]
             )
