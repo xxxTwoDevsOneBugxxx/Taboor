@@ -9,6 +9,8 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
     public static let shared = UserLocationService()
 
     @Published public var userCoordinate: CLLocationCoordinate2D?
+    @Published public var selectedCustomCoordinate: CLLocationCoordinate2D?
+    @Published public var selectedCustomArea: String?
     @Published public var currentArea: String = "المعادي، القاهرة"
     @Published public var currentAddress: String = "شارع النصر، المعادي"
     @Published public var isAuthorized: Bool = false
@@ -22,8 +24,37 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
     // Default Fallback Coordinate (Dokki / Central Cairo)
     public let defaultCairoCoordinate = CLLocationCoordinate2D(latitude: 30.0380153, longitude: 31.2130705)
 
+    private static let keyLat = "taboor_last_known_lat"
+    private static let keyLng = "taboor_last_known_lng"
+    private static let keyArea = "taboor_last_known_area"
+    private static let keyAddress = "taboor_last_known_address"
+
+    public var isManualOverride: Bool {
+        selectedCustomCoordinate != nil
+    }
+
     public var effectiveCoordinate: CLLocationCoordinate2D {
-        userCoordinate ?? defaultCairoCoordinate
+        selectedCustomCoordinate ?? userCoordinate ?? defaultCairoCoordinate
+    }
+
+    public var effectiveAddress: String {
+        selectedCustomArea ?? currentAddress
+    }
+
+    @MainActor
+    public func setCustomLocation(coordinate: CLLocationCoordinate2D, areaName: String) {
+        self.selectedCustomCoordinate = coordinate
+        self.selectedCustomArea = areaName
+        QueueDataService.shared.syncActiveTicketsWithUserLocation(coordinate)
+    }
+
+    @MainActor
+    public func resetToGps() {
+        self.selectedCustomCoordinate = nil
+        self.selectedCustomArea = nil
+        if isAuthorized {
+            startTracking()
+        }
     }
 
     private override init() {
@@ -31,6 +62,21 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
         locationManager.distanceFilter = 50 // Updates every 50 meters
+
+        // Restore cached location from previous session for instant zero-latency start
+        let def = UserDefaults.standard
+        let savedLat = def.double(forKey: Self.keyLat)
+        let savedLng = def.double(forKey: Self.keyLng)
+        if savedLat != 0 && savedLng != 0 {
+            self.userCoordinate = CLLocationCoordinate2D(latitude: savedLat, longitude: savedLng)
+            if let area = def.string(forKey: Self.keyArea), !area.isEmpty {
+                self.currentArea = area
+            }
+            if let addr = def.string(forKey: Self.keyAddress), !addr.isEmpty {
+                self.currentAddress = addr
+            }
+        }
+
         self.authorizationStatus = locationManager.authorizationStatus
         checkInitialStatus()
     }
@@ -75,6 +121,36 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
 
             if self.isAuthorized {
                 self.startTracking()
+            } else if status == .denied || status == .restricted {
+                self.fetchIpLocationFallback()
+            }
+        }
+    }
+
+    /// IP-based approximate geolocation fallback when GPS permission is denied
+    public func fetchIpLocationFallback() {
+        guard let url = URL(string: "https://ipapi.co/json/") else { return }
+        Task {
+            do {
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 3.5
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard (response as? HTTPURLResponse)?.statusCode == 200 else { return }
+
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let lat = json["latitude"] as? Double,
+                   let lon = json["longitude"] as? Double,
+                   let city = json["city"] as? String {
+                    await MainActor.run {
+                        if self.selectedCustomCoordinate == nil && self.userCoordinate == nil {
+                            self.userCoordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                            self.currentArea = city
+                            self.currentAddress = city
+                        }
+                    }
+                }
+            } catch {
+                // Silently fallback to defaultCairoCoordinate
             }
         }
     }
@@ -85,7 +161,14 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
         Task { @MainActor in
             self.userCoordinate = location.coordinate
             self.isLocating = false
+
+            // Persist coordinates for zero-latency instant startup on subsequent launches
+            let def = UserDefaults.standard
+            def.set(location.coordinate.latitude, forKey: Self.keyLat)
+            def.set(location.coordinate.longitude, forKey: Self.keyLng)
+
             self.reverseGeocode(location: location)
+            QueueDataService.shared.syncActiveTicketsWithUserLocation(location.coordinate)
         }
     }
 
@@ -124,6 +207,10 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
                 } else {
                     self.currentAddress = self.currentArea
                 }
+
+                let def = UserDefaults.standard
+                def.set(self.currentArea, forKey: Self.keyArea)
+                def.set(self.currentAddress, forKey: Self.keyAddress)
             }
         }
     }
@@ -157,5 +244,43 @@ public final class UserLocationService: NSObject, ObservableObject, CLLocationMa
         // approx 2.5 minutes per km + 2 min buffer
         let mins = Int(km * 2.5) + 2
         return max(2, mins)
+    }
+
+    /// Formats driving duration cleanly (e.g. "ساعة و ١٠ دقائق", "ساعتان", "٢٥ دقيقة")
+    public func formattedDriveTime(minutes: Int, isArabic: Bool) -> String {
+        if minutes < 60 {
+            return isArabic ? "\(max(1, minutes)) دقيقة" : "\(max(1, minutes)) min"
+        }
+        let hours = minutes / 60
+        let remainingMins = minutes % 60
+        if isArabic {
+            let hourStr: String
+            if hours == 1 {
+                hourStr = "ساعة"
+            } else if hours == 2 {
+                hourStr = "ساعتان"
+            } else if hours >= 3 && hours <= 10 {
+                hourStr = "\(hours) ساعات"
+            } else {
+                hourStr = "\(hours) ساعة"
+            }
+
+            if remainingMins == 0 {
+                return hourStr
+            } else if remainingMins == 1 {
+                return "\(hourStr) ودقيقة"
+            } else if remainingMins == 2 {
+                return "\(hourStr) ودقيقتان"
+            } else if remainingMins >= 3 && remainingMins <= 10 {
+                return "\(hourStr) و \(remainingMins) دقائق"
+            } else {
+                return "\(hourStr) و \(remainingMins) دقيقة"
+            }
+        } else {
+            if remainingMins == 0 {
+                return "\(hours) hr"
+            }
+            return "\(hours)h \(remainingMins)m"
+        }
     }
 }

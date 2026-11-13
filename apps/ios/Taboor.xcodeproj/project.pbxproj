@@ -39,6 +39,7 @@
 		4029B5F350C1A3BBE7CD06CA /* taboor_glass_chime.caf in Resources */ = {isa = PBXBuildFile; fileRef = B67A496D164ECD9BAFE23282 /* taboor_glass_chime.caf */; };
 		41AF569139061531DC3C2757 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9122281936D622E670564F0 /* RegisterView.swift */; };
 		457D9334F4903CEBCBFD28E1 /* ExpandablePlayerExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FC377EBF829439E2CD8183 /* ExpandablePlayerExample.swift */; };
+		46A47459B70C95F497669B67 /* RouteDirectionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116BF6BAA66CB93EBFC5C78D /* RouteDirectionsService.swift */; };
 		471CB2588CAB79D3799D006E /* SearchExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D91706731F3A451D85484B /* SearchExample.swift */; };
 		4BE1B6EC0C520EDD151F5F4D /* TintedInteractiveExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49D1950D5995F6327CC53BE /* TintedInteractiveExample.swift */; };
 		4CBCF8507356491EEC00FAFA /* SymbolReplacementExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC90E54D42544F99E520684B /* SymbolReplacementExample.swift */; };
@@ -186,6 +187,7 @@
 		0AE10EAD3315CB59C2196522 /* PresentationsExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationsExample.swift; sourceTree = "<group>"; };
 		0B86DF7E31299BD378A0E3FC /* DelayQueueLiveActivityIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DelayQueueLiveActivityIntent.swift; sourceTree = "<group>"; };
 		0BCAF1D4257AA4622826E9EB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		116BF6BAA66CB93EBFC5C78D /* RouteDirectionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDirectionsService.swift; sourceTree = "<group>"; };
 		1339EC52F31A32328053346E /* SpotlightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightService.swift; sourceTree = "<group>"; };
 		13F1D816A8218E2F53E0283F /* AuthWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthWidgets.swift; sourceTree = "<group>"; };
 		15E602282FCE6D7B674754A7 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
@@ -703,6 +705,7 @@
 		755C77788D02094D2D851C3D /* Location */ = {
 			isa = PBXGroup;
 			children = (
+				116BF6BAA66CB93EBFC5C78D /* RouteDirectionsService.swift */,
 				5A3941DEF75E4FCED68F3E06 /* TaboorPrecomputedRoutes.swift */,
 				8579D03DFCE4384F487B8D9E /* UserLocationService.swift */,
 			);
@@ -1050,25 +1053,25 @@
 			path = Domain;
 			sourceTree = "<group>";
 		};
-		"TEMP_862030C1-9626-4429-9B67-05800CAE29E5" /* Views */ = {
+		"TEMP_41073464-A4C5-47F3-8EFC-5337193B0B51" /* Views */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		"TEMP_AB0D485B-B6DC-4AF3-8DB2-9E576792CF31" /* Presentation */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Presentation;
-			sourceTree = "<group>";
-		};
-		"TEMP_BA2979C0-5A70-4F83-83A6-9C472D097475" /* Showcase */ = {
+		"TEMP_88B9E823-F0D5-477F-A8DB-01085A97941D" /* Showcase */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			path = Showcase;
+			sourceTree = "<group>";
+		};
+		"TEMP_FCD2199D-637D-45BE-A088-A8FF7BFFA226" /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Presentation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1279,6 +1282,7 @@
 				41AF569139061531DC3C2757 /* RegisterView.swift in Sources */,
 				67739D71BB6629D8C076A42E /* RegisterWidgets.swift in Sources */,
 				13AE7ABAAD800FF4507FCD82 /* RenderingCompositionExample.swift in Sources */,
+				46A47459B70C95F497669B67 /* RouteDirectionsService.swift in Sources */,
 				A45EC619A7A3598510AB0A5D /* ScrollEdgeDockExample.swift in Sources */,
 				471CB2588CAB79D3799D006E /* SearchExample.swift in Sources */,
 				3D27769B3BA545F087D2948C /* ServiceDTOs.swift in Sources */,

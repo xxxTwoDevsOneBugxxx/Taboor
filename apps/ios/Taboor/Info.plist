@@ -50,6 +50,8 @@
 		<string>fbapi</string>
 		<string>fb-messenger-share-api</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>نحتاج إلى إذن استخدام الكاميرا لمسح رموز QR عند مدخل العيادات والمراكز وحجز دورك في الطابور تلقائياً.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>نحتاج إلى موقعك الجغرافي لعرض أقرب العيادات والخدمات إليك وحساب المسافة ووقت الوصول بدقة.</string>
 	<key>NSSiriUsageDescription</key>
