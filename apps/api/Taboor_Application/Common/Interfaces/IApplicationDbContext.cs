@@ -13,6 +13,7 @@ public interface IApplicationDbContext
     DbSet<RefreshToken> RefreshTokens { get; set; }
     DbSet<OtpCode> OtpCodes { get; set; }
     DbSet<Plan> Plans { get; set; }
+    DbSet<Tenant> Tenants { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

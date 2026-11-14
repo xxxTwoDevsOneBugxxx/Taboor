@@ -11,8 +11,14 @@ This document serves as the single source of truth for architectural standards, 
 ### Monorepo Structure
 * **`apps/api`**: Backend Web API built with **ASP.NET Core (.NET 10)**.
 * **`apps/dashboard`**: Web Management Portal built with **React / TanStack Start / TanStack Router** and Tailwind CSS.
-* **`apps/android`**: Native Android application built with **Kotlin & Jetpack Compose (Material 3)**.
-* **`apps/ios`**: Native iOS application built with **Swift & SwiftUI**.
+* **`apps/mobile`**: Cross-platform Mobile application built with **Flutter (iOS & Android)**.
+
+---
+
+### Core Workflow & Agent Behavior Rules
+* ⚠️ **NO AUTONOMOUS COMMITS**: AI agents must **NEVER** execute `git commit` or `git push`. The developer reviews changes and commits manually via **JetBrains Rider**.
+* 🛡️ **NO CODE REMOVAL BEFORE FULL REPLACEMENT**: Legacy code, services, or files must never be deleted until 100% of their functionality has been verified as implemented and compiling in the new vertical slices.
+* 🚀 **CI/CD DEPLOYMENT**: Production releases are automated via GitHub Actions (`deploy-api.yml`) deploying to RunASP.net IIS via WebDeploy upon merging into the `main` branch.
 
 ---
 
@@ -379,3 +385,16 @@ When creating or refactoring any feature, follow this exact workflow:
    - Expose via thin controller in `Taboor_API/Controllers/` injecting only `ISender`.
    - Dispatch requests via `await sender.Send(...)` and wrap results in `ApiResponse<T>.SuccessResponse(...)`.
 8. **Verification**: Run `dotnet build apps/api/Taboor.slnx` to guarantee 0 warnings/errors.
+
+---
+
+## 9. Feature Roadmap & Current Status
+
+| Business Domain | Status | Architecture Style | Description |
+| :--- | :--- | :--- | :--- |
+| **`Auth`** | ✅ **Completed** | Vertical Slice (VSA) + MediatR | Dual-client auth (Cookies + JWTs), OTP email verify, password reset, Google & Facebook OAuth2. |
+| **`Plans`** | ✅ **Completed** | Vertical Slice (VSA) + MediatR | Subscription plans management (CRUD + Activate/Deactivate) for Platform Admin. |
+| **`Tenants`** | ⏳ **Next Up** | Vertical Slice (VSA) + MediatR | Multi-tenant organization onboard, plan subscription binding, tenant status lifecycle. |
+| **`Branches & Services`**| 📋 **Planned** | Vertical Slice (VSA) + MediatR | Tenant branches, counters, offered services, and employee assignments. |
+| **`Queues & Appointments`**| 📋 **Planned** | Vertical Slice (VSA) + MediatR | Real-time queue ticketing engine, customer call board, appointment bookings. |
+
