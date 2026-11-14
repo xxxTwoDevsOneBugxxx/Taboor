@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.location.LocationListener
+import android.os.Looper
 import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,12 +27,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.taboor.core.localization.LocaleManager
-import com.taboor.core.location.TaboorPrecomputedRoutes
 import com.taboor.core.services.LocationService
+import com.taboor.core.services.RouteResult
 import com.taboor.core.services.RoutingService
 import com.taboor.core.theme.AppColors
 import com.taboor.core.utils.bounceClick
-import kotlinx.coroutines.launch
 import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
@@ -58,11 +59,11 @@ fun TaboorMapView(
     branchLng: Double,
     branchTitle: String,
     branchAddress: String? = null,
-    branchId: String? = null,
     isFullScreen: Boolean = false,
     showControls: Boolean = true,
     showInfoChip: Boolean = true,
     onMapReady: ((MapLibreMap) -> Unit)? = null,
+    onRouteCalculated: ((RouteResult) -> Unit)? = null,
     modifier: Modifier = Modifier
         .fillMaxWidth()
         .height(280.dp)
@@ -70,7 +71,6 @@ fun TaboorMapView(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val isArabic = LocaleManager.isArabic
-    val coroutineScope = rememberCoroutineScope()
 
     var userPosition by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var maplibreMapRef by remember { mutableStateOf<MapLibreMap?>(null) }
@@ -83,7 +83,34 @@ fun TaboorMapView(
     val branchIcon = remember(context) { createBranchMarkerIcon(context) }
     val userIcon = remember(context) { createUserMarkerIcon(context) }
 
-    // Resolve user location once
+    // Keep the current location moving with the user so each route starts from the real GPS position.
+    DisposableEffect(context) {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? android.location.LocationManager
+        val listener = LocationListener { location ->
+            val next = location.latitude to location.longitude
+            val previous = userPosition
+            if (previous == null || LocationService.distanceKm(previous.first, previous.second, next.first, next.second) >= 0.08) {
+                userPosition = next
+            }
+        }
+        if (LocationService.hasPermission(context) && locationManager != null) {
+            try {
+                listOf(
+                    android.location.LocationManager.NETWORK_PROVIDER,
+                    android.location.LocationManager.GPS_PROVIDER
+                ).forEach { provider ->
+                    if (locationManager.isProviderEnabled(provider)) {
+                        locationManager.requestLocationUpdates(provider, 15_000L, 30f, listener, Looper.getMainLooper())
+                    }
+                }
+            } catch (_: SecurityException) {
+                // Permission can be revoked while the map is open.
+            }
+        }
+        onDispose { locationManager?.removeUpdates(listener) }
+    }
+
+    // Seed from the last known position immediately while waiting for a fresh GPS fix.
     LaunchedEffect(Unit) {
         val pos = LocationService.getCurrentPosition(context)
         userPosition = pos
@@ -137,126 +164,46 @@ fun TaboorMapView(
     }
 
     // Update Annotations & Route smoothly when ready (WITHOUT reloading style!)
-    LaunchedEffect(isStyleLoaded, branchLat, branchLng, userPosition, branchId) {
+    LaunchedEffect(isStyleLoaded, branchLat, branchLng, userPosition) {
         if (!isStyleLoaded) return@LaunchedEffect
         val map = maplibreMapRef ?: return@LaunchedEffect
 
         map.clear()
+        val destination = LatLng(branchLat, branchLng)
+        map.addMarker(
+            MarkerOptions()
+                .position(destination)
+                .title(branchTitle)
+                .snippet(branchAddress ?: "")
+                .icon(branchIcon)
+        )
 
-        // Check for authentic precomputed street navigation route (1:1 with iOS)
-        val targetBranchId = branchId ?: TaboorPrecomputedRoutes.findMatchingBranchId(branchLat, branchLng)
-        val precomputedPoints = TaboorPrecomputedRoutes.getRoute(targetBranchId)
+        val userPos = userPosition ?: Pair(LocationService.DEFAULT_LAT, LocationService.DEFAULT_LNG)
 
-        if (precomputedPoints != null && precomputedPoints.isNotEmpty()) {
-            val userStartCoord = precomputedPoints.first()
-            val branchEndCoord = precomputedPoints.last()
+        val user = LatLng(userPos.first, userPos.second)
+        map.addMarker(
+            MarkerOptions()
+                .position(user)
+                .title(if (isArabic) "موقعك الحالي" else "Your Location")
+                .icon(userIcon)
+        )
 
-            // Destination Branch Pin placed exactly at the end of the route
-            map.addMarker(
-                MarkerOptions()
-                    .position(branchEndCoord)
-                    .title(branchTitle)
-                    .snippet(branchAddress ?: "")
-                    .icon(branchIcon)
-            )
+        val route = RoutingService.getRoute(userPos.first, userPos.second, branchLat, branchLng)
+        if (route == null) return@LaunchedEffect
+        onRouteCalculated?.invoke(route)
+        val points = route.points.map { LatLng(it.first, it.second) }.ifEmpty { listOf(user, destination) }
+        map.addPolyline(
+            PolylineOptions().addAll(points)
+                .color(android.graphics.Color.argb(80, 11, 76, 86)).width(7.5f)
+        )
+        map.addPolyline(
+            PolylineOptions().addAll(points)
+                .color(android.graphics.Color.parseColor("#159F99")).width(4.5f)
+        )
 
-            // User starting marker on route
-            map.addMarker(
-                MarkerOptions()
-                    .position(userStartCoord)
-                    .title(if (isArabic) "موقعك الحالي" else "Your Location")
-                    .icon(userIcon)
-            )
-
-            // Double-stroke high contrast navigation polyline (1:1 with iOS Taboor Teal)
-            map.addPolyline(
-                PolylineOptions()
-                    .addAll(precomputedPoints)
-                    .color(android.graphics.Color.argb(80, 11, 76, 86))
-                    .width(7.5f)
-            )
-            map.addPolyline(
-                PolylineOptions()
-                    .addAll(precomputedPoints)
-                    .color(android.graphics.Color.parseColor("#159F99"))
-                    .width(4.5f)
-            )
-
-            // Frame route smoothly
-            val boundsBuilder = LatLngBounds.Builder()
-                .include(branchEndCoord)
-                .include(userStartCoord)
-            for (pt in precomputedPoints) {
-                boundsBuilder.include(pt)
-            }
-            val bounds = boundsBuilder.build()
-
-            map.animateCamera(
-                CameraUpdateFactory.newLatLngBounds(bounds, 130),
-                800
-            )
-        } else {
-            val branchLatLng = LatLng(branchLat, branchLng)
-            map.addMarker(
-                MarkerOptions()
-                    .position(branchLatLng)
-                    .title(branchTitle)
-                    .snippet(branchAddress ?: "")
-                    .icon(branchIcon)
-            )
-            val userPos = userPosition
-            if (userPos != null) {
-                val userLatLng = LatLng(userPos.first, userPos.second)
-                map.addMarker(
-                    MarkerOptions()
-                        .position(userLatLng)
-                        .title(if (isArabic) "موقعك الحالي" else "Your Location")
-                        .icon(userIcon)
-                )
-
-                // Async route calculation fallback
-                coroutineScope.launch {
-                    val routeResult = RoutingService.getRoute(
-                        startLat = userPos.first,
-                        startLng = userPos.second,
-                        endLat = branchLat,
-                        endLng = branchLng
-                    )
-
-                    val points = routeResult?.points?.map { LatLng(it.first, it.second) }
-                        ?: listOf(userLatLng, branchLatLng)
-
-                    map.addPolyline(
-                        PolylineOptions()
-                            .addAll(points)
-                            .color(android.graphics.Color.argb(80, 11, 76, 86))
-                            .width(7.5f)
-                    )
-                    map.addPolyline(
-                        PolylineOptions()
-                            .addAll(points)
-                            .color(android.graphics.Color.parseColor("#159F99"))
-                            .width(4.5f)
-                    )
-
-                    val bounds = LatLngBounds.Builder()
-                        .include(branchLatLng)
-                        .include(userLatLng)
-                        .build()
-
-                    map.animateCamera(
-                        CameraUpdateFactory.newLatLngBounds(bounds, 130),
-                        800
-                    )
-                }
-            } else {
-                val cameraPos = CameraPosition.Builder()
-                    .target(branchLatLng)
-                    .zoom(15.5)
-                    .build()
-                map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPos), 600)
-            }
-        }
+        val boundsBuilder = LatLngBounds.Builder().include(destination).include(user)
+        points.forEach(boundsBuilder::include)
+        map.animateCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 130), 800)
     }
 
     val containerModifier = if (isFullScreen || !showControls) {

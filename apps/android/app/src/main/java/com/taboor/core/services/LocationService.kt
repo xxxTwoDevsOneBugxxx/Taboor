@@ -28,10 +28,14 @@ import kotlin.math.*
 object LocationService {
 
     private const val TAG = "LocationService"
+    private const val LOCATION_PREFS = "taboor_user_location"
+    private const val KEY_CUSTOM_LAT = "custom_lat"
+    private const val KEY_CUSTOM_LNG = "custom_lng"
+    private const val KEY_CUSTOM_LABEL = "custom_label"
 
     // Default Cairo coordinates for fallback when location is disabled
-    const val DEFAULT_LAT = 30.0444
-    const val DEFAULT_LNG = 31.2357
+    const val DEFAULT_LAT = 30.0380153
+    const val DEFAULT_LNG = 31.2130705
 
     /**
      * Checks if location permission has been granted.
@@ -84,6 +88,35 @@ object LocationService {
 
         return bestLocation?.let { Pair(it.latitude, it.longitude) }
     }
+
+    /** Uses a manually selected area first, then device location, then iOS's Cairo fallback. */
+    fun getEffectivePosition(context: Context): Pair<Double, Double> {
+        val preferences = context.getSharedPreferences(LOCATION_PREFS, Context.MODE_PRIVATE)
+        val customLat = preferences.getString(KEY_CUSTOM_LAT, null)?.toDoubleOrNull()
+        val customLng = preferences.getString(KEY_CUSTOM_LNG, null)?.toDoubleOrNull()
+        if (customLat != null && customLng != null) return customLat to customLng
+        return getCurrentPosition(context) ?: (DEFAULT_LAT to DEFAULT_LNG)
+    }
+
+    fun setCustomLocation(context: Context, label: String, latitude: Double, longitude: Double) {
+        context.getSharedPreferences(LOCATION_PREFS, Context.MODE_PRIVATE).edit()
+            .putString(KEY_CUSTOM_LAT, latitude.toString())
+            .putString(KEY_CUSTOM_LNG, longitude.toString())
+            .putString(KEY_CUSTOM_LABEL, label)
+            .apply()
+    }
+
+    fun clearCustomLocation(context: Context) {
+        context.getSharedPreferences(LOCATION_PREFS, Context.MODE_PRIVATE).edit()
+            .remove(KEY_CUSTOM_LAT)
+            .remove(KEY_CUSTOM_LNG)
+            .remove(KEY_CUSTOM_LABEL)
+            .apply()
+    }
+
+    fun getCustomLocationLabel(context: Context): String? = context
+        .getSharedPreferences(LOCATION_PREFS, Context.MODE_PRIVATE)
+        .getString(KEY_CUSTOM_LABEL, null)
 
     /**
      * Reverse-geocodes coordinates to a clean area or city name (e.g. "مدينة نصر" or "Cairo").
