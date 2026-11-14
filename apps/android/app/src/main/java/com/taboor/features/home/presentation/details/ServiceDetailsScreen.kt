@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,6 +39,7 @@ import com.taboor.core.components.TaboorMapView
 import com.taboor.core.localization.LocalAppStrings
 import com.taboor.core.localization.LocaleManager
 import com.taboor.core.location.TaboorPrecomputedRoutes
+import com.taboor.core.services.LocationService
 import com.taboor.core.navigation.NavigationAppBottomSheet
 import com.taboor.core.theme.AppColors
 import com.taboor.core.theme.Tajawal
@@ -46,6 +48,8 @@ import com.taboor.features.home.data.repository.ServiceRepository
 import com.taboor.features.home.domain.model.AppointmentSlot
 import com.taboor.features.home.domain.model.ServiceBranch
 import com.taboor.features.home.domain.model.ServicePlace
+import com.taboor.features.home.domain.service.ServiceCoordinates
+import com.taboor.features.home.domain.service.ServiceDiscovery
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -81,21 +85,62 @@ fun ServiceDetailsScreen(
     BackHandler(onBack = onNavigateBack)
 
     val favoriteIds by ServiceRepository.favoritePlaceIds.collectAsState()
+    val activeTickets by ServiceRepository.activeTickets.collectAsState()
     val isFav = favoriteIds.contains(place.id)
+    val selectedLocation by ServiceRepository.selectedLocation.collectAsState()
+    val userCoordinate = remember(selectedLocation) {
+        LocationService.getEffectivePosition(context).let { (lat, lng) -> ServiceCoordinates(lat, lng) }
+    }
 
     var showNavigationSheet by remember { mutableStateOf(false) }
-    var bookingMode by remember { mutableStateOf(BookingMode.LIVE_QUEUE) }
-    var selectedBranchIndex by remember {
+    var showAlreadyBookedAlert by remember { mutableStateOf(false) }
+    var showMaxTicketsAlert by remember { mutableStateOf(false) }
+    var bookingMode by rememberSaveable { mutableStateOf(BookingMode.LIVE_QUEUE) }
+    var selectedBranchIndex by rememberSaveable(place.id) {
         mutableIntStateOf(
-            place.branches.indexOfFirst { it.isOpen }.takeIf { it >= 0 } ?: 0
+            ServiceDiscovery.nearestBranch(place, userCoordinate)?.let(place.branches::indexOf)?.takeIf { it >= 0 } ?: 0
         )
     }
-    var selectedSlotIndex by remember { mutableIntStateOf(1) } // Default 11:30 AM
-    var selectedDateDay by remember { mutableIntStateOf(0) } // 0: اليوم, 1: غداً, 2: بعد غد
+    var selectedSlotIndex by rememberSaveable { mutableIntStateOf(3) }
+    var selectedDateDay by rememberSaveable { mutableIntStateOf(0) } // 0: اليوم, 1: غداً, 2: بعد غد
     var isJoining by remember { mutableStateOf(false) }
 
     val selectedBranch = place.branches.getOrElse(selectedBranchIndex) { place.branches.first() }
-    val slots = ServiceRepository.availableAppointmentSlots
+    val hasExistingTicket = activeTickets.any { it.isActive && it.placeId == place.id }
+    val slots = remember(selectedDateDay) {
+        when (selectedDateDay) {
+            0 -> listOf(
+                AppointmentSlot("today_1", "03:30 م", "03:30 PM", isBooked = true),
+                AppointmentSlot("today_2", "04:00 م", "04:00 PM", isBooked = true),
+                AppointmentSlot("today_3", "04:30 م", "04:30 PM", isBooked = true),
+                AppointmentSlot("today_4", "05:00 م", "05:00 PM", isRecommended = true),
+                AppointmentSlot("today_5", "05:30 م", "05:30 PM"),
+                AppointmentSlot("today_6", "06:00 م", "06:00 PM"),
+                AppointmentSlot("today_7", "06:30 م", "06:30 PM"),
+                AppointmentSlot("today_8", "07:00 م", "07:00 PM")
+            )
+            1 -> listOf(
+                AppointmentSlot("tomorrow_1", "11:00 ص", "11:00 AM", isRecommended = true),
+                AppointmentSlot("tomorrow_2", "12:00 م", "12:00 PM", isBooked = true),
+                AppointmentSlot("tomorrow_3", "01:30 م", "01:30 PM"),
+                AppointmentSlot("tomorrow_4", "03:00 م", "03:00 PM", isBooked = true),
+                AppointmentSlot("tomorrow_5", "04:00 م", "04:00 PM"),
+                AppointmentSlot("tomorrow_6", "05:00 م", "05:00 PM"),
+                AppointmentSlot("tomorrow_7", "06:30 م", "06:30 PM"),
+                AppointmentSlot("tomorrow_8", "08:00 م", "08:00 PM")
+            )
+            else -> listOf(
+                AppointmentSlot("day_after_1", "10:30 ص", "10:30 AM", isRecommended = true),
+                AppointmentSlot("day_after_2", "11:30 ص", "11:30 AM"),
+                AppointmentSlot("day_after_3", "01:00 م", "01:00 PM"),
+                AppointmentSlot("day_after_4", "02:30 م", "02:30 PM"),
+                AppointmentSlot("day_after_5", "04:00 م", "04:00 PM"),
+                AppointmentSlot("day_after_6", "05:30 م", "05:30 PM"),
+                AppointmentSlot("day_after_7", "07:00 م", "07:00 PM"),
+                AppointmentSlot("day_after_8", "08:30 م", "08:30 PM")
+            )
+        }
+    }
     val selectedSlot = slots.getOrElse(selectedSlotIndex) { slots.first() }
 
     val estMinutes = remember(selectedBranch) {
@@ -143,22 +188,91 @@ fun ServiceDetailsScreen(
         },
         containerColor = M3Bg,
         bottomBar = {
-            // Material 3 Clean Bottom Bar
+            // Compact booking summary and primary action, matching the iOS booking bar.
             Surface(
-                color = M3Surface,
-                shadowElevation = 8.dp,
+                color = Color(0xFFFAF8F3),
+                shadowElevation = 4.dp,
                 border = androidx.compose.foundation.BorderStroke(1.dp, M3Border),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    Column(
+                        modifier = Modifier.weight(0.78f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            text = if (bookingMode == BookingMode.SCHEDULED) {
+                                if (isArabic) "الموعد المختار" else "Selected slot"
+                            } else {
+                                if (isArabic) "الانتظار المتوقع" else "Expected wait"
+                            },
+                            fontFamily = Tajawal,
+                            fontSize = 11.sp,
+                            color = M3TextSecondary,
+                            maxLines = 1
+                        )
+                        if (bookingMode == BookingMode.SCHEDULED) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = when (selectedDateDay) {
+                                        0 -> if (isArabic) "اليوم" else "Today"
+                                        1 -> if (isArabic) "غداً" else "Tomorrow"
+                                        else -> if (isArabic) "بعد غد" else "In 2 days"
+                                    },
+                                    fontFamily = Tajawal,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.Warning,
+                                    maxLines = 1
+                                )
+                                Text(" • ", color = M3TextSecondary, fontSize = 12.sp)
+                                Text(
+                                    text = selectedSlot.localizedTime(isArabic),
+                                    fontFamily = Tajawal,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = AppColors.Teal,
+                                    maxLines = 1
+                                )
+                            }
+                        } else {
+                            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "~${selectedBranch.estWaitMinutes}",
+                                    fontSize = 21.sp,
+                                    lineHeight = 23.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = AppColors.Teal
+                                )
+                                Text(
+                                    text = if (isArabic) "دقيقة" else "mins",
+                                    fontFamily = Tajawal,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = M3TextPrimary
+                                )
+                            }
+                        }
+                    }
                     Button(
                         onClick = {
                             if (!isJoining) {
+                                if (activeTickets.any { it.isActive && it.placeId == place.id }) {
+                                    showAlreadyBookedAlert = true
+                                    return@Button
+                                }
+                                if (activeTickets.count { it.isActive } >= 3) {
+                                    showMaxTicketsAlert = true
+                                    return@Button
+                                }
+                                if (bookingMode == BookingMode.SCHEDULED && selectedSlot.isBooked) return@Button
                                 isJoining = true
                                 coroutineScope.launch {
                                     delay(400)
@@ -187,14 +301,14 @@ fun ServiceDetailsScreen(
                             }
                         },
                         enabled = selectedBranch.isOpen && !isJoining,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = M3Primary,
                             disabledContainerColor = Color(0xFFD1D5DB)
                         ),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
+                            .weight(1.22f)
+                            .height(50.dp)
                             .bounceClick(scaleDown = 0.98f)
                     ) {
                         if (isJoining) {
@@ -209,19 +323,23 @@ fun ServiceDetailsScreen(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = if (bookingMode == BookingMode.LIVE_QUEUE) Icons.Rounded.ConfirmationNumber else Icons.Rounded.CalendarToday,
+                                    imageVector = when {
+                                        hasExistingTicket -> Icons.Rounded.CheckCircle
+                                        bookingMode == BookingMode.LIVE_QUEUE -> Icons.Rounded.ConfirmationNumber
+                                        else -> Icons.Rounded.CalendarToday
+                                    },
                                     contentDescription = null,
                                     modifier = Modifier.size(19.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = if (selectedBranch.isOpen) {
-                                        if (bookingMode == BookingMode.LIVE_QUEUE) {
-                                            if (isArabic) "انضم إلى الطابور (${selectedBranch.localizedLabel(true)})"
-                                            else "Join Queue (${selectedBranch.localizedLabel(false)})"
+                                        if (hasExistingTicket) {
+                                            if (isArabic) "عرض تذكرتك الحالية" else "View active ticket"
+                                        } else if (bookingMode == BookingMode.LIVE_QUEUE) {
+                                            if (isArabic) "انضم للطابور الآن" else "Join queue now"
                                         } else {
-                                            if (isArabic) "تأكيد حجز الموعد (${selectedSlot.localizedTime(true)})"
-                                            else "Confirm Appointment (${selectedSlot.localizedTime(false)})"
+                                            if (isArabic) "تأكيد حجز الموعد" else "Confirm appointment"
                                         }
                                     } else {
                                         strings.serviceClosed
@@ -259,7 +377,6 @@ fun ServiceDetailsScreen(
                         branchLng = selectedBranch.lng ?: 31.2357,
                         branchTitle = "${place.localizedName(isArabic)} - ${selectedBranch.localizedLabel(isArabic)}",
                         branchAddress = selectedBranch.localizedAddress(isArabic),
-                        branchId = selectedBranch.id,
                         isFullScreen = false,
                         showControls = false,
                         modifier = Modifier.fillMaxSize()
@@ -934,6 +1051,7 @@ fun ServiceDetailsScreen(
                                                 .bounceClick {
                                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                     selectedDateDay = index
+                                                    selectedSlotIndex = if (index == 0) 3 else 0
                                                 },
                                             shape = RoundedCornerShape(10.dp),
                                             color = if (isDaySelected) M3PrimaryContainer else Color(0xFFF3F4F6),
@@ -978,25 +1096,44 @@ fun ServiceDetailsScreen(
                                                     modifier = Modifier
                                                         .weight(1f)
                                                         .bounceClick {
+                                                            if (slot.isBooked) return@bounceClick
                                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                             selectedSlotIndex = slots.indexOf(slot)
                                                         },
                                                     shape = RoundedCornerShape(10.dp),
-                                                    color = if (isSlotSelected) M3PrimaryContainer else Color(0xFFF3F4F6),
+                                                    color = when { slot.isBooked -> Color(0xFFE5E7EB); isSlotSelected -> M3PrimaryContainer; else -> Color(0xFFF3F4F6) },
                                                     border = androidx.compose.foundation.BorderStroke(
                                                         1.5.dp,
                                                         if (isSlotSelected) M3Primary else M3Border
                                                     )
                                                 ) {
-                                                    Text(
-                                                        text = slot.localizedTime(isArabic),
-                                                        fontFamily = Tajawal,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = if (isSlotSelected) FontWeight.Bold else FontWeight.Medium,
-                                                        color = if (isSlotSelected) M3PrimaryDark else M3TextPrimary,
-                                                        textAlign = TextAlign.Center,
-                                                        modifier = Modifier.padding(vertical = 8.dp)
-                                                    )
+                                                    Column(
+                                                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = slot.localizedTime(isArabic),
+                                                            fontFamily = Tajawal,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = if (isSlotSelected || slot.isRecommended) FontWeight.Bold else FontWeight.Medium,
+                                                            color = when { slot.isBooked -> M3TextTertiary; isSlotSelected -> M3PrimaryDark; slot.isRecommended -> AppColors.Teal; else -> M3TextPrimary },
+                                                            textAlign = TextAlign.Center
+                                                        )
+                                                        if (slot.isBooked || slot.isRecommended) {
+                                                            Text(
+                                                                text = when {
+                                                                    slot.isBooked -> if (isArabic) "مكتمل" else "Full"
+                                                                    isArabic -> "أقرب متاح ⭐"
+                                                                    else -> "Nearest ⭐"
+                                                                },
+                                                                fontFamily = Tajawal,
+                                                                fontSize = 8.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = if (slot.isBooked) M3TextTertiary else AppColors.Teal
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -1071,6 +1208,42 @@ fun ServiceDetailsScreen(
                 }
             }
         }
+    }
+
+    if (showAlreadyBookedAlert) {
+        AlertDialog(
+            onDismissRequest = { showAlreadyBookedAlert = false },
+            title = { Text(if (isArabic) "لديك تذكرة نشطة بالفعل" else "Active ticket already exists", fontFamily = Tajawal) },
+            text = { Text(if (isArabic) "أنت مسجل حالياً في طابور هذا المكان. لا يمكن حجز أكثر من تذكرة نشطة لنفس المكان." else "You already have an active ticket at this place. You can only keep one active ticket per place.", fontFamily = Tajawal) },
+            confirmButton = {
+                TextButton(onClick = { showAlreadyBookedAlert = false; onJoinedQueue() }) {
+                    Text(if (isArabic) "عرض تذاكري" else "View my tickets", fontFamily = Tajawal)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAlreadyBookedAlert = false }) {
+                    Text(if (isArabic) "حسناً" else "OK", fontFamily = Tajawal)
+                }
+            }
+        )
+    }
+
+    if (showMaxTicketsAlert) {
+        AlertDialog(
+            onDismissRequest = { showMaxTicketsAlert = false },
+            title = { Text(if (isArabic) "وصلت للحد الأقصى من الطوابير" else "Maximum active tickets", fontFamily = Tajawal) },
+            text = { Text(if (isArabic) "لديك ٣ طوابير أو مواعيد نشطة. أكمل أو ألغِ إحدى التذاكر قبل إضافة حجز جديد." else "You have 3 active queues or appointments. Complete or cancel one before booking again.", fontFamily = Tajawal) },
+            confirmButton = {
+                TextButton(onClick = { showMaxTicketsAlert = false; onJoinedQueue() }) {
+                    Text(if (isArabic) "إدارة تذاكري" else "Manage tickets", fontFamily = Tajawal)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMaxTicketsAlert = false }) {
+                    Text(if (isArabic) "حسناً" else "OK", fontFamily = Tajawal)
+                }
+            }
+        )
     }
 
     if (showNavigationSheet) {

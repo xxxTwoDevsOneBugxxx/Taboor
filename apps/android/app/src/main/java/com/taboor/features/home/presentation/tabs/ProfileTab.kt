@@ -11,8 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -152,125 +152,78 @@ fun ProfileTab(
             }
 
             // ==========================================
-            // 2. User Overview Card (With verified seal & edit pill)
+            // 2. User overview
             // ==========================================
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .bounceClick(scaleDown = 0.985f) { onNavigateToEditProfile() },
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(18.dp),
                 color = AppColors.Paper,
-                shadowElevation = 1.dp
+                border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.CardBorder),
+                shadowElevation = 0.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Avatar Squircle with gradient
                     Box(
                         modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(AppColors.Teal, AppColors.DeepTeal)
-                                )
-                            )
-                            .shadow(6.dp, RoundedCornerShape(16.dp), ambientColor = AppColors.Teal.copy(alpha = 0.25f)),
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(AppColors.SoftTeal),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = userInitials,
                             fontFamily = Tajawal,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color.White
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.Teal
                         )
                     }
 
-                    // User Info
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = nameValue,
-                                fontFamily = Tajawal,
-                                fontSize = 16.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.TextPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Icon(
-                                imageVector = Icons.Rounded.Verified,
-                                contentDescription = "Verified",
-                                tint = AppColors.Teal,
-                                modifier = Modifier.size(15.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            text = nameValue,
+                            fontFamily = Tajawal,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         Text(
                             text = emailValue,
-                            fontFamily = Tajawal,
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontFamily = Inter,
+                            fontSize = 12.sp,
                             color = AppColors.TextSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-
-                        Spacer(modifier = Modifier.height(3.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Phone,
-                                contentDescription = null,
-                                tint = AppColors.Teal,
-                                modifier = Modifier.size(12.dp)
-                            )
+                        if (phoneValue.isNotBlank()) {
                             Text(
                                 text = phoneValue,
                                 fontFamily = Inter,
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = AppColors.TextSecondary
+                                color = AppColors.TextSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-
-                    // Edit Action Pill
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = AppColors.SoftTeal
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = if (isArabic) "تعديل" else "Edit",
-                                fontFamily = Tajawal,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = AppColors.Teal
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = AppColors.Teal,
-                                modifier = Modifier.size(12.dp)
-                            )
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = if (isArabic) "تعديل الحساب" else "Edit account",
+                        tint = AppColors.TextSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
 

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taboor.core.localization.LocalAppStrings
 import com.taboor.core.localization.LocaleManager
+import com.taboor.core.components.TaboorConfirmModal
 import com.taboor.core.navigation.NavigationAppBottomSheet
 import com.taboor.core.theme.AppColors
 import com.taboor.core.theme.Tajawal
@@ -71,6 +72,8 @@ fun QueueTab(
     val strings = LocalAppStrings.current
     val isArabic = LocaleManager.isArabic
     val activeTicket by ServiceRepository.activeTicket.collectAsState()
+    val activeTickets by ServiceRepository.activeTickets.collectAsState()
+    val selectedTicketIndex by ServiceRepository.selectedTicketIndex.collectAsState()
     val historyItems by ServiceRepository.history.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -254,6 +257,56 @@ fun QueueTab(
                 // ==========================================
                 val ticket = activeTicket
                 if (ticket != null) {
+                    if (activeTickets.size > 1) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            activeTickets.forEachIndexed { index, queuedTicket ->
+                                val selected = selectedTicketIndex == index
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .bounceClick()
+                                        .clickable {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            ServiceRepository.selectActiveTicket(index)
+                                        },
+                                    shape = RoundedCornerShape(50),
+                                    color = if (selected) AppColors.Ink else AppColors.Paper,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (selected) AppColors.Ink else AppColors.CardBorder
+                                    ),
+                                    shadowElevation = if (selected) 2.dp else 0.dp
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(7.dp)
+                                                .clip(CircleShape)
+                                                .background(if (queuedTicket.bookingType == TicketBookingType.SCHEDULED) AppColors.Amber else AppColors.AccentGreen)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "${queuedTicket.localizedServiceName(isArabic).split(" ").take(2).joinToString(" ")} (#${queuedTicket.ticketNumber})",
+                                            fontFamily = Tajawal,
+                                            fontSize = 11.5.sp,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (selected) Color.White else AppColors.TextPrimary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Apple Wallet Style Virtual Ticket Card
                     WalletTicketCard(
                         ticket = ticket,
@@ -312,69 +365,35 @@ fun QueueTab(
         }
     }
 
-    if (showCancelDialog) {
-        val ticket = activeTicket
-        val isScheduled = ticket?.bookingType == TicketBookingType.SCHEDULED
-        AlertDialog(
-            onDismissRequest = { showCancelDialog = false },
-            title = {
-                Text(
-                    text = if (isScheduled) {
-                        if (isArabic) "إلغاء حجز الموعد" else "Cancel Appointment"
-                    } else {
-                        if (isArabic) "إلغاء التذكرة" else "Cancel Ticket"
-                    },
-                    fontFamily = Tajawal,
-                    fontWeight = FontWeight.Bold
+    val isScheduledCancellation = activeTicket?.bookingType == TicketBookingType.SCHEDULED
+    TaboorConfirmModal(
+        isOpen = showCancelDialog,
+        onDismiss = { showCancelDialog = false },
+        onConfirm = {
+            showCancelDialog = false
+            ServiceRepository.cancelActiveTicket()
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(
+                    if (isArabic) "تم إلغاء التذكرة بنجاح" else "Ticket cancelled"
                 )
-            },
-            text = {
-                Text(
-                    text = if (isScheduled) {
-                        if (isArabic) "هل أنت متأكد من رغبتك في إلغاء حجز موعدك؟ سيتم إتاحة الموعد لمستخدم آخر."
-                        else "Are you sure you want to cancel your scheduled appointment? The slot will be released."
-                    } else {
-                        if (isArabic) "هل أنت متأكد من رغبتك في إلغاء دورك الحالي؟ ستفقد مكانك في الطابور."
-                        else "Are you sure you want to cancel your ticket? You will lose your spot in line."
-                    },
-                    fontFamily = Tajawal,
-                    color = AppColors.TextSecondary,
-                    lineHeight = 20.sp
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showCancelDialog = false
-                        ServiceRepository.cancelActiveTicket()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(
-                                if (isArabic) "تم إلغاء التذكرة بنجاح" else "Ticket cancelled"
-                            )
-                        }
-                    }
-                ) {
-                    Text(
-                        text = if (isArabic) "نعم، إلغاء" else "Yes, Cancel",
-                        color = AppColors.Error,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = Tajawal
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) {
-                    Text(
-                        text = if (isArabic) "الاحتفاظ بدوري" else "Keep My Spot",
-                        color = AppColors.TextSecondary,
-                        fontFamily = Tajawal
-                    )
-                }
-            },
-            containerColor = AppColors.Paper,
-            shape = RoundedCornerShape(24.dp)
-        )
-    }
+            }
+        },
+        title = if (isScheduledCancellation) {
+            if (isArabic) "إلغاء حجز الموعد" else "Cancel Appointment"
+        } else {
+            if (isArabic) "إلغاء التذكرة" else "Cancel Ticket"
+        },
+        message = if (isScheduledCancellation) {
+            if (isArabic) "هل أنت متأكد من رغبتك في إلغاء حجز موعدك؟ سيتم إتاحة الموعد لمستخدم آخر."
+            else "Are you sure you want to cancel your scheduled appointment? The slot will be released."
+        } else {
+            if (isArabic) "هل أنت متأكد من رغبتك في إلغاء دورك الحالي؟ ستفقد مكانك في الطابور."
+            else "Are you sure you want to cancel your ticket? You will lose your spot in line."
+        },
+        confirmText = if (isArabic) "نعم، إلغاء" else "Yes, Cancel",
+        cancelText = if (isArabic) "الاحتفاظ بدوري" else "Keep My Spot",
+        isDestructive = true
+    )
 
     if (showNavigationSheet && activeTicket != null) {
         val ticket = activeTicket!!

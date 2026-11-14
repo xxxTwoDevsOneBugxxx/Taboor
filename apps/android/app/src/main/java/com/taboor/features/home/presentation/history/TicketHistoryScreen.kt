@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +45,7 @@ fun TicketHistoryScreen(
 ) {
     val isArabic = LocaleManager.isArabic
     val historyItems by ServiceRepository.history.collectAsState()
-    var selectedFilter by remember { mutableStateOf(HistoryFilter.ALL) }
+    var selectedFilter by rememberSaveable { mutableStateOf(HistoryFilter.ALL) }
 
     val filteredList = remember(historyItems, selectedFilter) {
         when (selectedFilter) {

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.taboor.core.localization.LocalAppStrings
 import com.taboor.core.localization.LocaleManager
 import com.taboor.core.theme.AppColors
+import com.taboor.core.components.TaboorConfirmModal
 import com.taboor.core.theme.Tajawal
 import com.taboor.core.utils.bounceClick
 import com.taboor.core.utils.pulseEffect
@@ -57,6 +58,12 @@ fun AlertsTab() {
 
     var filterIndex by remember { mutableIntStateOf(0) } // 0: All, 1: Unread, 2: Queue Status, 3: Updates
     var showClearConfirm by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (alerts.isEmpty()) {
+            ServiceRepository.resetAlerts()
+        }
+    }
 
     val unreadCount = remember(alerts) { alerts.count { !it.read } }
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -150,57 +157,25 @@ fun AlertsTab() {
     }
 
     // ==========================================
-    // Clear All Confirmation Dialog
+    // Unified Clear All Confirmation Modal
     // ==========================================
-    if (showClearConfirm) {
-        AlertDialog(
-            onDismissRequest = { showClearConfirm = false },
-            title = {
-                Text(
-                    text = if (isArabic) "مسح جميع التنبيهات" else "Clear All Alerts",
-                    fontFamily = Tajawal,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = if (isArabic)
-                        "هل أنت متأكد من مسح جميع التنبيهات؟ لن تتمكن من استعادتها."
-                    else
-                        "Are you sure you want to clear all alerts? This cannot be undone.",
-                    fontFamily = Tajawal,
-                    color = AppColors.TextSecondary,
-                    lineHeight = 20.sp
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showClearConfirm = false
-                        ServiceRepository.clearAllAlerts()
-                    }
-                ) {
-                    Text(
-                        text = if (isArabic) "مسح الكل" else "Clear All",
-                        color = AppColors.Error,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = Tajawal
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) {
-                    Text(
-                        text = if (isArabic) "إلغاء" else "Cancel",
-                        color = AppColors.TextSecondary,
-                        fontFamily = Tajawal
-                    )
-                }
-            },
-            containerColor = AppColors.Paper,
-            shape = RoundedCornerShape(24.dp)
-        )
-    }
+    TaboorConfirmModal(
+        isOpen = showClearConfirm,
+        onDismiss = { showClearConfirm = false },
+        onConfirm = {
+            showClearConfirm = false
+            ServiceRepository.clearAllAlerts()
+        },
+        title = if (isArabic) "مسح جميع التنبيهات؟" else "Clear All Alerts?",
+        message = if (isArabic)
+            "هل أنت متأكد من رغبتك في مسح كافة التنبيهات؟ سيتم حذف جميع الإشعارات السابقة ولن تتمكن من استرجاعها."
+        else
+            "Are you sure you want to clear all notifications? All previous alerts will be permanently removed.",
+        confirmText = if (isArabic) "مسح جميع التنبيهات" else "Clear All Alerts",
+        cancelText = if (isArabic) "تراجع" else "Cancel",
+        icon = Icons.Rounded.DeleteSweep,
+        isDestructive = true
+    )
 }
 
 // ==========================================
@@ -291,53 +266,60 @@ private fun AlertsTopHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Dynamic Action Button (Mark Read OR Clear Trash)
-        if (unreadCount > 0) {
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = AppColors.Paper,
-                shadowElevation = 1.dp,
-                modifier = Modifier
-                    .border(1.dp, AppColors.Teal.copy(alpha = 0.25f), RoundedCornerShape(50))
-                    .bounceClick { onMarkAllRead() }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+        // Actions: Mark Read & Clear All Trash
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (unreadCount > 0) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = AppColors.Paper,
+                    shadowElevation = 1.dp,
+                    modifier = Modifier
+                        .border(1.dp, AppColors.Teal.copy(alpha = 0.25f), RoundedCornerShape(50))
+                        .bounceClick { onMarkAllRead() }
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = AppColors.Teal,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Text(
-                        text = if (isArabic) "تحديد كمقروء" else "Mark Read",
-                        fontFamily = Tajawal,
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColors.Teal
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = null,
+                            tint = AppColors.Teal,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = if (isArabic) "تحديد كمقروء" else "Mark Read",
+                            fontFamily = Tajawal,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.Teal
+                        )
+                    }
                 }
             }
-        } else if (alertsCount > 0) {
-            Surface(
-                shape = CircleShape,
-                color = AppColors.Paper,
-                shadowElevation = 1.dp,
-                modifier = Modifier
-                    .size(36.dp)
-                    .border(0.5.dp, AppColors.RowDivider, CircleShape)
-                    .bounceClick { onClearAllClick() }
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.DeleteOutline,
-                        contentDescription = "Clear All",
-                        tint = AppColors.TextTertiary,
-                        modifier = Modifier.size(17.dp)
-                    )
+
+            if (alertsCount > 0) {
+                Surface(
+                    shape = CircleShape,
+                    color = AppColors.Paper,
+                    shadowElevation = 1.dp,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .border(0.5.dp, AppColors.RowDivider, CircleShape)
+                        .bounceClick { onClearAllClick() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Rounded.DeleteOutline,
+                            contentDescription = "Clear All",
+                            tint = AppColors.AccentRed,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
                 }
             }
         }

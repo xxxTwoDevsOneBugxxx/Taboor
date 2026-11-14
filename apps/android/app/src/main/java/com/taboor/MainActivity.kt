@@ -2,16 +2,24 @@ package com.taboor
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import org.maplibre.android.MapLibre
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
-import com.taboor.core.constants.AppConstants
-import com.taboor.core.theme.TaboorTheme
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalView
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import org.maplibre.android.MapLibre
 import com.taboor.features.auth.presentation.forgotpassword.ForgotPasswordScreen
 import com.taboor.features.auth.presentation.login.LoginScreen
 import com.taboor.features.auth.presentation.login.LoginViewModel
@@ -20,8 +28,8 @@ import com.taboor.features.auth.presentation.register.RegisterViewModel
 import com.taboor.features.home.data.repository.ServiceRepository
 import com.taboor.features.home.domain.model.ServiceCategory
 import com.taboor.features.home.domain.model.ServicePlace
-import com.taboor.features.home.presentation.HomeScreen
 import com.taboor.features.home.presentation.HomeBottomTab
+import com.taboor.features.home.presentation.HomeScreen
 import com.taboor.features.home.presentation.allservices.AllServicesScreen
 import com.taboor.features.home.presentation.details.ServiceDetailsScreen
 import com.taboor.features.home.presentation.favorites.FavoritePlacesScreen
@@ -33,6 +41,7 @@ import com.taboor.features.home.presentation.settings.SmartAlertPreferencesScree
 import com.taboor.features.home.presentation.tracking.LiveQueueTrackingScreen
 import com.taboor.features.onboarding.presentation.OnboardingScreen
 import com.taboor.features.splash.presentation.SplashScreen
+import com.taboor.core.theme.TaboorTheme
 
 enum class AppDestination {
     SPLASH,
@@ -64,238 +73,177 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TaboorTheme {
-                var currentDestination by remember { mutableStateOf(AppDestination.SPLASH) }
-                var currentHomeTab by remember { mutableStateOf(HomeBottomTab.HOME) }
+                val navController = rememberNavController()
+                var currentHomeTab by rememberSaveable { mutableStateOf(HomeBottomTab.HOME) }
                 var selectedPlace by remember { mutableStateOf<ServicePlace?>(null) }
-                var selectedCategory by remember { mutableStateOf<ServiceCategory?>(null) }
+                var selectedCategory by rememberSaveable { mutableStateOf<ServiceCategory?>(null) }
+                val currentRoute by navController.currentBackStackEntryAsState()
+                val view = LocalView.current
 
-                // Native Android Dynamic System Bars (Light/Dark Status & Nav bar icons)
-                val view = androidx.compose.ui.platform.LocalView.current
-                if (!view.isInEditMode) {
-                    SideEffect {
-                        val window = (view.context as android.app.Activity).window
-                        val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
-                        val isDarkScreen = currentDestination == AppDestination.QR_SCANNER
-                        insetsController.isAppearanceLightStatusBars = !isDarkScreen
-                        insetsController.isAppearanceLightNavigationBars = !isDarkScreen
-                    }
+                SideEffect {
+                    val window = (view.context as android.app.Activity).window
+                    val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
+                    val isDarkScreen = currentRoute?.destination?.route == AppDestination.QR_SCANNER.name
+                    insetsController.isAppearanceLightStatusBars = !isDarkScreen
+                    insetsController.isAppearanceLightNavigationBars = !isDarkScreen
                 }
 
-                // System Back Button Handling
-                BackHandler(enabled = currentDestination != AppDestination.SPLASH && currentDestination != AppDestination.HOME && currentDestination != AppDestination.LOGIN) {
-                    when (currentDestination) {
-                        AppDestination.REGISTER,
-                        AppDestination.FORGOT_PASSWORD -> currentDestination = AppDestination.LOGIN
-                        AppDestination.SERVICE_DETAILS,
-                        AppDestination.ALL_SERVICES,
-                        AppDestination.EDIT_PROFILE,
-                        AppDestination.CHANGE_PASSWORD,
-                        AppDestination.QR_SCANNER,
-                        AppDestination.LIVE_TRACKING,
-                        AppDestination.TICKET_HISTORY,
-                        AppDestination.FAVORITE_PLACES,
-                        AppDestination.SMART_ALERT_PREFERENCES -> currentDestination = AppDestination.HOME
-                        else -> {}
+                NavHost(
+                    navController = navController,
+                    startDestination = AppDestination.SPLASH.name,
+                    enterTransition = {
+                        fadeIn(tween(160)) + scaleIn(initialScale = 0.985f, animationSpec = tween(160))
+                    },
+                    exitTransition = { fadeOut(tween(120)) },
+                    popEnterTransition = {
+                        fadeIn(tween(160)) + scaleIn(initialScale = 1.015f, animationSpec = tween(160))
+                    },
+                    popExitTransition = { fadeOut(tween(120)) }
+                ) {
+                    composable(AppDestination.SPLASH.name) {
+                        SplashScreen(
+                            onNavigateToOnboarding = { navController.navigateTo(AppDestination.ONBOARDING) },
+                            onNavigateToLogin = { navController.navigateTo(AppDestination.LOGIN) },
+                            onNavigateToHome = { navController.navigateAsRoot(AppDestination.HOME) }
+                        )
                     }
-                }
 
-                Crossfade(
-                    targetState = currentDestination,
-                    animationSpec = tween(durationMillis = AppConstants.SCREEN_TRANSITION_MS),
-                    label = "ScreenTransition"
-                ) { destination ->
-                    when (destination) {
-                        AppDestination.SPLASH -> {
-                            SplashScreen(
-                                onNavigateToOnboarding = {
-                                    currentDestination = AppDestination.ONBOARDING
-                                },
-                                onNavigateToLogin = {
-                                    currentDestination = AppDestination.LOGIN
-                                },
-                                onNavigateToHome = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.ONBOARDING.name) {
+                        OnboardingScreen(
+                            onFinishOnboarding = { navController.navigateAsRoot(AppDestination.LOGIN) }
+                        )
+                    }
 
-                        AppDestination.ONBOARDING -> {
-                            OnboardingScreen(
-                                onFinishOnboarding = {
-                                    currentDestination = AppDestination.LOGIN
-                                }
-                            )
-                        }
+                    composable(AppDestination.LOGIN.name) {
+                        LoginScreen(
+                            viewModel = loginViewModel,
+                            onForgotPasswordClick = { navController.navigateTo(AppDestination.FORGOT_PASSWORD) },
+                            onCreateAccountClick = { navController.navigateTo(AppDestination.REGISTER) },
+                            onLoginSuccess = { navController.navigateAsRoot(AppDestination.HOME) }
+                        )
+                    }
 
-                        AppDestination.LOGIN -> {
-                            LoginScreen(
-                                viewModel = loginViewModel,
-                                onForgotPasswordClick = {
-                                    currentDestination = AppDestination.FORGOT_PASSWORD
-                                },
-                                onCreateAccountClick = {
-                                    currentDestination = AppDestination.REGISTER
-                                },
-                                onLoginSuccess = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.REGISTER.name) {
+                        RegisterScreen(
+                            viewModel = registerViewModel,
+                            onNavigateToLogin = { navController.popBackStack() },
+                            onRegisterSuccess = { navController.navigateAsRoot(AppDestination.HOME) }
+                        )
+                    }
 
-                        AppDestination.REGISTER -> {
-                            RegisterScreen(
-                                viewModel = registerViewModel,
-                                onNavigateToLogin = {
-                                    currentDestination = AppDestination.LOGIN
-                                },
-                                onRegisterSuccess = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.FORGOT_PASSWORD.name) {
+                        ForgotPasswordScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            onResetSuccess = { navController.popBackStack() }
+                        )
+                    }
 
-                        AppDestination.FORGOT_PASSWORD -> {
-                            ForgotPasswordScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.LOGIN
-                                },
-                                onResetSuccess = {
-                                    currentDestination = AppDestination.LOGIN
-                                }
-                            )
-                        }
+                    composable(AppDestination.HOME.name) {
+                        HomeScreen(
+                            selectedTab = currentHomeTab,
+                            onTabChange = { currentHomeTab = it },
+                            onNavigateToDetails = { place ->
+                                selectedPlace = place
+                                navController.navigateTo(AppDestination.SERVICE_DETAILS)
+                            },
+                            onNavigateToAllServices = { category ->
+                                selectedCategory = category
+                                navController.navigateTo(AppDestination.ALL_SERVICES)
+                            },
+                            onNavigateToEditProfile = { navController.navigateTo(AppDestination.EDIT_PROFILE) },
+                            onNavigateToChangePassword = { navController.navigateTo(AppDestination.CHANGE_PASSWORD) },
+                            onNavigateToHistory = { navController.navigateTo(AppDestination.TICKET_HISTORY) },
+                            onNavigateToFavorites = { navController.navigateTo(AppDestination.FAVORITE_PLACES) },
+                            onNavigateToAlertPreferences = { navController.navigateTo(AppDestination.SMART_ALERT_PREFERENCES) },
+                            onNavigateToLiveTracking = { navController.navigateTo(AppDestination.LIVE_TRACKING) },
+                            onOpenQrScanner = { navController.navigateTo(AppDestination.QR_SCANNER) },
+                            onSignOut = { navController.navigateAsRoot(AppDestination.LOGIN) }
+                        )
+                    }
 
-                        AppDestination.HOME -> {
-                            HomeScreen(
-                                selectedTab = currentHomeTab,
-                                onTabChange = { currentHomeTab = it },
-                                onNavigateToDetails = { place ->
-                                    selectedPlace = place
-                                    currentDestination = AppDestination.SERVICE_DETAILS
-                                },
-                                onNavigateToAllServices = { category ->
-                                    selectedCategory = category
-                                    currentDestination = AppDestination.ALL_SERVICES
-                                },
-                                onNavigateToEditProfile = {
-                                    currentDestination = AppDestination.EDIT_PROFILE
-                                },
-                                onNavigateToChangePassword = {
-                                    currentDestination = AppDestination.CHANGE_PASSWORD
-                                },
-                                onNavigateToHistory = {
-                                    currentDestination = AppDestination.TICKET_HISTORY
-                                },
-                                onNavigateToFavorites = {
-                                    currentDestination = AppDestination.FAVORITE_PLACES
-                                },
-                                onNavigateToAlertPreferences = {
-                                    currentDestination = AppDestination.SMART_ALERT_PREFERENCES
-                                },
-                                onNavigateToLiveTracking = {
-                                    currentDestination = AppDestination.LIVE_TRACKING
-                                },
-                                onOpenQrScanner = {
-                                    currentDestination = AppDestination.QR_SCANNER
-                                },
-                                onSignOut = {
-                                    currentDestination = AppDestination.LOGIN
-                                }
-                            )
-                        }
+                    composable(AppDestination.ALL_SERVICES.name) {
+                        AllServicesScreen(
+                            initialCategory = selectedCategory,
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToDetails = { place ->
+                                selectedPlace = place
+                                navController.navigateTo(AppDestination.SERVICE_DETAILS)
+                            }
+                        )
+                    }
 
-                        AppDestination.SERVICE_DETAILS -> {
-                            val place = selectedPlace ?: ServiceRepository.places.first()
+                    composable(AppDestination.SERVICE_DETAILS.name) {
+                        val place = selectedPlace ?: ServiceRepository.places.firstOrNull()
+                        if (place != null) {
                             ServiceDetailsScreen(
                                 place = place,
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                },
+                                onNavigateBack = { navController.popBackStack() },
                                 onJoinedQueue = {
                                     currentHomeTab = HomeBottomTab.QUEUE
-                                    currentDestination = AppDestination.HOME
+                                    if (!navController.popBackStack(AppDestination.HOME.name, inclusive = false)) {
+                                        navController.navigateAsRoot(AppDestination.HOME)
+                                    }
                                 }
                             )
+                        } else {
+                            BackHandler { navController.popBackStack() }
                         }
+                    }
 
-                        AppDestination.ALL_SERVICES -> {
-                            AllServicesScreen(
-                                initialCategory = selectedCategory,
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                },
-                                onNavigateToDetails = { place ->
-                                    selectedPlace = place
-                                    currentDestination = AppDestination.SERVICE_DETAILS
-                                }
-                            )
-                        }
+                    composable(AppDestination.EDIT_PROFILE.name) {
+                        EditProfileScreen(onNavigateBack = { navController.popBackStack() })
+                    }
 
-                        AppDestination.EDIT_PROFILE -> {
-                            EditProfileScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.CHANGE_PASSWORD.name) {
+                        ChangePasswordScreen(onNavigateBack = { navController.popBackStack() })
+                    }
 
-                        AppDestination.CHANGE_PASSWORD -> {
-                            ChangePasswordScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.QR_SCANNER.name) {
+                        QrScannerScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            onScanSuccess = {
+                                currentHomeTab = HomeBottomTab.QUEUE
+                                navController.popBackStack()
+                            }
+                        )
+                    }
 
-                        AppDestination.QR_SCANNER -> {
-                            QrScannerScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                },
-                                onScanSuccess = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.LIVE_TRACKING.name) {
+                        LiveQueueTrackingScreen(onNavigateBack = { navController.popBackStack() })
+                    }
 
-                        AppDestination.LIVE_TRACKING -> {
-                            LiveQueueTrackingScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.TICKET_HISTORY.name) {
+                        TicketHistoryScreen(onNavigateBack = { navController.popBackStack() })
+                    }
 
-                        AppDestination.TICKET_HISTORY -> {
-                            TicketHistoryScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.FAVORITE_PLACES.name) {
+                        FavoritePlacesScreen(
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToDetails = { place ->
+                                selectedPlace = place
+                                navController.navigateTo(AppDestination.SERVICE_DETAILS)
+                            }
+                        )
+                    }
 
-                        AppDestination.FAVORITE_PLACES -> {
-                            FavoritePlacesScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                },
-                                onNavigateToDetails = { place ->
-                                    selectedPlace = place
-                                    currentDestination = AppDestination.SERVICE_DETAILS
-                                }
-                            )
-                        }
-
-                        AppDestination.SMART_ALERT_PREFERENCES -> {
-                            SmartAlertPreferencesScreen(
-                                onNavigateBack = {
-                                    currentDestination = AppDestination.HOME
-                                }
-                            )
-                        }
+                    composable(AppDestination.SMART_ALERT_PREFERENCES.name) {
+                        SmartAlertPreferencesScreen(onNavigateBack = { navController.popBackStack() })
                     }
                 }
             }
         }
+    }
+}
+
+private fun NavHostController.navigateTo(destination: AppDestination) {
+    navigate(destination.name) {
+        launchSingleTop = true
+    }
+}
+
+private fun NavHostController.navigateAsRoot(destination: AppDestination) {
+    navigate(destination.name) {
+        popUpTo(graph.id) { inclusive = false }
+        launchSingleTop = true
     }
 }

@@ -40,10 +40,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taboor.core.components.TaboorMapView
+import com.taboor.core.components.TaboorConfirmModal
 import com.taboor.core.localization.LocaleManager
 import com.taboor.core.location.TaboorPrecomputedRoutes
 import com.taboor.core.navigation.NavigationAppBottomSheet
 import com.taboor.core.services.LocationService
+import com.taboor.core.services.RouteResult
 import com.taboor.core.theme.AppColors
 import com.taboor.core.theme.Tajawal
 import com.taboor.core.utils.bounceClick
@@ -73,6 +75,7 @@ fun LiveQueueTrackingScreen(
     val haptic = LocalHapticFeedback.current
     val isArabic = LocaleManager.isArabic
     val activeTicket by ServiceRepository.activeTicket.collectAsState()
+    var calculatedRoute by remember(activeTicket?.id) { mutableStateOf<RouteResult?>(null) }
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showNavigationSheet by remember { mutableStateOf(false) }
@@ -97,53 +100,23 @@ fun LiveQueueTrackingScreen(
         context.startActivity(shareChooser)
     }
 
-    if (showCancelDialog) {
-        AlertDialog(
-            onDismissRequest = { showCancelDialog = false },
-            title = {
-                Text(
-                    text = if (isArabic) "إلغاء التذكرة" else "Cancel Ticket",
-                    fontFamily = Tajawal,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = if (isArabic)
-                        "هل أنت متأكد من رغبتك في إلغاء دورك الحالي؟ ستفقد مكانك في الطابور وسينتقل لدور الانتظار التالي."
-                    else
-                        "Are you sure you want to cancel your active ticket? You will lose your spot in line.",
-                    fontFamily = Tajawal
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showCancelDialog = false
-                        ServiceRepository.cancelActiveTicket()
-                        onNavigateBack()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColors.AccentRed)
-                ) {
-                    Text(
-                        text = if (isArabic) "تأكيد الإلغاء" else "Confirm Cancel",
-                        fontFamily = Tajawal,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) {
-                    Text(
-                        text = if (isArabic) "تراجع" else "Keep",
-                        fontFamily = Tajawal,
-                        color = AppColors.TextSecondary
-                    )
-                }
-            }
-        )
-    }
+    TaboorConfirmModal(
+        isOpen = showCancelDialog,
+        onDismiss = { showCancelDialog = false },
+        onConfirm = {
+            showCancelDialog = false
+            ServiceRepository.cancelActiveTicket()
+            onNavigateBack()
+        },
+        title = if (isArabic) "إلغاء التذكرة" else "Cancel Ticket",
+        message = if (isArabic)
+            "هل أنت متأكد من رغبتك في إلغاء دورك الحالي؟ ستفقد مكانك في الطابور وسينتقل لدور الانتظار التالي."
+        else
+            "Are you sure you want to cancel your active ticket? You will lose your spot in line.",
+        confirmText = if (isArabic) "تأكيد الإلغاء" else "Confirm Cancel",
+        cancelText = if (isArabic) "الاحتفاظ بدوري" else "Keep My Spot",
+        isDestructive = true
+    )
 
     Scaffold(
         containerColor = AppColors.Background,
@@ -181,9 +154,21 @@ fun LiveQueueTrackingScreen(
         } else {
             val branchLat = ticket.latitude ?: 30.0585
             val branchLng = ticket.longitude ?: 31.3466
-            val distKm = TaboorPrecomputedRoutes.getDistanceKm(ticket.branchId, branchLat, branchLng)
-            val etaMin = TaboorPrecomputedRoutes.getEstimatedMinutes(ticket.branchId, branchLat, branchLng)
-            val (subInstruction, mainInstruction) = TaboorPrecomputedRoutes.getTurnInstruction(ticket.branchId, isArabic)
+            val fallbackDistance = TaboorPrecomputedRoutes.getDistanceKm(ticket.branchId, branchLat, branchLng)
+            val fallbackEta = TaboorPrecomputedRoutes.getEstimatedMinutes(ticket.branchId, branchLat, branchLng)
+            val fallbackInstructions = TaboorPrecomputedRoutes.getTurnInstruction(ticket.branchId, isArabic)
+            val distKm = calculatedRoute?.distanceKm?.let { "%.1f".format(it) } ?: fallbackDistance
+            val etaMin = calculatedRoute?.durationMinutes ?: fallbackEta
+            val firstStepMeters = calculatedRoute?.firstStepDistanceMeters
+            val subInstruction = firstStepMeters?.let { meters ->
+                if (isArabic) {
+                    if (meters >= 1000) "بعد %.1f كم".format(meters / 1000.0) else "بعد ${meters.toInt().coerceAtLeast(50)} متر"
+                } else {
+                    if (meters >= 1000) "In %.1f km".format(meters / 1000.0) else "In ${meters.toInt().coerceAtLeast(50)} m"
+                }
+            } ?: fallbackInstructions.first
+            val mainInstruction = (if (isArabic) calculatedRoute?.instructionAr else calculatedRoute?.instructionEn)
+                ?: fallbackInstructions.second
 
             val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -197,12 +182,12 @@ fun LiveQueueTrackingScreen(
                     branchLng = branchLng,
                     branchTitle = ticket.localizedServiceName(isArabic),
                     branchAddress = ticket.localizedBranch(isArabic),
-                    branchId = ticket.branchId,
                     isFullScreen = true,
                     showControls = false,
                     onMapReady = { map ->
                         maplibreMapRef = map
                     },
+                    onRouteCalculated = { route -> calculatedRoute = route },
                     modifier = Modifier.fillMaxSize()
                 )
 

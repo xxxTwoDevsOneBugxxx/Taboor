@@ -1,5 +1,8 @@
 package com.taboor.features.home.presentation.tabs
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -44,6 +47,7 @@ import com.taboor.core.localization.LocalAppStrings
 import com.taboor.core.localization.LocaleManager
 import com.taboor.core.location.TaboorPrecomputedRoutes
 import com.taboor.core.services.LocationService
+import com.taboor.core.services.RouteResult
 import com.taboor.core.services.SessionManager
 import com.taboor.core.theme.AppColors
 import com.taboor.core.theme.Inter
@@ -54,6 +58,8 @@ import com.taboor.features.home.data.repository.ServiceRepository
 import com.taboor.features.home.domain.model.ServiceCategory
 import com.taboor.features.home.domain.model.ServicePlace
 import com.taboor.features.home.domain.model.icon
+import com.taboor.features.home.domain.service.ServiceCoordinates
+import com.taboor.features.home.domain.service.ServiceDiscovery
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -76,6 +82,7 @@ fun HomeTab(
     onNavigateToDetails: (ServicePlace) -> Unit,
     onNavigateToAllServices: (ServiceCategory?) -> Unit,
     onNavigateToQueueTab: () -> Unit,
+    onNavigateToAlertsTab: () -> Unit,
     onOpenQrScanner: () -> Unit,
     onOpenLiveTracking: () -> Unit = {}
 ) {
@@ -85,12 +92,27 @@ fun HomeTab(
     val isArabic = LocaleManager.isArabic
     val currentUser by SessionManager.currentUser.collectAsState()
     val activeTicket by ServiceRepository.activeTicket.collectAsState()
+    val alerts by ServiceRepository.alerts.collectAsState()
+    val hasUnreadAlerts = alerts.any { !it.read }
+    var homeRoute by remember(activeTicket?.id) { mutableStateOf<RouteResult?>(null) }
     val selectedLocation by ServiceRepository.selectedLocation.collectAsState()
     val favoriteIds by ServiceRepository.favoritePlaceIds.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var showLocationSheet by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var locationRevision by remember { mutableIntStateOf(0) }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result -> if (result.values.any { it }) locationRevision++ }
+
+    LaunchedEffect(Unit) {
+        if (!LocationService.hasPermission(context)) {
+            locationPermissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
+        }
+    }
 
     val currentHour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     val greeting = when {
@@ -99,12 +121,29 @@ fun HomeTab(
         else -> strings.homeGoodEvening
     }
 
-    val allPlaces = ServiceRepository.places
-    val filteredPlaces = remember(searchQuery) {
-        allPlaces.filter { it.matchesQuery(searchQuery) }
+    val userLocation = remember(selectedLocation, locationRevision) {
+        LocationService.getEffectivePosition(context).let { (lat, lng) -> ServiceCoordinates(lat, lng) }
     }
-    val fastPlaces = remember {
-        allPlaces.filter { it.totalWaiting <= 4 }
+    val allPlaces by ServiceRepository.placesFlow.collectAsState()
+    val localPlaces = remember(allPlaces, userLocation) {
+        ServiceDiscovery.localPlacesOrAll(allPlaces, userLocation)
+    }
+    val filteredPlaces = remember(searchQuery, allPlaces, userLocation) {
+        val localMatches = localPlaces.filter { it.matchesQuery(searchQuery) }
+        if (localMatches.isEmpty() && searchQuery.isNotBlank()) {
+            allPlaces.filter { it.matchesQuery(searchQuery) }
+        } else {
+            localMatches.sortedByDescending { it.starRating }
+        }
+    }
+    val fastPlaces = remember(allPlaces, userLocation) {
+        ServiceDiscovery.localPlacesOrAll(allPlaces, userLocation)
+            .sortedBy { place ->
+                place.branches.minOfOrNull { branch ->
+                    ServiceDiscovery.distanceToBranch(branch, userLocation) ?: Double.MAX_VALUE
+                } ?: Double.MAX_VALUE
+            }
+            .take(4)
     }
 
     val displayName = currentUser?.fullName?.takeIf { it.isNotBlank() } ?: if (isArabic) "محمد أحمد" else "Mohamed Ahmed"
@@ -233,24 +272,25 @@ fun HomeTab(
                         shadowElevation = 1.dp,
                         modifier = Modifier
                             .size(38.dp)
-                            .bounceClick(scaleDown = 0.94f) { onNavigateToQueueTab() }
+                            .bounceClick(scaleDown = 0.94f) { onNavigateToAlertsTab() }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Rounded.Notifications,
-                                contentDescription = null,
+                                contentDescription = strings.navAlerts,
                                 tint = AppColors.Ink,
                                 modifier = Modifier.size(18.dp)
                             )
-                            // Amber notification indicator dot
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = 7.dp, end = 7.dp)
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(AppColors.Amber)
-                            )
+                            if (hasUnreadAlerts) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 7.dp, end = 7.dp)
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(AppColors.Amber)
+                                )
+                            }
                         }
                     }
                 }
@@ -379,10 +419,10 @@ fun HomeTab(
                                 branchLng = ticket.longitude ?: 31.3466,
                                 branchTitle = ticket.localizedServiceName(isArabic),
                                 branchAddress = ticket.localizedBranch(isArabic),
-                                branchId = ticket.branchId,
                                 isFullScreen = false,
                                 showControls = false,
                                 showInfoChip = false,
+                                onRouteCalculated = { route -> homeRoute = route },
                                 modifier = Modifier.fillMaxSize()
                             )
 
@@ -425,7 +465,10 @@ fun HomeTab(
                                                 .pulseEffect(minScale = 0.8f, maxScale = 1.3f)
                                         )
                                         Text(
-                                            text = if (isArabic) "دورك خلال ${ticket.estMinutes} دقائق" else "Your turn in ~${ticket.estMinutes}m",
+                                            text = homeRoute?.let { route ->
+                                                val distance = "%.1f".format(route.distanceKm)
+                                                if (isArabic) "$distance كم • ~${route.durationMinutes} د" else "$distance km • ~${route.durationMinutes} min"
+                                            } ?: if (isArabic) "دورك خلال ${ticket.estMinutes} دقائق" else "Your turn in ~${ticket.estMinutes}m",
                                             fontFamily = Tajawal,
                                             fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
@@ -882,7 +925,10 @@ fun HomeTab(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         rowCategories.forEach { category ->
-                            val placesCount = allPlaces.count { it.category == category }
+                            val placesCount = ServiceDiscovery.localPlacesOrAll(
+                                allPlaces.filter { it.category == category },
+                                userLocation
+                            ).size
                             val (catBg, catColor) = when (category) {
                                 ServiceCategory.CLINICS -> Pair(Color(0xFFE6F7F5), Color(0xFF0D9488))
                                 ServiceCategory.SALONS -> Pair(Color(0xFFF3E8FF), Color(0xFF7C3AED))
@@ -1016,8 +1062,8 @@ fun HomeTab(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(fastPlaces) { place ->
-                        val branch = place.branches.first()
-                        val estMinutes = (place.totalWaiting * 3.5).toInt().coerceIn(2, 10)
+                        val branch = ServiceDiscovery.nearestBranch(place, userLocation) ?: return@items
+                        val estMinutes = branch.estWaitMinutes
 
                         Surface(
                             modifier = Modifier
@@ -1217,17 +1263,12 @@ fun HomeTab(
             }
         } else {
             items(filteredPlaces) { place ->
-                val mainBranch = place.branches.first()
-                val isOpen = place.branches.any { it.isOpen }
-                val branchDist = TaboorPrecomputedRoutes.getDistanceKm(
-                    mainBranch.id,
-                    mainBranch.lat ?: 30.0585,
-                    mainBranch.lng ?: 31.3466
-                )
-                val estDriveMin = TaboorPrecomputedRoutes.getEstimatedMinutes(
-                    mainBranch.id,
-                    mainBranch.lat ?: 30.0585,
-                    mainBranch.lng ?: 31.3466
+                val mainBranch = ServiceDiscovery.nearestBranch(place, userLocation) ?: return@items
+                val isOpen = mainBranch.isOpen
+                val branchDist = ServiceDiscovery.distanceToBranch(mainBranch, userLocation)
+                    ?.let { String.format(java.util.Locale.US, "%.1f", it) } ?: "—"
+                val estDriveMin = LocationService.estimateDriveTime(
+                    ServiceDiscovery.distanceToBranch(mainBranch, userLocation) ?: 0.0
                 )
 
                 val (catBg, catColor) = when (place.category) {
@@ -1437,7 +1478,12 @@ fun HomeTab(
     if (showLocationSheet) {
         com.taboor.features.home.presentation.location.LocationPickerBottomSheet(
             currentLocation = selectedLocation,
-            onLocationSelected = { loc ->
+            onLocationSelected = { loc, latitude, longitude ->
+                if (latitude != null && longitude != null) {
+                    LocationService.setCustomLocation(context, loc, latitude, longitude)
+                } else {
+                    LocationService.clearCustomLocation(context)
+                }
                 ServiceRepository.updateSelectedLocation(loc)
             },
             onDismiss = { showLocationSheet = false }

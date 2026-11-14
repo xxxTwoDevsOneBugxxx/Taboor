@@ -30,24 +30,26 @@ data class NeighborhoodOption(
     val nameAr: String,
     val nameEn: String,
     val subtitleAr: String,
-    val subtitleEn: String
+    val subtitleEn: String,
+    val latitude: Double,
+    val longitude: Double
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationPickerBottomSheet(
     currentLocation: String,
-    onLocationSelected: (String) -> Unit,
+    onLocationSelected: (String, Double?, Double?) -> Unit,
     onDismiss: () -> Unit
 ) {
     val isArabic = LocaleManager.isArabic
     val neighborhoods = listOf(
-        NeighborhoodOption("maadi", "المعادي، شارع النصر", "Maadi, El-Nasr St.", "القاهرة الكبرى", "Greater Cairo"),
-        NeighborhoodOption("nasr_city", "مدينة نصر، مكرم عبيد", "Nasr City, Makram Ebeid", "شرق القاهرة", "East Cairo"),
-        NeighborhoodOption("new_cairo", "التجمع الخامس، شارع التسعين", "New Cairo, 90th St.", "القاهرة الجديدة", "New Cairo"),
-        NeighborhoodOption("downtown", "وسط البلد، ميدان التحرير", "Downtown, Tahrir Sq.", "وسط القاهرة", "Central Cairo"),
-        NeighborhoodOption("mohandessin", "المهندسين، شارع شهاب", "Mohandessin, Shehab St.", "الجيزة", "Giza"),
-        NeighborhoodOption("sheikh_zayed", "الشيخ زايد، وصلة دهشور", "Sheikh Zayed, Dahshur Link", "الجيزة / أكتوبر", "Giza / 6th Oct")
+        NeighborhoodOption("maadi", "المعادي، شارع النصر", "Maadi, El-Nasr St.", "القاهرة الكبرى", "Greater Cairo", 29.9602, 31.2569),
+        NeighborhoodOption("nasr_city", "مدينة نصر، مكرم عبيد", "Nasr City, Makram Ebeid", "شرق القاهرة", "East Cairo", 30.0561, 31.3414),
+        NeighborhoodOption("new_cairo", "التجمع الخامس، شارع التسعين", "New Cairo, 90th St.", "القاهرة الجديدة", "New Cairo", 30.0197, 31.4289),
+        NeighborhoodOption("downtown", "وسط البلد، ميدان التحرير", "Downtown, Tahrir Sq.", "وسط القاهرة", "Central Cairo", 30.0480, 31.2395),
+        NeighborhoodOption("mohandessin", "المهندسين، شارع شهاب", "Mohandessin, Shehab St.", "الجيزة", "Giza", 30.0384, 31.2114),
+        NeighborhoodOption("sheikh_zayed", "الشيخ زايد، وصلة دهشور", "Sheikh Zayed, Dahshur Link", "الجيزة / أكتوبر", "Giza / 6th Oct", 30.0468, 30.9850)
     )
 
     ModalBottomSheet(
@@ -116,7 +118,7 @@ fun LocationPickerBottomSheet(
                     .fillMaxWidth()
                     .bounceClick()
                     .clickable {
-                        onLocationSelected(if (isArabic) "موقعي الحالي (GPS)" else "Current Location (GPS)")
+                        onLocationSelected(if (isArabic) "موقعي الحالي (GPS)" else "Current Location (GPS)", null, null)
                         onDismiss()
                     },
                 shape = RoundedCornerShape(16.dp),
@@ -168,7 +170,7 @@ fun LocationPickerBottomSheet(
                             .fillMaxWidth()
                             .bounceClick()
                             .clickable {
-                                onLocationSelected(name)
+                                onLocationSelected(name, item.latitude, item.longitude)
                                 onDismiss()
                             },
                         shape = RoundedCornerShape(16.dp),

@@ -1,21 +1,21 @@
 package com.taboor.features.home.presentation
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -86,36 +86,65 @@ fun HomeScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Smooth tab transition matching Flutter _FadeIndexedStack
-            AnimatedContent(
-                targetState = selectedTab,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) togetherWith
-                            fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
-                },
-                label = "HomeTabTransition"
-            ) { tab ->
-                when (tab) {
-                    HomeBottomTab.HOME -> HomeTab(
-                        onNavigateToDetails = onNavigateToDetails,
-                        onNavigateToAllServices = onNavigateToAllServices,
-                        onNavigateToQueueTab = { onTabChange(HomeBottomTab.QUEUE) },
-                        onOpenQrScanner = onOpenQrScanner,
-                        onOpenLiveTracking = onNavigateToLiveTracking
+            // Keep each tab composed and slide it by its index, matching the iOS pager.
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clipToBounds()
+            ) {
+                val tabWidth = maxWidth
+                val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+                val lastTabIndex = HomeBottomTab.values().lastIndex
+                val selectedIndex = if (isRtl) lastTabIndex - selectedTab.ordinal else selectedTab.ordinal
+
+                HomeBottomTab.values().forEach { tab ->
+                    val tabIndex = if (isRtl) lastTabIndex - tab.ordinal else tab.ordinal
+                    val offset by animateDpAsState(
+                        targetValue = tabWidth * (tabIndex - selectedIndex).toFloat(),
+                        animationSpec = tween(durationMillis = 320),
+                        label = "${tab.name}TabOffset"
                     )
-                    HomeBottomTab.QUEUE -> QueueTab(
-                        onExploreServices = { onTabChange(HomeBottomTab.HOME) },
-                        onOpenLiveTracking = onNavigateToLiveTracking
-                    )
-                    HomeBottomTab.ALERTS -> AlertsTab()
-                    HomeBottomTab.PROFILE -> ProfileTab(
-                        onNavigateToEditProfile = onNavigateToEditProfile,
-                        onNavigateToChangePassword = onNavigateToChangePassword,
-                        onNavigateToHistory = onNavigateToHistory,
-                        onNavigateToFavorites = onNavigateToFavorites,
-                        onNavigateToAlertPreferences = onNavigateToAlertPreferences,
-                        onSignOut = onSignOut
-                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .absoluteOffset(x = offset)
+                            .zIndex(if (tab == selectedTab) 1f else 0f)
+                            .then(
+                                if (tab == selectedTab) Modifier
+                                else Modifier.pointerInput(tab) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent().changes.forEach { it.consume() }
+                                        }
+                                    }
+                                }
+                            )
+                    ) {
+                        when (tab) {
+                            HomeBottomTab.HOME -> HomeTab(
+                                onNavigateToDetails = onNavigateToDetails,
+                                onNavigateToAllServices = onNavigateToAllServices,
+                                onNavigateToQueueTab = { onTabChange(HomeBottomTab.QUEUE) },
+                                onNavigateToAlertsTab = { onTabChange(HomeBottomTab.ALERTS) },
+                                onOpenQrScanner = onOpenQrScanner,
+                                onOpenLiveTracking = onNavigateToLiveTracking
+                            )
+                            HomeBottomTab.QUEUE -> QueueTab(
+                                onExploreServices = { onTabChange(HomeBottomTab.HOME) },
+                                onOpenLiveTracking = onNavigateToLiveTracking
+                            )
+                            HomeBottomTab.ALERTS -> AlertsTab()
+                            HomeBottomTab.PROFILE -> ProfileTab(
+                                onNavigateToEditProfile = onNavigateToEditProfile,
+                                onNavigateToChangePassword = onNavigateToChangePassword,
+                                onNavigateToHistory = onNavigateToHistory,
+                                onNavigateToFavorites = onNavigateToFavorites,
+                                onNavigateToAlertPreferences = onNavigateToAlertPreferences,
+                                onSignOut = onSignOut
+                            )
+                        }
+                    }
                 }
             }
 
