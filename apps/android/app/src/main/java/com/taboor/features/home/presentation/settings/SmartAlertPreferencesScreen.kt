@@ -1,5 +1,11 @@
 package com.taboor.features.home.presentation.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,17 +26,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taboor.core.components.TaboorTopAppBar
 import com.taboor.core.localization.LocaleManager
+import com.taboor.core.notifications.TaboorNotificationManager
 import com.taboor.core.theme.AppColors
 import com.taboor.core.theme.Tajawal
 import com.taboor.core.utils.bounceClick
 import com.taboor.features.home.data.repository.ServiceRepository
 import com.taboor.features.home.domain.model.SmartAlertPreferences
+import com.taboor.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -40,6 +50,7 @@ fun SmartAlertPreferencesScreen(
     onNavigateBack: () -> Unit
 ) {
     val isArabic = LocaleManager.isArabic
+    val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
     val savedPrefs by ServiceRepository.smartAlertPreferences.collectAsState()
@@ -49,8 +60,24 @@ fun SmartAlertPreferencesScreen(
     var smartDeparture by remember(savedPrefs) { mutableStateOf(savedPrefs.smartDepartureNotice) }
     var timeSensitiveHaptics by remember(savedPrefs) { mutableStateOf(savedPrefs.timeSensitiveHaptics) }
     var lockScreenAlert by remember(savedPrefs) { mutableStateOf(savedPrefs.lockScreenAlert) }
+    val preferences = remember(context) {
+        context.getSharedPreferences("taboor_smart_alerts", android.content.Context.MODE_PRIVATE)
+    }
+    var selectedChime by remember {
+        mutableStateOf(preferences.getString("selected_chime", "soft_marimba") ?: "soft_marimba")
+    }
 
     var showTestBanner by remember { mutableStateOf(false) }
+
+    fun postPreviewNotification() {
+        TaboorNotificationManager.showTestNotification(context, isArabic, customersAhead, selectedChime)
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) postPreviewNotification()
+    }
 
     fun save() {
         val updated = SmartAlertPreferences(
@@ -63,7 +90,16 @@ fun SmartAlertPreferencesScreen(
         ServiceRepository.updateAlertPreferences(updated)
     }
 
+    fun previewChime(chime: TurnChime) {
+        MediaPlayer.create(context, chime.audioResource)?.let { player ->
+            player.setOnCompletionListener { it.release() }
+            player.start()
+        }
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TaboorTopAppBar(
                 title = if (isArabic) "إعدادات التنبيهات الذكية" else "Smart Alert Preferences",
@@ -83,7 +119,7 @@ fun SmartAlertPreferencesScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 8.dp)
-                    .padding(bottom = 40.dp),
+                    .padding(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 // Test Feedback Banner
@@ -148,15 +184,8 @@ fun SmartAlertPreferencesScreen(
                                     if (isSelected) AppColors.Teal else AppColors.CardBorder
                                 )
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         RadioButton(
                                             selected = isSelected,
                                             onClick = null,
@@ -167,25 +196,33 @@ fun SmartAlertPreferencesScreen(
                                             fontFamily = Tajawal,
                                             fontSize = 13.5.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = AppColors.TextPrimary
+                                            color = AppColors.TextPrimary,
+                                            modifier = Modifier.weight(1f)
                                         )
-                                    }
-
-                                    if (count == 2) {
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = AppColors.Teal.copy(alpha = 0.12f)
-                                        ) {
-                                            Text(
-                                                text = if (isArabic) "موصى به" else "Recommended",
-                                                fontFamily = Tajawal,
-                                                fontSize = 10.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = AppColors.Teal,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
+                                        if (count == 2) {
+                                            Surface(shape = RoundedCornerShape(6.dp), color = AppColors.Teal.copy(alpha = 0.12f)) {
+                                                Text(
+                                                    text = if (isArabic) "موصى به" else "Recommended",
+                                                    fontFamily = Tajawal,
+                                                    fontSize = 10.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AppColors.Teal,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
                                         }
                                     }
+                                    Text(
+                                        text = if (count == 2) {
+                                            if (isArabic) "الوقت المثالي للاستعداد والدخول مباشرة" else "Ideal time to be ready at the counter"
+                                        } else {
+                                            if (isArabic) "يعطيك وقتاً إضافياً للوصول للمكان" else "Provides more time to arrive"
+                                        },
+                                        fontFamily = Tajawal,
+                                        fontSize = 11.sp,
+                                        color = AppColors.TextSecondary,
+                                        modifier = Modifier.padding(start = 46.dp, top = 0.dp)
+                                    )
                                 }
                             }
                         }
@@ -301,7 +338,7 @@ fun SmartAlertPreferencesScreen(
                 // Section 4: Lock screen & Vibration
                 SectionBox(
                     title = if (isArabic) "شاشة القفل والاهتزاز الحركي" else "Lock Screen & Haptics",
-                    subtitle = if (isArabic) "متابعة الدور وتنبيهات اللحظة الأخيرة" else "Live updates on notification drawer"
+                    subtitle = if (isArabic) "متابعة مباشرة للدور وتنبيهات اللحظة الأخيرة" else "Ongoing lock screen updates and turn alerts"
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(
@@ -374,14 +411,14 @@ fun SmartAlertPreferencesScreen(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = if (isArabic) "إشعار مثبت في شاشة القفل" else "Ongoing Lock Screen Notification",
+                                text = if (isArabic) "إشعار مستمر على شاشة القفل" else "Ongoing Lock Screen Notification",
                                     fontFamily = Tajawal,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = AppColors.TextPrimary
                                 )
                                 Text(
-                                    text = if (isArabic) "إبقاء التذكرة محدثة مباشرة أثناء قفل الشاشة" else "Keep ticket live progress on notification center",
+                                text = if (isArabic) "متابعة تقدم التذكرة مباشرة من شاشة القفل" else "Follow live ticket progress from your lock screen",
                                     fontFamily = Tajawal,
                                     fontSize = 11.5.sp,
                                     color = AppColors.TextSecondary
@@ -400,11 +437,65 @@ fun SmartAlertPreferencesScreen(
                     }
                 }
 
+                SectionBox(
+                    title = if (isArabic) "نغمة نداء الدور المخصصة" else "Turn Alert Signature Chime",
+                    subtitle = if (isArabic) "اختر النغمة التي تسمعها عند نداء رقمك" else "Choose the sound played when your turn is called"
+                ) {
+                    Column {
+                        TurnChime.entries.forEachIndexed { index, chime ->
+                            val selected = selectedChime == chime.key
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (selected) AppColors.SoftTeal.copy(alpha = 0.45f) else Color.Transparent)
+                                    .clickable {
+                                        selectedChime = chime.key
+                                        preferences.edit().putString("selected_chime", chime.key).apply()
+                                        previewChime(chime)
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(36.dp).clip(CircleShape)
+                                        .background(if (selected) AppColors.Teal else AppColors.SoftTeal),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(chime.icon, contentDescription = null,
+                                        tint = if (selected) Color.White else AppColors.Teal,
+                                        modifier = Modifier.size(18.dp))
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(if (isArabic) chime.titleAr else chime.titleEn,
+                                        fontFamily = Tajawal, fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold, color = AppColors.TextPrimary)
+                                    Text(if (isArabic) chime.subtitleAr else chime.subtitleEn,
+                                        fontFamily = Tajawal, fontSize = 11.sp, color = AppColors.TextSecondary)
+                                }
+                                RadioButton(selected = selected, onClick = null,
+                                    colors = RadioButtonDefaults.colors(selectedColor = AppColors.Teal))
+                            }
+                            if (index != TurnChime.entries.lastIndex) {
+                                HorizontalDivider(color = AppColors.CardBorder)
+                            }
+                        }
+                    }
+                }
+
                 // Test Alert Button
                 Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         showTestBanner = true
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            postPreviewNotification()
+                        }
                         coroutineScope.launch {
                             delay(4000)
                             showTestBanner = false
@@ -440,6 +531,22 @@ fun SmartAlertPreferencesScreen(
             }
         }
     }
+}
+
+private enum class TurnChime(
+    val key: String,
+    val titleAr: String,
+    val titleEn: String,
+    val subtitleAr: String,
+    val subtitleEn: String,
+    val icon: ImageVector,
+    val audioResource: Int
+) {
+    CLASSIC("modern_bell", "جرس طابور الكلاسيكي", "Classic Taboor Bell", "نغمات صاعدة واضحة للأماكن المزدحمة", "Clear ascending chime for busy areas", Icons.Rounded.NotificationsActive, R.raw.taboor_turn_chime),
+    GLASS("crystal_glass", "رنين الزجاج السائل", "Liquid Glass Ping", "نقرة زجاجية نقية متطابقة مع هوية التطبيق", "Pure crystal glass ping matching Taboor UI", Icons.Rounded.WaterDrop, R.raw.taboor_glass_chime),
+    MARIMBA("soft_marimba", "ماريمبا خشبية هادئة", "Warm Marimba", "رنين خشبي دافئ ومريح مناسب للعيادات", "Warm woody chime, ideal for clinics", Icons.Rounded.MusicNote, R.raw.taboor_marimba_chime),
+    ZEN("zen_bell", "هدوء التأمل", "Zen Temple Bell", "رنة هادئة ومريحة للأعصاب", "Calm and peaceful meditative bell", Icons.Rounded.Spa, R.raw.taboor_zen_chime),
+    DREAMY("dreamy_celestial", "نغم أثيري ناعم", "Dreamy Celestial", "كورد ناعم وخافت للمكاتب وأماكن العمل", "Ethereal gentle chord for offices", Icons.Rounded.AutoAwesome, R.raw.taboor_dreamy_chime)
 }
 
 @Composable
