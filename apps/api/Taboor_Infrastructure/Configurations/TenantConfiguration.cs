@@ -35,6 +35,8 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .HasMaxLength(500);
 
         builder.Property(t => t.Status)
+            .HasConversion<string>()
+            .HasMaxLength(30)
             .IsRequired();
 
         builder.Property(t => t.CreatedAt)

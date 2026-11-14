@@ -25,6 +25,7 @@ namespace Taboor_Infrastructure.DB
         public DbSet<OtpCode> OtpCodes { get; set; }
         public DbSet<Plan> Plans { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<TenantSubscription> TenantSubscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
