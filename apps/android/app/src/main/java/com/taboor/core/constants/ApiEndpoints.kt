@@ -15,6 +15,9 @@ object ApiEndpoints {
     private const val QUEUES = "Queues"
     private const val SERVICES = "Services"
     private const val APPOINTMENTS = "Appointments"
+    private const val PLACES = "Places"
+    private const val ALERTS = "Alerts"
+    private const val HISTORY = "History"
 
     // ==========================================
     // 1. Authentication Endpoints (AuthController)
@@ -47,9 +50,17 @@ object ApiEndpoints {
     const val ALL_SERVICES = "$SERVICES"
     fun getServiceDetails(serviceId: String) = "$SERVICES/$serviceId"
     const val JOIN_QUEUE = "$QUEUES/join"
+    const val ACTIVE_TICKETS = "$QUEUES/my-active-tickets"
+    const val BOOK_APPOINTMENT = "$QUEUES/book-appointment"
     const val LEAVE_QUEUE = "$QUEUES/leave"
     const val DELAY_TICKET = "$QUEUES/delay"
     fun getActiveTicket(userId: String) = "$QUEUES/active/$userId"
+
+    // Customer discovery endpoints, shared with the iOS repository contracts.
+    const val ALL_PLACES = PLACES
+    fun getPlaceById(id: String) = "$PLACES/$id"
+    const val USER_ALERTS = ALERTS
+    const val TICKET_HISTORY = "$HISTORY/my-history"
 
     /**
      * Resolves the full URL for any API endpoint.

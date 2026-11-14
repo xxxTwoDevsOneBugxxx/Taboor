@@ -15,6 +15,11 @@ data class ServicePlace(
     val aboutAr: String? = null,
     val workingHours: String? = null,
     val starRating: Double = 4.5,
+    val reviewCount: Int = 128,
+    val imageUrl: String? = null,
+    val isAvailable: Boolean = true,
+    val activeQueuesCount: Int = 0,
+    val estimatedWaitMinutes: Int = 0,
     val keywords: List<String> = emptyList()
 ) {
     val totalWaiting: Int

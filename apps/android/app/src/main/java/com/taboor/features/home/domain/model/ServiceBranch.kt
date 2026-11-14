@@ -10,13 +10,16 @@ data class ServiceBranch(
     val address: String? = null,
     val addressAr: String? = null,
     val lat: Double? = null,
-    val lng: Double? = null
+    val lng: Double? = null,
+    val phone: String? = null,
+    val openingHours: String? = null,
+    val counters: List<ServiceCounter> = emptyList()
 ) {
     val waitingCount: Int
         get() = waiting
 
     val estWaitMinutes: Int
-        get() = (waiting * 3.5).toInt().coerceIn(2, 60)
+        get() = (waiting * 4.5).toInt().coerceAtLeast(3)
 
     fun localizedLabel(isAr: Boolean): String {
         return if (isAr && labelAr != null) labelAr else label
@@ -26,3 +29,12 @@ data class ServiceBranch(
         return if (isAr && addressAr != null) addressAr else address
     }
 }
+
+data class ServiceCounter(
+    val id: String,
+    val number: Int,
+    val name: String,
+    val nameAr: String,
+    val servingTicket: String? = null,
+    val isOpen: Boolean = true
+)

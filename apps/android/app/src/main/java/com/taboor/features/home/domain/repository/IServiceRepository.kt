@@ -5,8 +5,11 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface IServiceRepository {
     val activeTicket: StateFlow<UserTicket?>
+    val activeTickets: StateFlow<List<UserTicket>>
+    val selectedTicketIndex: StateFlow<Int>
     val alerts: StateFlow<List<AppAlert>>
     val places: List<ServicePlace>
+    val placesFlow: StateFlow<List<ServicePlace>>
     val history: StateFlow<List<TicketHistoryItem>>
     val favoritePlaceIds: StateFlow<Set<String>>
     val smartAlertPreferences: StateFlow<SmartAlertPreferences>
@@ -25,6 +28,7 @@ interface IServiceRepository {
     fun filterPlaces(query: String, category: ServiceCategory?): List<ServicePlace>
     fun isFavorite(placeId: String): Boolean
     fun toggleFavorite(placeId: String)
+    fun selectActiveTicket(index: Int)
     fun updateAlertPreferences(prefs: SmartAlertPreferences)
     fun updateSelectedLocation(location: String)
 }

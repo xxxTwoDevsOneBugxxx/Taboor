@@ -40,8 +40,7 @@ object SessionManager {
                 _currentUser.value = null
             }
         } else {
-            // Default demo user fallback for seamless initial experience
-            _currentUser.value = User(
+            _currentUser.value = loadSeededUser(context) ?: User(
                 id = "user_demo",
                 email = "customer@taboor.app",
                 fullName = "محمد أحمد",
@@ -50,6 +49,15 @@ object SessionManager {
             )
         }
     }
+
+    private fun loadSeededUser(context: Context): User? = runCatching {
+        val root = JSONObject(
+            context.assets.open("seeds/user_profile_seed.json")
+                .bufferedReader()
+                .use { it.readText() }
+        )
+        User.fromJson(root.getJSONObject("data")).copy(token = "jwt_token_demo")
+    }.getOrNull()
 
     val isLoggedIn: Boolean
         get() = _currentUser.value != null

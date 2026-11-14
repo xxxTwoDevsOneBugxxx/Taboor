@@ -15,5 +15,6 @@ class TaboorApplication : Application() {
         LocaleManager.init(this)
         com.taboor.core.services.SessionManager.init(this)
         com.taboor.core.services.BiometricService.init(this)
+        com.taboor.features.home.data.repository.ServiceRepository.initialize(this)
     }
 }

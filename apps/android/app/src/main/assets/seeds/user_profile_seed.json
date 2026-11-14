@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "message": "User profile fetched successfully",
+  "data": {
+    "id": "usr_9981",
+    "fullName": "محمد أحمد",
+    "email": "mohamed@taboor.com",
+    "phoneNumber": "+20 101 234 5678",
+    "role": "Customer",
+    "avatarUrl": null,
+    "completedQueuesCount": 14,
+    "savedTimeMinutes": 320,
+    "favoritePlacesCount": 2,
+    "createdAt": "2026-01-15T10:00:00Z"
+  }
+}

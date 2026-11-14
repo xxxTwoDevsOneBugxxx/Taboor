@@ -3,10 +3,16 @@ package com.taboor.features.home.data.repository
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import com.taboor.core.theme.AppColors
+import com.taboor.core.services.LocationService
 import com.taboor.features.home.domain.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 import com.taboor.features.home.domain.repository.IServiceRepository
 
@@ -14,6 +20,10 @@ object ServiceRepository : IServiceRepository {
 
     private val _activeTicket = MutableStateFlow<UserTicket?>(UserTicket())
     override val activeTicket: StateFlow<UserTicket?> = _activeTicket.asStateFlow()
+    private val _activeTickets = MutableStateFlow(listOf(UserTicket()))
+    override val activeTickets: StateFlow<List<UserTicket>> = _activeTickets.asStateFlow()
+    private val _selectedTicketIndex = MutableStateFlow(0)
+    override val selectedTicketIndex: StateFlow<Int> = _selectedTicketIndex.asStateFlow()
 
     private val _alerts = MutableStateFlow<List<AppAlert>>(generateSeededAlerts())
     override val alerts: StateFlow<List<AppAlert>> = _alerts.asStateFlow()
@@ -85,7 +95,7 @@ object ServiceRepository : IServiceRepository {
         )
     }
 
-    override val places: List<ServicePlace> = listOf(
+    private val _places = MutableStateFlow<List<ServicePlace>>(listOf(
         ServicePlace(
             id = "place_1",
             name = "Dr. Sara Dental Clinic",
@@ -338,7 +348,72 @@ object ServiceRepository : IServiceRepository {
                 )
             )
         )
-    )
+    ))
+
+    override var places: List<ServicePlace>
+        get() = _places.value
+        set(value) { _places.value = value }
+    override val placesFlow: StateFlow<List<ServicePlace>> = _places.asStateFlow()
+
+    /** Loads local JSON immediately, then refreshes from the API when mock mode is disabled. */
+    fun initialize(context: android.content.Context) {
+        val appContext = context.applicationContext
+        val seedRepository = ServiceDataRepositoryFactory.seed(appContext)
+        val seedResult = runCatching { seedRepository.loadSync() }
+        seedResult.onFailure(::logServiceDataError)
+        val seeds = seedResult.getOrNull() ?: return
+        applyDataSnapshot(seeds, appContext)
+
+        if (!ServiceDataConfig.useMockData) {
+            val liveRepository = ServiceDataRepositoryFactory.create(appContext)
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                runCatching { liveRepository.fetchSnapshot() }
+                    .onSuccess { snapshot ->
+                        withContext(Dispatchers.Main) { applyDataSnapshot(snapshot, appContext) }
+                    }
+                    .onFailure(::logServiceDataError)
+            }
+        }
+    }
+
+    private fun applyDataSnapshot(seeds: ServiceSeedData, context: android.content.Context) {
+        if (seeds.places.isEmpty()) return
+        places = seeds.places
+        _selectedLocation.value = LocationService.getCustomLocationLabel(context) ?: _selectedLocation.value
+        val activeTickets = seeds.tickets.filter { it.isActive }
+        if (activeTickets.isNotEmpty()) {
+            _activeTickets.value = activeTickets
+            _selectedTicketIndex.value = 0
+            _activeTicket.value = activeTickets.first()
+        }
+        if (seeds.alerts.isNotEmpty()) _alerts.value = seeds.alerts
+        if (seeds.history.isNotEmpty()) _history.value = seeds.history
+        _favoritePlaceIds.value = setOf("place_1", "place_2")
+    }
+
+    override fun selectActiveTicket(index: Int) {
+        val tickets = _activeTickets.value
+        if (index !in tickets.indices) return
+        _selectedTicketIndex.value = index
+        _activeTicket.value = tickets[index]
+    }
+
+    private fun replaceSelectedTicket(ticket: UserTicket?) {
+        val tickets = _activeTickets.value.toMutableList()
+        val index = _selectedTicketIndex.value.coerceIn(0, (tickets.size - 1).coerceAtLeast(0))
+        if (ticket == null) {
+            if (tickets.isNotEmpty()) tickets.removeAt(index)
+            val nextIndex = index.coerceAtMost((tickets.size - 1).coerceAtLeast(0))
+            _activeTickets.value = tickets
+            _selectedTicketIndex.value = nextIndex
+            _activeTicket.value = tickets.getOrNull(nextIndex)
+        } else {
+            if (tickets.isEmpty()) tickets.add(ticket) else tickets[index] = ticket
+            _activeTickets.value = tickets
+            _selectedTicketIndex.value = index
+            _activeTicket.value = ticket
+        }
+    }
 
     private fun generateSeededAlerts(): List<AppAlert> {
         val now = System.currentTimeMillis()
@@ -417,12 +492,12 @@ object ServiceRepository : IServiceRepository {
     }
 
     override fun delayActiveTicket(minutes: Int) {
-        _activeTicket.value = _activeTicket.value?.let {
+        _activeTicket.value?.let {
             it.copy(
                 estMinutes = it.estMinutes + minutes,
                 waitingAhead = it.waitingAhead + 1
             )
-        }
+        }?.let(::replaceSelectedTicket)
     }
 
     fun delayTicket() = delayActiveTicket(10)
@@ -442,13 +517,13 @@ object ServiceRepository : IServiceRepository {
             )
             _history.value = listOf(historyItem) + _history.value
         }
-        _activeTicket.value = null
+        replaceSelectedTicket(null)
     }
 
     fun cancelTicket() = cancelActiveTicket()
 
     fun setDemoTicket() {
-        _activeTicket.value = UserTicket(
+        val ticket = UserTicket(
             ticketNumber = "A-12",
             serviceName = "Dar Al Fouad Hospital",
             serviceNameAr = "مستشفى دار الفؤاد - العيادات الخارجية",
@@ -465,6 +540,9 @@ object ServiceRepository : IServiceRepository {
             latitude = 30.0585,
             longitude = 31.3466
         )
+        _activeTickets.value = listOf(ticket)
+        _selectedTicketIndex.value = 0
+        _activeTicket.value = ticket
     }
 
     override fun joinQueue(place: ServicePlace, branch: ServiceBranch): UserTicket {
@@ -487,6 +565,8 @@ object ServiceRepository : IServiceRepository {
             latitude = branch.lat ?: 30.0585,
             longitude = branch.lng ?: 31.3466
         )
+        _activeTickets.value = listOf(ticket) + _activeTickets.value.filter { it.isActive }
+        _selectedTicketIndex.value = 0
         _activeTicket.value = ticket
         return ticket
     }
@@ -518,6 +598,8 @@ object ServiceRepository : IServiceRepository {
             latitude = branch.lat ?: 30.0585,
             longitude = branch.lng ?: 31.3466
         )
+        _activeTickets.value = listOf(ticket) + _activeTickets.value.filter { it.isActive }
+        _selectedTicketIndex.value = 0
         _activeTicket.value = ticket
         return ticket
     }
@@ -560,6 +642,10 @@ object ServiceRepository : IServiceRepository {
 
     override fun clearAllAlerts() {
         _alerts.value = emptyList()
+    }
+
+    fun resetAlerts() {
+        _alerts.value = generateSeededAlerts()
     }
 
     override fun getPlaceById(id: String): ServicePlace? {
