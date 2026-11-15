@@ -1,4 +1,5 @@
 import { useAuthStore } from '#/feature/auth/auth-store'
+import { isEndUser } from '#/lib/isPlatformAdmin'
 import axios from 'axios'
 
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
@@ -93,11 +94,10 @@ async function refreshAccessToken(): Promise<string> {
 
       const { accessToken: newAccessToken, user } = response.data.data
 
-      // Exact backend strings only: "Admin", "Customer", "User"
-      // If refresh belongs to a "User" (mobile-only account), don't restore dashboard session
-      if (user.role === 'User') {
+      // If refresh belongs to an end-user mobile account ('Customer' / 'User'), don't restore dashboard session
+      if (isEndUser(user)) {
         useAuthStore.getState().clearAuth()
-        throw new Error('User role not allowed on dashboard')
+        throw new Error('Customer role not allowed on dashboard')
       }
 
       useAuthStore.getState().setAccessToken(newAccessToken, user)

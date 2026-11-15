@@ -4,7 +4,7 @@ import BrandPanel from '#/feature/auth/Components/BrandPanel'
 import LoginForm from '#/feature/auth/Components/LoginForm'
 import { useAuthStore } from '#/feature/auth/auth-store'
 import { ensureAuthInitialized } from '#/lib/client'
-import { isPlatformAdmin } from '#/lib/isPlatformAdmin'
+import { isPlatformAdmin, isEndUser } from '#/lib/isPlatformAdmin'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
@@ -13,9 +13,7 @@ export const Route = createFileRoute('/login')({
     const { isAuthenticated, user } = useAuthStore.getState()
 
     if (isAuthenticated) {
-      // Exact backend strings only: "Admin", "Customer", "User"
-      // User is not allowed on dashboard web — stay on login (will be cleared below if somehow authenticated)
-      if (user?.role === 'User') {
+      if (isEndUser(user)) {
         useAuthStore.getState().clearAuth()
         return
       }

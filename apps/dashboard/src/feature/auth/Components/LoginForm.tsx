@@ -17,6 +17,7 @@ import { createLoginSchema } from '../auth-schema'
 import type { LoginFormValues } from '../auth-schema'
 import { Spinner } from '#/components/ui/spinner'
 import { useTranslation } from 'react-i18next'
+import { isPlatformAdmin, isEndUser } from '#/lib/isPlatformAdmin'
 
 export default function LoginForm() {
   const navigate = useNavigate()
@@ -39,8 +40,8 @@ export default function LoginForm() {
     setNotAuthorized(false)
     login.mutate(values, {
       onSuccess: async (data) => {
-        // Exact backend strings only: "Admin", "Customer", "User"
-        if (data.user.role === 'User') {
+        // Mobile end-user accounts ('Customer' / 'User') are not permitted on the web dashboard
+        if (isEndUser(data.user)) {
           setNotAuthorized(true)
           // revoke the just-issued refresh cookie so session doesn't persist
           const { useAuthStore } = await import('../auth-store')
@@ -54,10 +55,10 @@ export default function LoginForm() {
           return
         }
 
-        if (data.user.role === 'Admin') {
+        if (isPlatformAdmin(data.user)) {
           navigate({ to: '/plans' })
         } else {
-          // Customer
+          // Business tenant
           navigate({ to: '/dashboard' })
         }
       },

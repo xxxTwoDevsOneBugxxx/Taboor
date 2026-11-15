@@ -7,7 +7,7 @@ import {
   platformNavConfig,
   PLATFORM_PATHS,
 } from '#/components/layout/sidebarConfig'
-import { isPlatformAdmin } from '#/lib/isPlatformAdmin'
+import { isPlatformAdmin, isEndUser } from '#/lib/isPlatformAdmin'
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
@@ -21,8 +21,8 @@ export const Route = createFileRoute('/_authenticated')({
       })
     }
 
-    // Exact backend strings only: "Admin", "Customer", "User"
-    if (user?.role === 'User') {
+    // End-user mobile accounts ('Customer' / 'User') are not permitted on the web dashboard
+    if (isEndUser(user)) {
       useAuthStore.getState().clearAuth()
       throw redirect({ to: '/login' })
     }
