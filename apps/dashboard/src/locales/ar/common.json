@@ -82,5 +82,87 @@
       "title": "النشاط",
       "description": "النشاط والأحداث الأخيرة على المنصة."
     }
+  },
+  "tenantsTable": {
+    "columns": {
+      "tenant": "المشترك / المؤسسة",
+      "contact": "المالك والتواصل",
+      "plan": "الباقة الحالية",
+      "subscriptionStatus": "حالة الاشتراك",
+      "accountStatus": "حالة الحساب",
+      "createdAt": "تاريخ الانضمام",
+      "actions": "الإجراءات"
+    },
+    "subStatus": {
+      "active": "نشط",
+      "trialing": "تجريبي",
+      "pastDue": "متأخر",
+      "canceled": "ملغي",
+      "expired": "منتهي"
+    },
+    "tenantStatus": {
+      "active": "مفعل",
+      "suspended": "موقوف"
+    },
+    "filters": {
+      "searchPlaceholder": "بحث بالاسم، الرابط، الهاتف...",
+      "allSubscriptions": "كل الاشتراكات",
+      "allStatuses": "كل الحالات",
+      "subscriptionStatus": "الاشتراك",
+      "tenantStatus": "الحالة",
+      "clearFilter": "مسح الفلتر",
+      "reset": "إعادة ضبط",
+      "perMonth": "ج.م / شهر"
+    },
+    "actions": {
+      "viewDetails": "عرض التفاصيل",
+      "visitPage": "زيارة صفحة الحجز",
+      "manageSubscription": "إدارة الاشتراك",
+      "suspend": "إيقاف المشترك",
+      "activate": "تفعيل المشترك"
+    }
+  },
+  "tenantDetails": {
+    "title": "تفاصيل المشترك",
+    "subtitle": "عرض تفصيلي وإدارة حساب المنشأة والاشتراك.",
+    "sections": {
+      "overview": "نظرة عامة",
+      "contactAndOwner": "معلومات التواصل والمالك",
+      "currentSubscription": "الاشتراك الحالي",
+      "teamMembers": "فريق العمل والموظفين",
+      "subscriptionHistory": "سجل الاشتراكات"
+    },
+    "fields": {
+      "businessName": "اسم المنشأة",
+      "slug": "الرابط العام",
+      "contactEmail": "إيميل التواصل",
+      "contactPhone": "هاتف التواصل",
+      "ownerName": "اسم المالك",
+      "ownerEmail": "إيميل المالك",
+      "ownerPhone": "هاتف المالك",
+      "plan": "الباقة",
+      "price": "السعر",
+      "billingCycle": "دورة الفوترة",
+      "period": "فترة الاشتراك",
+      "autoRenew": "التجديد التلقائي",
+      "enabled": "مفعل",
+      "disabled": "معطل",
+      "trialEnds": "نهاية التجربة",
+      "canceledAt": "تاريخ الإلغاء",
+      "cancellationReason": "السبب",
+      "joinedDate": "تاريخ الانضمام",
+      "role": "الدور",
+      "noSubscription": "لا يوجد اشتراك نشط حالياً.",
+      "noMembers": "لا يوجد موظفين مسجلين."
+    },
+    "roles": {
+      "owner": "مالك",
+      "admin": "مسؤول",
+      "staff": "موظف"
+    },
+    "actions": {
+      "visitPage": "زيارة صفحة الحجز",
+      "close": "إغلاق"
+    }
   }
 }

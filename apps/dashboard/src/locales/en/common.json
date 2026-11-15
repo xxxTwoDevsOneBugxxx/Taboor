@@ -82,5 +82,87 @@
       "title": "Activity",
       "description": "Recent platform activity and events."
     }
+  },
+  "tenantsTable": {
+    "columns": {
+      "tenant": "Tenant / Business",
+      "contact": "Contact & Owner",
+      "plan": "Current Plan",
+      "subscriptionStatus": "Subscription Status",
+      "accountStatus": "Account Status",
+      "createdAt": "Joined Date",
+      "actions": "Actions"
+    },
+    "subStatus": {
+      "active": "Active",
+      "trialing": "Trialing",
+      "pastDue": "Past Due",
+      "canceled": "Canceled",
+      "expired": "Expired"
+    },
+    "tenantStatus": {
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, slug, phone...",
+      "allSubscriptions": "All Subscriptions",
+      "allStatuses": "All Account Statuses",
+      "subscriptionStatus": "Subscription",
+      "tenantStatus": "Status",
+      "clearFilter": "Clear filter",
+      "reset": "Reset",
+      "perMonth": "/ mo"
+    },
+    "actions": {
+      "viewDetails": "View Details",
+      "visitPage": "Visit Booking Page",
+      "manageSubscription": "Manage Subscription",
+      "suspend": "Suspend Tenant",
+      "activate": "Activate Tenant"
+    }
+  },
+  "tenantDetails": {
+    "title": "Tenant Details",
+    "subtitle": "Overview and management of business organization.",
+    "sections": {
+      "overview": "Overview",
+      "contactAndOwner": "Contact & Owner Information",
+      "currentSubscription": "Current Subscription",
+      "teamMembers": "Team Members",
+      "subscriptionHistory": "Subscription History"
+    },
+    "fields": {
+      "businessName": "Business Name",
+      "slug": "Public Slug",
+      "contactEmail": "Contact Email",
+      "contactPhone": "Contact Phone",
+      "ownerName": "Owner Name",
+      "ownerEmail": "Owner Email",
+      "ownerPhone": "Owner Phone",
+      "plan": "Plan",
+      "price": "Price",
+      "billingCycle": "Billing Cycle",
+      "period": "Period",
+      "autoRenew": "Auto Renew",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "trialEnds": "Trial Ends",
+      "canceledAt": "Canceled At",
+      "cancellationReason": "Reason",
+      "joinedDate": "Joined Date",
+      "role": "Role",
+      "noSubscription": "No active subscription found.",
+      "noMembers": "No team members found."
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "staff": "Staff"
+    },
+    "actions": {
+      "visitPage": "Visit Booking Page",
+      "close": "Close"
+    }
   }
 }
