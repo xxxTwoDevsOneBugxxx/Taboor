@@ -58,6 +58,12 @@ namespace Taboor_Application.Common
         }
 
         /// <summary>
+        /// Optional pagination metadata for paginated collection endpoints.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public PaginationMetadata? Pagination { get; set; }
+
+        /// <summary>
         /// HTTP Status Code.
         /// </summary>
         public HttpStatusCode StatusCode { get; set; }
@@ -72,6 +78,23 @@ namespace Taboor_Application.Common
                 Data = data,
                 Message = message,
                 StatusCode = statusCode
+            };
+        }
+
+        public static ApiResponse<T> PagedSuccess(
+            T data,
+            int pageNumber,
+            int pageSize,
+            int totalCount,
+            string? message = null)
+        {
+            return new ApiResponse<T>
+            {
+                Success = true,
+                Data = data,
+                Message = message,
+                StatusCode = HttpStatusCode.OK,
+                Pagination = new PaginationMetadata(pageNumber, pageSize, totalCount)
             };
         }
 
@@ -93,5 +116,27 @@ namespace Taboor_Application.Common
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Metadata payload describing the pagination state and boundaries.
+    /// </summary>
+    public class PaginationMetadata
+    {
+        public int PageNumber { get; init; }
+        public int PageSize { get; init; }
+        public int TotalCount { get; init; }
+        public int TotalPages => PageSize > 0 ? (int)Math.Ceiling(TotalCount / (double)PageSize) : 0;
+        public bool HasPreviousPage => PageNumber > 1;
+        public bool HasNextPage => PageNumber < TotalPages;
+
+        public PaginationMetadata() { }
+
+        public PaginationMetadata(int pageNumber, int pageSize, int totalCount)
+        {
+            PageNumber = pageNumber;
+            PageSize = pageSize;
+            TotalCount = totalCount;
+        }
     }
 }
