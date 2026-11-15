@@ -46,7 +46,11 @@ catch (Exception ex)
     Console.Error.WriteLine($"DataProtection key path unavailable, using default key storage: {ex.Message}");
 }
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingConfig).Assembly);
 
 // CORS for the web dashboard (cross-origin cookies require explicit origins + credentials)

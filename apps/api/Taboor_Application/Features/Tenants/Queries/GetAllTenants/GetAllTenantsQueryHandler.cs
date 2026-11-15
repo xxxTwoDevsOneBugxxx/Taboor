@@ -59,12 +59,31 @@ public class GetAllTenantsQueryHandler(IApplicationDbContext context)
         var totalCount = await query.CountAsync(ct);
 
         // 6. Dynamic Sorting
-        query = request.SortBy?.Trim().ToLowerInvariant() switch
+        if (string.IsNullOrWhiteSpace(request.SortBy))
         {
-            "name" => request.SortDescending ? query.OrderByDescending(t => t.Name) : query.OrderBy(t => t.Name),
-            "status" => request.SortDescending ? query.OrderByDescending(t => t.Status) : query.OrderBy(t => t.Status),
-            _ => request.SortDescending ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt)
-        };
+            query = query.OrderByDescending(t => t.CreatedAt);
+        }
+        else
+        {
+            query = request.SortBy.Trim().ToLowerInvariant() switch
+            {
+                "name" => request.SortDescending ? query.OrderByDescending(t => t.Name) : query.OrderBy(t => t.Name),
+                "status" => request.SortDescending ? query.OrderByDescending(t => t.Status) : query.OrderBy(t => t.Status),
+                "planname" or "plan" => request.SortDescending
+                    ? query.OrderByDescending(t => context.TenantSubscriptions
+                        .Where(s => s.TenantId == t.Id)
+                        .OrderByDescending(s => s.StartDate)
+                        .Select(s => s.Plan.Name)
+                        .FirstOrDefault())
+                    : query.OrderBy(t => context.TenantSubscriptions
+                        .Where(s => s.TenantId == t.Id)
+                        .OrderByDescending(s => s.StartDate)
+                        .Select(s => s.Plan.Name)
+                        .FirstOrDefault()),
+                "createdat" or "created_at" => request.SortDescending ? query.OrderByDescending(t => t.CreatedAt) : query.OrderBy(t => t.CreatedAt),
+                _ => query.OrderByDescending(t => t.CreatedAt)
+            };
+        }
 
         // 7. Pagination & Projection to TenantListItemDto
         var skip = (request.PageNumber - 1) * request.PageSize;
