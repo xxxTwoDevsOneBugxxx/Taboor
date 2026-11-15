@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { Collapsible } from '@base-ui/react/collapsible'
 import { ChevronRightIcon } from 'lucide-react'
@@ -31,10 +32,23 @@ type AppSidebarProps = {
 }
 
 export function AppSidebar({ config }: AppSidebarProps) {
-  const { state } = useSidebar()
+  const { state, isMobile, setOpenMobile } = useSidebar()
   const { pathname } = useLocation()
   const direction = useDirection()
   const { t } = useTranslation('navbar')
+
+  const handleNavClick = React.useCallback(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [isMobile, setOpenMobile])
+
+  // Automatically close mobile sidebar on any route transition
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [pathname, isMobile, setOpenMobile])
 
   const isActive = (url: string) =>
     pathname === url || pathname.startsWith(`${url}/`)
@@ -44,7 +58,10 @@ export function AppSidebar({ config }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" side={direction === 'rtl' ? 'right' : 'left'}>
       <SidebarHeader className="h-14 justify-center px-2 group-data-[collapsible=icon]:px-0">
-        <div className="flex items-center group-data-[collapsible=icon]:justify-center">
+        <div
+          className="flex items-center group-data-[collapsible=icon]:justify-center"
+          onClick={handleNavClick}
+        >
           <Logo size="xs" scale={1.3} hideWordmark={state === 'collapsed'} />
         </div>
       </SidebarHeader>
@@ -76,7 +93,12 @@ export function AppSidebar({ config }: AppSidebarProps) {
                             {section.items.map((item) => (
                               <SidebarMenuSubItem key={item.key}>
                                 <SidebarMenuSubButton
-                                  render={<Link to={item.url} />}
+                                  render={
+                                    <Link
+                                      to={item.url}
+                                      onClick={handleNavClick}
+                                    />
+                                  }
                                   isActive={isActive(item.url)}
                                 >
                                   <item.icon />
@@ -102,7 +124,9 @@ export function AppSidebar({ config }: AppSidebarProps) {
                   {section.items.map((item) => (
                     <SidebarMenuItem key={item.key}>
                       <SidebarMenuButton
-                        render={<Link to={item.url} />}
+                        render={
+                          <Link to={item.url} onClick={handleNavClick} />
+                        }
                         isActive={isActive(item.url)}
                         tooltip={itemLabel(item.key)}
                       >
