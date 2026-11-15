@@ -120,6 +120,11 @@
       "manageSubscription": "إدارة الاشتراك",
       "suspend": "إيقاف المشترك",
       "activate": "تفعيل المشترك"
+    },
+    "toasts": {
+      "suspendedSuccess": "تم إيقاف حساب الشركة بنجاح",
+      "activatedSuccess": "تم تفعيل حساب الشركة بنجاح",
+      "statusError": "فشل في تحديث حالة الشركة"
     }
   },
   "tenantDetails": {

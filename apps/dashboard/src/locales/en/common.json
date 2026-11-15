@@ -120,6 +120,11 @@
       "manageSubscription": "Manage Subscription",
       "suspend": "Suspend Tenant",
       "activate": "Activate Tenant"
+    },
+    "toasts": {
+      "suspendedSuccess": "Tenant account suspended successfully",
+      "activatedSuccess": "Tenant account activated successfully",
+      "statusError": "Failed to update tenant status"
     }
   },
   "tenantDetails": {

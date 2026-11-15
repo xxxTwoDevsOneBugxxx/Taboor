@@ -1,5 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { Building2Icon, ExternalLinkIcon } from 'lucide-react'
+import {
+  BanIcon,
+  Building2Icon,
+  CheckCircle2Icon,
+  ExternalLinkIcon,
+} from 'lucide-react'
 import {
   Sheet,
   SheetContent,
@@ -9,7 +14,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { useTenant } from '../../hooks/use-tenants'
+import { cn } from '@/lib/utils'
+import { useTenant, useToggleTenantStatus } from '../../hooks/use-tenants'
 import { useDirection } from '#/hooks/use-direction'
 import { TenantDetailSkeleton } from './TenantDetailSkeleton'
 import { TenantDetailHeader } from './TenantDetailHeader'
@@ -31,11 +37,15 @@ export function TenantDetailSheet({
 }: TenantDetailSheetProps) {
   const { t } = useTranslation('common')
   const direction = useDirection()
+  const { toggleStatus, isToggling } = useToggleTenantStatus()
 
   // Fetch tenant details when sheet is open and tenantId is present
   const { data: tenant, isLoading } = useTenant(
     open && tenantId ? tenantId : '',
   )
+
+  const isActive =
+    tenant?.status === 'Active' || (tenant?.status as unknown) === 1
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -88,25 +98,51 @@ export function TenantDetailSheet({
 
         {/* Footer Actions */}
         {tenant && (
-          <SheetFooter className="p-4 border-t shrink-0 bg-background/50 flex-row gap-2 justify-end">
+          <SheetFooter className="p-4 border-t shrink-0 bg-background/50 flex flex-row items-center justify-between gap-2">
             <Button
-              variant="outline"
+              variant={isActive ? 'destructive' : 'outline'}
               size="sm"
-              onClick={() => onOpenChange(false)}
-              className="text-xs cursor-pointer"
+              onClick={() => toggleStatus(tenant)}
+              disabled={isToggling}
+              className={cn(
+                'text-xs gap-1.5 cursor-pointer',
+                !isActive &&
+                  'text-emerald-600 border-emerald-600/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700',
+              )}
             >
-              {t('tenantDetails.actions.close')}
+              {isActive ? (
+                <>
+                  <BanIcon className="size-3.5" />
+                  <span>{t('tenantsTable.actions.suspend')}</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2Icon className="size-3.5" />
+                  <span>{t('tenantsTable.actions.activate')}</span>
+                </>
+              )}
             </Button>
 
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => window.open(`/t/${tenant.slug}`, '_blank')}
-              className="text-xs gap-1.5 cursor-pointer"
-            >
-              <ExternalLinkIcon className="size-3.5" />
-              <span>{t('tenantDetails.actions.visitPage')}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="text-xs cursor-pointer"
+              >
+                {t('tenantDetails.actions.close')}
+              </Button>
+
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => window.open(`/t/${tenant.slug}`, '_blank')}
+                className="text-xs gap-1.5 cursor-pointer"
+              >
+                <ExternalLinkIcon className="size-3.5" />
+                <span>{t('tenantDetails.actions.visitPage')}</span>
+              </Button>
+            </div>
           </SheetFooter>
         )}
       </SheetContent>

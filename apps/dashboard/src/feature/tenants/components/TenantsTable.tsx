@@ -16,7 +16,11 @@ import {
 import { getTenantsColumns } from './tenants-columns'
 import { TenantDetailSheet } from './TenantDetailSheet'
 import { TenantMobileCard } from './TenantMobileCard'
-import { usePrefetchTenant, useTenants } from '../hooks/use-tenants'
+import {
+  usePrefetchTenant,
+  useTenants,
+  useToggleTenantStatus,
+} from '../hooks/use-tenants'
 import type {
   SubscriptionStatus,
   TenantListItem,
@@ -80,6 +84,7 @@ export function TenantsTable() {
   }
 
   const prefetchTenant = usePrefetchTenant()
+  const { toggleStatus } = useToggleTenantStatus()
 
   const handleOpenDetails = React.useCallback((tenant: TenantListItem) => {
     setSelectedTenantId(tenant.id)
@@ -91,14 +96,12 @@ export function TenantsTable() {
       getTenantsColumns(t, i18n, {
         onViewDetails: handleOpenDetails,
         onHoverDetails: (tenant) => prefetchTenant(tenant.id),
-        onToggleStatus: (tenant) => {
-          console.log('Toggle status for:', tenant.id)
-        },
+        onToggleStatus: (tenant) => toggleStatus(tenant),
         onManageSubscription: (tenant) => {
           console.log('Manage subscription for:', tenant.id)
         },
       }),
-    [t, i18n, handleOpenDetails, prefetchTenant],
+    [t, i18n, handleOpenDetails, prefetchTenant, toggleStatus],
   )
 
   const subscriptionOptions: FilterOption[] = React.useMemo(
@@ -190,9 +193,7 @@ export function TenantsTable() {
           <TenantMobileCard
             tenant={tenant}
             onViewDetails={handleOpenDetails}
-            onToggleStatus={(t) => {
-              console.log('Toggle status for:', t.id)
-            }}
+            onToggleStatus={(t) => toggleStatus(t)}
             onManageSubscription={(t) => {
               console.log('Manage subscription for:', t.id)
             }}

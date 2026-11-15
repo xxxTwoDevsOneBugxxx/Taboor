@@ -37,4 +37,12 @@ export const tenantsApi = {
     )
     return response.data.data
   },
+
+  activateTenant: async (id: string): Promise<void> => {
+    await apiClient.patch(`/Tenants/${id}/activate`)
+  },
+
+  suspendTenant: async (id: string, reason?: string): Promise<void> => {
+    await apiClient.patch(`/Tenants/${id}/suspend`, { reason })
+  },
 }
