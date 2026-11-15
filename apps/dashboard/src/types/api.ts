@@ -1,3 +1,12 @@
+export interface PaginationMetadata {
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+}
+
 export interface ApiResponse<T> {
   data: T
   message?: string
@@ -5,4 +14,5 @@ export interface ApiResponse<T> {
   error?: string
   errors?: string[]
   statusCode?: number
+  pagination?: PaginationMetadata
 }
