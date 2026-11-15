@@ -39,6 +39,12 @@ public class TenantSubscription
     public bool AutoRenew { get; private set; } = true;
 
     /// <summary>
+    /// Reference ID assigned by the external payment gateway (e.g., Paymob subscription ID or Stripe sub_xxx).
+    /// Null for local/mock environments or until gateway checkout finishes.
+    /// </summary>
+    public string? ExternalSubscriptionId { get; private set; }
+
+    /// <summary>
     /// The timestamp when the subscription was canceled (null if active).
     /// </summary>
     public DateTime? CanceledAt { get; private set; }
@@ -60,7 +66,7 @@ public class TenantSubscription
     /// <summary>
     /// Static Factory Method to create a new free-trial subscription for a newly onboarded tenant.
     /// </summary>
-    public static TenantSubscription CreateTrial(Guid tenantId, int planId, int trialDays = 14)
+    public static TenantSubscription CreateTrial(Guid tenantId, int planId, int trialDays = 14, string? externalSubscriptionId = null)
     {
         var now = DateTime.UtcNow;
         var trialEnd = now.AddDays(trialDays);
@@ -75,6 +81,7 @@ public class TenantSubscription
             EndDate = trialEnd,
             TrialEndsAt = trialEnd,
             AutoRenew = false,
+            ExternalSubscriptionId = externalSubscriptionId?.Trim(),
             CreatedAt = now
         };
     }
@@ -82,7 +89,13 @@ public class TenantSubscription
     /// <summary>
     /// Static Factory Method to create an active paid subscription.
     /// </summary>
-    public static TenantSubscription CreateActive(Guid tenantId, int planId, DateTime startDate, DateTime endDate, bool autoRenew = true)
+    public static TenantSubscription CreateActive(
+        Guid tenantId,
+        int planId,
+        DateTime startDate,
+        DateTime endDate,
+        string? externalSubscriptionId = null,
+        bool autoRenew = true)
     {
         var now = DateTime.UtcNow;
 
@@ -96,6 +109,7 @@ public class TenantSubscription
             EndDate = endDate,
             TrialEndsAt = null,
             AutoRenew = autoRenew,
+            ExternalSubscriptionId = externalSubscriptionId?.Trim(),
             CreatedAt = now
         };
     }
@@ -103,14 +117,27 @@ public class TenantSubscription
     #region Domain Behaviors & State Transitions
 
     /// <summary>
+    /// Updates the external payment gateway reference identifier.
+    /// </summary>
+    public void UpdateExternalSubscriptionId(string externalSubscriptionId)
+    {
+        ExternalSubscriptionId = externalSubscriptionId.Trim();
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// Renews the current subscription period to a new end date upon successful payment.
     /// </summary>
-    public void Renew(DateTime newEndDate)
+    public void Renew(DateTime newEndDate, string? externalSubscriptionId = null)
     {
         Status = SubscriptionStatus.Active;
         StartDate = EndDate > DateTime.UtcNow ? EndDate : DateTime.UtcNow;
         EndDate = newEndDate;
         TrialEndsAt = null;
+        if (!string.IsNullOrWhiteSpace(externalSubscriptionId))
+        {
+            ExternalSubscriptionId = externalSubscriptionId.Trim();
+        }
         UpdatedAt = DateTime.UtcNow;
     }
 

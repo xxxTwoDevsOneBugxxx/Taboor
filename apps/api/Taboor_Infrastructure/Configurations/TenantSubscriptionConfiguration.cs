@@ -32,6 +32,9 @@ public class TenantSubscriptionConfiguration : IEntityTypeConfiguration<TenantSu
         builder.Property(s => s.AutoRenew)
             .HasDefaultValue(true);
 
+        builder.Property(s => s.ExternalSubscriptionId)
+            .HasMaxLength(255);
+
         builder.Property(s => s.CancellationReason)
             .HasMaxLength(500);
 

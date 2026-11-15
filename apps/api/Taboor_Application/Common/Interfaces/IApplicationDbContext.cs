@@ -15,6 +15,7 @@ public interface IApplicationDbContext
     DbSet<Plan> Plans { get; set; }
     DbSet<Tenant> Tenants { get; set; }
     DbSet<TenantSubscription> TenantSubscriptions { get; set; }
+    DbSet<TenantMember> TenantMembers { get; set; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
