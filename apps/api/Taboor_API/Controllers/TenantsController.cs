@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Taboor_Application.Common;
 using Taboor_Application.Common.Constants;
+using Taboor_Application.Features.Tenants.Commands.ActivateTenant;
+using Taboor_Application.Features.Tenants.Commands.SuspendTenant;
 using Taboor_Application.Features.Tenants.DTOs;
 using Taboor_Application.Features.Tenants.Queries.GetAllTenants;
 using Taboor_Application.Features.Tenants.Queries.GetTenantById;
@@ -55,4 +57,32 @@ public class TenantsController(ISender sender) : ControllerBase
         var tenant = await sender.Send(new GetTenantByIdQuery(id), ct);
         return Ok(ApiResponse<TenantDetailDto>.SuccessResponse(tenant));
     }
+
+    /// <summary>
+    /// Activates a tenant organization, restoring active operational access.
+    /// </summary>
+    [HttpPatch("{id:guid}/activate")]
+    public async Task<IActionResult> Activate([FromRoute] Guid id, CancellationToken ct = default)
+    {
+        await sender.Send(new ActivateTenantCommand(id), ct);
+        return Ok(ApiResponse<object>.SuccessResponse(null, "Tenant activated successfully."));
+    }
+
+    /// <summary>
+    /// Administratively suspends a tenant organization, blocking operations.
+    /// </summary>
+    [HttpPatch("{id:guid}/suspend")]
+    public async Task<IActionResult> Suspend(
+        [FromRoute] Guid id,
+        [FromBody] SuspendTenantRequest? request = null,
+        CancellationToken ct = default)
+    {
+        await sender.Send(new SuspendTenantCommand(id, request?.Reason), ct);
+        return Ok(ApiResponse<object>.SuccessResponse(null, "Tenant suspended successfully."));
+    }
 }
+
+/// <summary>
+/// Optional request payload when suspending a tenant.
+/// </summary>
+public record SuspendTenantRequest(string? Reason = null);
