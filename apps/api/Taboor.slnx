@@ -3,4 +3,5 @@
   <Project Path="Taboor_Application/Taboor_Application.csproj" />
   <Project Path="Taboor_Domain/Taboor_Domain.csproj" />
   <Project Path="Taboor_Infrastructure/Taboor_Infrastructure.csproj" />
+  <Project Path="Taboor_Seeder/Taboor_Seeder.csproj" />
 </Solution>
