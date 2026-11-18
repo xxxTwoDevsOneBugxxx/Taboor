@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Taboor_Application.Common;
 using Taboor_Application.Common.Constants;
 using Taboor_Application.Features.Tenants.Commands.ActivateTenant;
+using Taboor_Application.Features.Tenants.Commands.CancelTenantSubscription;
 using Taboor_Application.Features.Tenants.Commands.ChangeTenantPlan;
 using Taboor_Application.Features.Tenants.Commands.RenewTenantSubscription;
 using Taboor_Application.Features.Tenants.Commands.SuspendTenant;
@@ -126,5 +127,22 @@ public class TenantsController(ISender sender) : ControllerBase
         return Ok(ApiResponse<object>.SuccessResponse(
             null,
             "Subscription renewed successfully."));
+    }
+
+    /// <summary>
+    /// Cancels an existing tenant subscription contract.
+    /// </summary>
+    [HttpPost("{id:guid}/subscription/cancel")]
+    public async Task<IActionResult> CancelSubscription(
+        [FromRoute] Guid id,
+        [FromBody] CancelTenantSubscriptionRequest? request = null,
+        CancellationToken ct = default)
+    {
+        var command = new CancelTenantSubscriptionCommand(id, request?.Reason);
+        await sender.Send(command, ct);
+
+        return Ok(ApiResponse<object>.SuccessResponse(
+            null,
+            "Subscription canceled successfully."));
     }
 }
