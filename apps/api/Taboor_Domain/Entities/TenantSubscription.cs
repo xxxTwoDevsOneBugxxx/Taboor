@@ -134,6 +134,8 @@ public class TenantSubscription
         StartDate = EndDate > DateTime.UtcNow ? EndDate : DateTime.UtcNow;
         EndDate = newEndDate;
         TrialEndsAt = null;
+        CanceledAt = null;
+        CancellationReason = null;
         if (!string.IsNullOrWhiteSpace(externalSubscriptionId))
         {
             ExternalSubscriptionId = externalSubscriptionId.Trim();
@@ -150,6 +152,8 @@ public class TenantSubscription
         Status = SubscriptionStatus.Active;
         EndDate = newEndDate;
         TrialEndsAt = null;
+        CanceledAt = null;
+        CancellationReason = null;
         UpdatedAt = DateTime.UtcNow;
     }
 

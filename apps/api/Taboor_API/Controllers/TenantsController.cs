@@ -5,6 +5,7 @@ using Taboor_Application.Common;
 using Taboor_Application.Common.Constants;
 using Taboor_Application.Features.Tenants.Commands.ActivateTenant;
 using Taboor_Application.Features.Tenants.Commands.ChangeTenantPlan;
+using Taboor_Application.Features.Tenants.Commands.RenewTenantSubscription;
 using Taboor_Application.Features.Tenants.Commands.SuspendTenant;
 using Taboor_Application.Features.Tenants.DTOs;
 using Taboor_Application.Features.Tenants.Queries.GetAllTenants;
@@ -103,5 +104,27 @@ public class TenantsController(ISender sender) : ControllerBase
         return Ok(ApiResponse<object>.SuccessResponse(
             null,
             "Subscription plan changed successfully."));
+    }
+
+    /// <summary>
+    /// Renews an existing tenant subscription contract, extending the active period.
+    /// </summary>
+    [HttpPost("{id:guid}/subscription/renew")]
+    public async Task<IActionResult> RenewSubscription(
+        [FromRoute] Guid id,
+        [FromBody] RenewTenantSubscriptionRequest? request = null,
+        CancellationToken ct = default)
+    {
+        var command = new RenewTenantSubscriptionCommand(
+            id,
+            request?.BillingCycle,
+            request?.CustomDays,
+            request?.ExternalPaymentId);
+
+        await sender.Send(command, ct);
+
+        return Ok(ApiResponse<object>.SuccessResponse(
+            null,
+            "Subscription renewed successfully."));
     }
 }
