@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Taboor_Application.Common;
 using Taboor_Application.Common.Constants;
 using Taboor_Application.Features.Tenants.Commands.ActivateTenant;
+using Taboor_Application.Features.Tenants.Commands.ChangeTenantPlan;
 using Taboor_Application.Features.Tenants.Commands.SuspendTenant;
 using Taboor_Application.Features.Tenants.DTOs;
 using Taboor_Application.Features.Tenants.Queries.GetAllTenants;
 using Taboor_Application.Features.Tenants.Queries.GetTenantById;
+using Taboor_Application.Features.Tenants.Requests;
 using Taboor_Domain.Entities;
 
 namespace Taboor_API.Controllers;
@@ -80,9 +82,26 @@ public class TenantsController(ISender sender) : ControllerBase
         await sender.Send(new SuspendTenantCommand(id, request?.Reason), ct);
         return Ok(ApiResponse<object>.SuccessResponse(null, "Tenant suspended successfully."));
     }
-}
 
-/// <summary>
-/// Optional request payload when suspending a tenant.
-/// </summary>
-public record SuspendTenantRequest(string? Reason = null);
+    /// <summary>
+    /// Changes, upgrades, or downgrades a tenant's subscription plan.
+    /// </summary>
+    [HttpPut("{id:guid}/subscription/plan")]
+    public async Task<IActionResult> ChangePlan(
+        [FromRoute] Guid id,
+        [FromBody] ChangeTenantPlanRequest request,
+        CancellationToken ct = default)
+    {
+        var command = new ChangeTenantPlanCommand(
+            id,
+            request.NewPlanId,
+            request.BillingCycle,
+            request.CustomDays);
+
+        await sender.Send(command, ct);
+
+        return Ok(ApiResponse<object>.SuccessResponse(
+            null,
+            "Subscription plan changed successfully."));
+    }
+}

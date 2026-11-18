@@ -149,6 +149,7 @@ public class TenantSubscription
         PlanId = newPlanId;
         Status = SubscriptionStatus.Active;
         EndDate = newEndDate;
+        TrialEndsAt = null;
         UpdatedAt = DateTime.UtcNow;
     }
 
